@@ -1,8 +1,8 @@
  # Himmelblau function GP model
 This model approximates the Himmelblau function:
-$$
+$
 f(x, y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
-$$
+$
 
 This model: 
 - Generates training and testing data using LHS sampling between $[-5, 5]$ in both dimensions
@@ -12,10 +12,17 @@ This model:
 
 
 # How to Run
-## Dependencies
-Use your environment of choice:
+## Setup
 
-    pip install -r requirements.txt
+Install uv:
+```bash
+pip install uv
+```
+
+Create environment and install dependencies:
+```bash
+uv sync
+```
 
 # Code Components
 ## src/
