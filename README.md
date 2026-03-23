@@ -16,3 +16,8 @@ This model:
 Use your environment of choice:
 
     pip install -r requirements.txt
+
+# Code Components
+## src/
+### gp_model/
+1. data_processing.py - LHS sampling + standardisation and de-standardisation + converts arrays to tensors 
