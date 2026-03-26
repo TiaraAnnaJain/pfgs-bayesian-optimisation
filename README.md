@@ -13,6 +13,10 @@ This model:
 
 # How to Run
 ## Dependencies
-Use your environment of choice:
+Install uv:
 
-    pip install -r requirements.txt
+    pip install uv
+
+Create environment and install dependencies:
+
+    uv sync
