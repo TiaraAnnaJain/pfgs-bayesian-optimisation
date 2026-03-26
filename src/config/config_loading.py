@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import tomllib
-from src.config.data_models import PSOConfig, ExperimentConfigBO, ExperimentConfigPFGS
+from src.config.data_config import PSOConfig, ExperimentConfigBO, ExperimentConfigPFGS
 from typing import Tuple
 
 
