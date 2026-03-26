@@ -6,20 +6,17 @@ particles = 200
 dimensions = 2
 bounds = [[-5, 5], [-5, 5]]
 
-[[experiments]]
-name = "ucb"
+[experiments.ucb]
 method = "BO"
 acquisition_function = "UCB"
 alphas = [1.0, 1.5, 1.96, 2.0, 2.5]
 test_set_types = ["Design Space Only", "Entire Domain"]
 
-[[experiments]]
-name = "ei"
+[experiments.ei]
 method = "BO"
 acquisition_function = "EI"
 test_set_types = ["Design Space Only", "Entire Domain"]
 
-[[experiments]]
-name = "pfgs"
+[experiments.pfgs]
 method = "PFGS"
 test_set_types = ["Design Space Only", "Entire Domain"]
