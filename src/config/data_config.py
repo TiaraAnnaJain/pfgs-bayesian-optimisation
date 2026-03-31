@@ -1,8 +1,10 @@
+"""Data models for configuration setup."""
+
 from dataclasses import dataclass
 from typing import List, Optional
 
 
-@dataclass
+@dataclass(frozen=True)
 class PSOConfig:
     c1: float
     c2: float
@@ -12,10 +14,17 @@ class PSOConfig:
     bounds: list
 
 
-@dataclass
+@dataclass(frozen=True)
+class NSGAConfig:
+    population_size: int
+    number_of_generations: int
+
+
+@dataclass(frozen=True)
 class ExperimentConfigPFGS:
     method: str
     test_set_types: List[str]
+    utopia_point: List[float]
 
     def __post_init__(self):
         if self.method not in {"PFGS"}:
@@ -27,7 +36,7 @@ class ExperimentConfigPFGS:
             raise ValueError(f"Invalid test set type(s): {self.test_set_types}")
 
 
-@dataclass
+@dataclass(frozen=True)
 class ExperimentConfigBO:
     method: str
     acquisition_function: str
@@ -44,11 +53,11 @@ class ExperimentConfigBO:
 
         if self.acquisition_function == "UCB":
             if not self.alphas:
-                raise ValueError(f"No range of alpha values provided")
+                raise ValueError("No range of alpha values provided")
 
         if self.acquisition_function == "EI":
             if self.alphas is not None:
-                raise ValueError(f"Alpha values must not be provided for EI experiment")
+                raise ValueError("Alpha values must not be provided for EI experiment")
 
         allowed_types = {"Design Space Only", "Entire Domain"}
 
