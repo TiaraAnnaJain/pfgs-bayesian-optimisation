@@ -1,62 +1,74 @@
-from dataclasses import dataclass
+"""Loading function for TOML file."""
+
 import tomllib
-from src.config.data_config import PSOConfig, ExperimentConfigBO, ExperimentConfigPFGS
-from typing import Tuple
+from typing import Tuple, Union
+from src.config.data_config import (
+    PSOConfig,
+    ExperimentConfigBO,
+    ExperimentConfigPFGS,
+    NSGAConfig,
+)
 
 
 def load_config(
-    path: str, experiment_name: str
-) -> Tuple[PSOConfig, ExperimentConfigBO | ExperimentConfigPFGS]:
-    """
-    Loads configuration from config.toml file and converts to PSOConfig and ExperimentConfigBO or ExperimentConfigPFGS.
+    path: str,
+) -> Tuple[
+    Union[ExperimentConfigBO, ExperimentConfigPFGS], Union[NSGAConfig, PSOConfig]
+]:
+    """Loads experiment configuration from TOML file.
 
     Parameters:
-    path (str): path to config.toml file
-    experiment_name (str): name of experiment to load
+        path (str): Path to TOML file.
 
     Returns:
-    pso (PSOConfig): PSO configuration loaded from config.toml file
-    experiments (list[ExperimentConfigBO | ExperimentConfigPFGS]): experiment configuration for either PFGS or BO loaded from config.toml file.
+        experiment (Union[ExperimentConfigBO, ExperimentConfigPFGS]): Experiment configuration.
+        optimizer (Union[NSGAConfig, PSOConfig]): Optimizer configuration.
     """
 
     with open(path, "rb") as f:
         cfg = tomllib.load(f)
 
-    pso_raw = cfg["pso_parameters"]
+    experiment_raw = cfg["experiment"]
+    method = experiment_raw["method"]
 
-    pso = PSOConfig(
-        c1=pso_raw["c1"],
-        c2=pso_raw["c2"],
-        w=pso_raw["w"],
-        particles=pso_raw["particles"],
-        dimensions=pso_raw["dimensions"],
-        bounds=pso_raw["bounds"],
-    )
+    if method == "PFGS":
+        if "nsga_parameters" not in cfg:
+            raise ValueError("PFGS experiment requires [nsga_parameters]")
 
-    experiments = cfg["experiments"]
-
-    if experiment_name not in experiments:
-        raise ValueError(f"Experiment {experiment_name} not found in config file")
-
-    exp_raw = experiments[experiment_name]
-
-    method = exp_raw["method"]
-
-    if method == "BO":
-        experiment = ExperimentConfigBO(
-            method=exp_raw["method"],
-            acquisition_function=exp_raw["acquisition_function"],
-            alphas=exp_raw.get("alphas"),
-            test_set_types=exp_raw["test_set_types"],
+        experiment = ExperimentConfigPFGS(
+            method=experiment_raw["method"],
+            test_set_types=experiment_raw["test_set_types"],
+            utopia_point=experiment_raw["utopia_point"],
         )
 
-    elif method == "PFGS":
-        experiment = ExperimentConfigPFGS(
-            method=exp_raw["method"],
-            test_set_types=exp_raw["test_set_types"],
+        nsga_raw = cfg["nsga_parameters"]
+        optimizer = NSGAConfig(
+            population_size=nsga_raw["population_size"],
+            number_of_generations=nsga_raw["number_of_generations"],
+        )
+
+    elif method == "BO":
+        if "pso_parameters" not in cfg:
+            raise ValueError("BO experiment requires [pso_parameters]")
+
+        experiment = ExperimentConfigBO(
+            method=experiment_raw["method"],
+            acquisition_function=experiment_raw["acquisition_function"],
+            alphas=experiment_raw.get("alphas"),
+            test_set_types=experiment_raw["test_set_types"],
+        )
+
+        pso_raw = cfg["pso_parameters"]
+        optimizer = PSOConfig(
+            c1=pso_raw["c1"],
+            c2=pso_raw["c2"],
+            w=pso_raw["w"],
+            particles=pso_raw["particles"],
+            dimensions=pso_raw["dimensions"],
+            bounds=pso_raw["bounds"],
         )
 
     else:
-        raise ValueError(f"Unknown method: {method}")
+        raise ValueError(f"Unknown method {method}")
 
-    return pso, experiment
+    return experiment, optimizer
