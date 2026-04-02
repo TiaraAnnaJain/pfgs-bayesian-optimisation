@@ -16,19 +16,19 @@ def test_himmelblau():
 def test_generate_data():
     """Test data generation and LHS sampling."""
     train, test, design_space, _, _ = generate_data()
-    assert train.X.shape == (5, 2)
-    assert test.X.shape == (100, 2)
-    assert design_space.X.shape == (100, 2)
+    assert train.x.shape == (5, 2)
+    assert test.x.shape == (100, 2)
+    assert design_space.x.shape == (100, 2)
     assert train.y.shape == (5, 1)
     assert test.y.shape == (100, 1)
     assert design_space.y.shape == (100, 1)
 
-    assert train.X.min() >= -5
-    assert train.X.max() <= 5
-    assert test.X.min() >= -5
-    assert test.X.max() <= 5
-    assert design_space.X.min() >= -6
-    assert design_space.X.max() <= 6
+    assert train.x.min() >= -5
+    assert train.x.max() <= 5
+    assert test.x.min() >= -5
+    assert test.x.max() <= 5
+    assert design_space.x.min() >= -6
+    assert design_space.x.max() <= 6
 
 
 def test_standardize():
@@ -36,9 +36,11 @@ def test_standardize():
     X = np.array([[1.0, 2.0], [3.0, 4.0]])
     y = np.array([[10.0], [20.0]])
 
-    data = Dataset(X=X, y=y)
+    data = Dataset(x=X, y=y)
 
-    x_std, y_std = data.standardize()
+    data.standardize()
+    x_std = data.x
+    y_std = data.y
 
     assert np.allclose(x_std, [[-1, -1], [1, 1]])
     assert np.allclose(y_std, [[-1], [1]])
@@ -47,7 +49,7 @@ def test_transform_without_standardize_raises():
     X = np.array([[1.0], [2.0]])
     y = np.array([[3.0], [4.0]])
 
-    data = Dataset(X=X, y=y)
+    data = Dataset(x=X, y=y)
 
     with pytest.raises(ValueError):
         data.transform(X, y)
@@ -59,9 +61,9 @@ def test_destandardize():
     y = np.array([[10.0], [20.0]])
     preds = np.array([[0.0, 1.0], [1.0, 4.0]])
 
-    data = Dataset(X=X, y=y)
+    data = Dataset(x=X, y=y)
 
-    _, _ = data.standardize()
+    data.standardize()
     result = data.de_standardize(preds)
 
     expected = np.array([[15.0, 25.0], [20.0, 100.0]])
