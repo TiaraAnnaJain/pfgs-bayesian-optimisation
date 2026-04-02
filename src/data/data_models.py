@@ -20,10 +20,10 @@ class Dataset:
 
     def standardize(self):
         """
-        Standardises X and y.
+        Standardises x and y.
 
         Returns:
-            self.X (NDArray[np.float64]): standardised x.
+            self.x (NDArray[np.float64]): standardised x.
             self.y (NDArray[np.float64]): standardised y.
         """
         if self.standardised:
@@ -48,7 +48,7 @@ class Dataset:
         self, x_new: NDArray[np.float64], y_new: Optional[NDArray[np.float64]]
     ) -> Union[Tuple[NDArray[np.float64], None], Tuple[NDArray[np.float64], NDArray[np.float64]]]:
         """
-        Transforms X and y.
+        Transforms x and y.
 
         Parameters:
             x_new (NDArray[np.float64]): x to be standardised.
@@ -70,7 +70,7 @@ class Dataset:
 
     def transform_inverse(self, x_new: NDArray[np.float64], y_new: Optional[NDArray[np.float64]]) -> Union[Tuple[NDArray[np.float64], None], Tuple[NDArray[np.float64], NDArray[np.float64]]]:
         """
-        Inverses transformed X.
+        Inverses transformed x.
 
         Parameters:
             x_new (NDArray[np.float64]): transformed x.
