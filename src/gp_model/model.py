@@ -4,6 +4,7 @@ from botorch.models import SingleTaskGP
 from src.data.data_models import Dataset
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
+
 class GPModel:
     def __init__(self):
         self.model = None
@@ -49,9 +50,3 @@ class GPModel:
 
         predictions = np.column_stack((mean, var))
         return predictions
-
-
-
-
-
-
