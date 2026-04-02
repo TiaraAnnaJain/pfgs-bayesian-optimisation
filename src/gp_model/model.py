@@ -3,6 +3,7 @@ import numpy as np
 from botorch.models import SingleTaskGP
 from src.data.data_models import Dataset
 from gpytorch.mlls import ExactMarginalLogLikelihood
+from gpytorch.constraints import GreaterThan
 
 
 class GPModel:
@@ -17,9 +18,17 @@ class GPModel:
         train_x = torch.tensor(dataset.x, dtype=torch.float64)
         train_y = torch.tensor(dataset.y, dtype=torch.float64)
 
+        if train_y.ndim == 1:
+            train_y = train_y.unsqueeze(-1)
+
+
         self.model = SingleTaskGP(train_X=train_x, train_Y=train_y)
         self.mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.005)
+
+        self.model.likelihood.noise_covar.register_constraint(
+            "raw_noise", GreaterThan(1e-5)
+        )
 
         self.model.train()
         self.model.likelihood.train()
@@ -30,6 +39,7 @@ class GPModel:
             self.optimizer.zero_grad()
             output = self.model(train_x)
             loss = -self.mll(output, train_y)
+            loss = loss.mean()
             loss.backward()
 
             if verbose:
@@ -38,7 +48,7 @@ class GPModel:
             self.optimizer.step()
 
     def predict(self, dataset: Dataset, x):
-        x_transformed = dataset.transform(x, None)
+        x_transformed, _ = dataset.transform(x, None)
         test_x = torch.tensor(x_transformed, dtype=torch.float64)
 
         self.model.eval()
