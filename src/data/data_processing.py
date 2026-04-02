@@ -98,12 +98,3 @@ def generate_data(
         seed_train,
         seed_test,
     )
-
-
-def to_tensor(
-    x_standardised: NDArray[np.float64], y_standardised: NDArray[np.float64]
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Converts arrays to tensors"""
-    x_tensor = torch.tensor(x_standardised, dtype=torch.float64)
-    y_tensor = torch.tensor(y_standardised, dtype=torch.float64)
-    return x_tensor, y_tensor
