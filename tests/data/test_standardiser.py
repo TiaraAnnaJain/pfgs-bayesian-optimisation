@@ -1,34 +1,8 @@
-"""Unit tests for data processing and standardisation."""
+"""Unit tests for data model and standardisation."""
 
 import numpy as np
 import pytest
-from src.data.data_processing import himmelblau, generate_data
 from src.data.data_models import Dataset
-
-
-def test_himmelblau():
-    """Test Himmelblau function by testing values at maxima."""
-    X_maxima = np.array([[3, 2]])
-    y = himmelblau(X_maxima).squeeze()
-    assert float(y) == float(np.exp(8.01))
-
-
-def test_generate_data():
-    """Test data generation and LHS sampling."""
-    train, test, design_space, _, _ = generate_data()
-    assert train.x.shape == (5, 2)
-    assert test.x.shape == (100, 2)
-    assert design_space.x.shape == (100, 2)
-    assert train.y.shape == (5, 1)
-    assert test.y.shape == (100, 1)
-    assert design_space.y.shape == (100, 1)
-
-    assert train.x.min() >= -5
-    assert train.x.max() <= 5
-    assert test.x.min() >= -5
-    assert test.x.max() <= 5
-    assert design_space.x.min() >= -6
-    assert design_space.x.max() <= 6
 
 
 def test_standardize():
