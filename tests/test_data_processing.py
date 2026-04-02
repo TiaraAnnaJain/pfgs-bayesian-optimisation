@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from src.data.data_processing import himmelblau,generate_data
+from src.data.data_processing import himmelblau, generate_data
 from src.data.data_models import Dataset
 
 
@@ -44,6 +44,7 @@ def test_standardize():
 
     assert np.allclose(x_std, [[-1, -1], [1, 1]])
     assert np.allclose(y_std, [[-1], [1]])
+
 
 def test_transform_without_standardize_raises():
     X = np.array([[1.0], [2.0]])

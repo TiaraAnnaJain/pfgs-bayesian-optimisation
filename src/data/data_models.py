@@ -46,7 +46,10 @@ class Dataset:
 
     def transform(
         self, x_new: NDArray[np.float64], y_new: Optional[NDArray[np.float64]]
-    ) -> Union[Tuple[NDArray[np.float64], None], Tuple[NDArray[np.float64], NDArray[np.float64]]]:
+    ) -> Union[
+        Tuple[NDArray[np.float64], None],
+        Tuple[NDArray[np.float64], NDArray[np.float64]],
+    ]:
         """
         Transforms x and y.
 
@@ -68,7 +71,12 @@ class Dataset:
         y_new = (y_new - self.y_standardiser_mean) / self.y_standardiser_std
         return x_new, y_new
 
-    def transform_inverse(self, x_new: NDArray[np.float64], y_new: Optional[NDArray[np.float64]]) -> Union[Tuple[NDArray[np.float64], None], Tuple[NDArray[np.float64], NDArray[np.float64]]]:
+    def transform_inverse(
+        self, x_new: NDArray[np.float64], y_new: Optional[NDArray[np.float64]]
+    ) -> Union[
+        Tuple[NDArray[np.float64], None],
+        Tuple[NDArray[np.float64], NDArray[np.float64]],
+    ]:
         """
         Inverses transformed x.
 
@@ -90,7 +98,9 @@ class Dataset:
         y_new = (y_new + self.y_standardiser_mean) * self.y_standardiser_std
         return x_new, y_new
 
-    def de_standardize(self, predictions_standardised: NDArray[np.float64]) -> NDArray[np.float64]:
+    def de_standardize(
+        self, predictions_standardised: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
         """
         De-standardises GP predictions.
 
