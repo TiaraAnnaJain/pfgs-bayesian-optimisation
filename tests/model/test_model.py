@@ -18,7 +18,7 @@ def test_gp_model():
     model = GPModel()
 
     model.train(dataset)
-    predictions = model.predict(dataset, dataset.x)
+    predictions = model.predict(dataset.x)
 
     mean, var = predictions[:, 0], predictions[:, 1]
 
@@ -36,11 +36,11 @@ def test_trainingdata_fit():
     model = GPModel()
 
     model.train(dataset)
-    predictions = model.predict(dataset, dataset.x)
+    predictions = model.predict(dataset.x)
 
     mean = predictions[:, 0]
     _, y_true = dataset.transform_inverse(dataset.x, dataset.y)
-    mse = ((mean - y_true)**2).mean()
+    mse = ((mean - y_true) ** 2).mean()
 
     baseline = np.var(y_true)
     assert mse.item() < baseline
@@ -55,11 +55,11 @@ def test_gp_uncertainty_behavior():
     model = GPModel()
     model.train(dataset)
 
-    predictions_train = model.predict(dataset, dataset.x)
+    predictions_train = model.predict(dataset.x)
     var_train = predictions_train[:, 1].mean()
 
     test_x = np.array([[2.0]])
-    predictions_test = model.predict(dataset, test_x)
+    predictions_test = model.predict(test_x)
     var_test = predictions_test[:, 1].mean()
 
     assert var_train < var_test
