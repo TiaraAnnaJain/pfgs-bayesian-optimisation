@@ -1,9 +1,9 @@
 import torch
 import numpy as np
 from botorch.models import SingleTaskGP
-from src.data.data_models import Dataset
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from gpytorch.constraints import GreaterThan
+from src.data.data_models import Dataset
 
 
 class GPModel:
@@ -11,6 +11,7 @@ class GPModel:
         self.model = None
         self.mll = None
         self.optimizer = None
+        torch.manual_seed(11)
 
     def train(self, dataset: Dataset, verbose: bool = False):
         dataset.standardize()
@@ -21,11 +22,9 @@ class GPModel:
         if train_y.ndim == 1:
             train_y = train_y.unsqueeze(-1)
 
-
         self.model = SingleTaskGP(train_X=train_x, train_Y=train_y)
         self.mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.005)
-
         self.model.likelihood.noise_covar.register_constraint(
             "raw_noise", GreaterThan(1e-5)
         )
