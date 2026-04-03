@@ -14,8 +14,6 @@ class GPModel:
         torch.manual_seed(11)
 
     def train(self, dataset: Dataset, verbose: bool = False):
-        dataset.standardize()
-
         train_x = torch.tensor(dataset.x, dtype=torch.float64)
         train_y = torch.tensor(dataset.y, dtype=torch.float64)
 
@@ -47,8 +45,7 @@ class GPModel:
             self.optimizer.step()
 
     def predict(self, dataset: Dataset, x):
-        x_transformed, _ = dataset.transform(x, None)
-        test_x = torch.tensor(x_transformed, dtype=torch.float64)
+        test_x = torch.tensor(x, dtype=torch.float64)
 
         self.model.eval()
 
