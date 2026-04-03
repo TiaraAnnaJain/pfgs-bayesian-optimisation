@@ -1,5 +1,8 @@
+"""GP model: botorch's SingleTaskGP."""
+
 import torch
 import numpy as np
+from numpy.typing import NDArray
 from botorch.models import SingleTaskGP
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from gpytorch.constraints import GreaterThan
@@ -7,6 +10,10 @@ from src.data.data_models import Dataset
 
 
 class GPModel:
+    """
+    Gaussian Process model.
+    """
+
     def __init__(self):
         self.model = None
         self.mll = None
@@ -14,6 +21,12 @@ class GPModel:
         torch.manual_seed(11)
 
     def train(self, dataset: Dataset, verbose: bool = False):
+        """
+        Train GP on training dataset.
+
+        Parameters:
+            dataset (Dataset): The training dataset.
+        """
         train_x = torch.tensor(dataset.x, dtype=torch.float64)
         train_y = torch.tensor(dataset.y, dtype=torch.float64)
 
@@ -44,7 +57,16 @@ class GPModel:
 
             self.optimizer.step()
 
-    def predict(self, dataset: Dataset, x):
+    def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        """
+        Predict output based on test set.
+
+        Parameters:
+            x (NDArray[np.float64]): test set inputs.
+
+        Returns:
+            predictions (NDArray[np.float64]): mean and variance predictions.
+        """
         test_x = torch.tensor(x, dtype=torch.float64)
 
         self.model.eval()
