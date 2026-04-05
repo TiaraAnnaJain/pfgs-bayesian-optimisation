@@ -1,4 +1,4 @@
-"""Optimizer to generate pareto front"""
+"""NSGA-2 optimizer to generate pareto front"""
 
 from typing import Any, Tuple
 from pymoo.algorithms.moo.nsga2 import NSGA2
