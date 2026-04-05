@@ -27,9 +27,14 @@ uv sync
 # Code Components
 ## src/
 ### data/
-1. data_processing.py - himmelblau function, data generation, LHS sampling 
-2. data_models.py - data model for GP + standardisation and de-standardisation
+1. data_processing.py - Himmelblau function, data generation, LHS sampling 
+2. data_models.py - Data model for GP + standardisation and de-standardisation
 
 ### gp_model/
 1. model.py - Gaussian Process model. 
-2. analysis.py - computes rmse and rrmse. 
+2. analysis.py - Computes rmse and rrmse. 
+
+### pareto_front/
+1. gp_problem.py - Problem wrapper for GP model. 
+2. optimizer.py - Runs NSGA-2 to generate pareto front
+3. optimal_point.py - Calculates the optimal point on the pareto front with reference to the utopia point. 
