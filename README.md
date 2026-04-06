@@ -37,4 +37,5 @@ uv sync
 ### pareto_front/
 1. gp_problem.py - Problem wrapper for GP model. 
 2. optimizer.py - Runs NSGA-2 to generate pareto front
-3. optimal_point.py - Calculates the optimal point on the pareto front with reference to the utopia point. 
+3. optimal_point.py - Calculates the optimal point on the pareto front with reference to the utopia point.
+4. alpha_calculator.py - Calculates the UCB coefficient of the optimal point on pareto front. 
