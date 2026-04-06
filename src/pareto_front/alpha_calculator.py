@@ -19,8 +19,8 @@ class AlphaCalculator:
         self, pareto_front: NDArray[np.float64], optimal_points: NDArray[np.float64]
     ) -> None:
         self.pareto_front = pareto_front
-        self.optimal_mean = optimal_points[:, 0]
-        self.optimal_var = optimal_points[:, 1]
+        self.optimal_mean = float(optimal_points[0, 0])
+        self.optimal_var = float(optimal_points[0, 1])
 
     def calculate_alpha(self) -> Tuple[float, float]:
         """
