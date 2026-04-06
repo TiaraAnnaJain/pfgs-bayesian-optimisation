@@ -75,9 +75,9 @@ class OptimalPoints:
             filtered_scaled_pareto_front (NDArray[np.float64]): filtered pareto front.
 
         Returns:
-            closest_point (NDArray[np.float64]): closest point on Pareto front.
+            closest_point (NDArray[np.float64]): closest point on scaled Pareto front.
             closest_idx (NDArray[np.float64]): indices of closest point on Pareto front.
-            optimal_point (NDArray[np.float64]): unscaled closest point on Pareto front.
+            optimal_point (NDArray[np.float64]): closest point on uscaled Pareto front.
         """
         distance = self.distance_calculator(filtered_scaled_pareto_front)
         min_distance = distance.min()
