@@ -23,7 +23,7 @@ def generate_data(
     n_per_region: int = 25,
     delta: int = 1.5,
     maxima: Union[NDArray[np.float64], None] = None,
-) -> Tuple[Dataset, Dataset, Dataset, int, int]:
+) -> Tuple[Dataset, Dataset, Dataset]:
     """
     Uses LHS sampling to generate training and test datasets.
 
@@ -42,8 +42,6 @@ def generate_data(
         Dataset(x_test, y_test): test dataset
         Dataset(x_test_design_space_set,yx_test_design_space_set): test dataset in the
         design space only.
-        seed_train (int): random seed for reproducibility of training data
-        seed_test (int): random seed for reproducibility of test data
     """
 
     if maxima is None:
@@ -94,7 +92,5 @@ def generate_data(
     return (
         Dataset(x_train, y_train),
         Dataset(x_test, y_test),
-        Dataset(x_test_design_space_set, y_test_design_space_set),
-        seed_train,
-        seed_test,
+        Dataset(x_test_design_space_set, y_test_design_space_set)
     )
