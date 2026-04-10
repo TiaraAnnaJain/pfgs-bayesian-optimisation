@@ -65,29 +65,29 @@ class OptimalPoints:
         return distance
 
     def closest_points(
-        self, filtered_scaled_pareto_front: NDArray[np.float64]
+        self, scaled_pareto_front: NDArray[np.float64]
     ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
         """
         Finds the closest point on Pareto front by minimising Euclidean distance from
         utopia point.
 
         Parameters:
-            filtered_scaled_pareto_front (NDArray[np.float64]): filtered pareto front.
+            scaled_pareto_front (NDArray[np.float64]): filtered pareto front.
 
         Returns:
             closest_point (NDArray[np.float64]): closest point on scaled Pareto front.
             closest_idx (NDArray[np.float64]): indices of closest point on Pareto front.
             optimal_point (NDArray[np.float64]): closest point on uscaled Pareto front.
         """
-        distance = self.distance_calculator(filtered_scaled_pareto_front)
+        distance = self.distance_calculator(scaled_pareto_front)
         min_distance = distance.min()
 
         closest_idx = np.where(distance == min_distance)[0][0]
 
-        optimal_point = filtered_scaled_pareto_front[closest_idx]
+        optimal_point = scaled_pareto_front[closest_idx]
         optimal_point = np.array(optimal_point).reshape(-1, 2)
 
-        closest_point = filtered_scaled_pareto_front[closest_idx]
+        closest_point = scaled_pareto_front[closest_idx]
         closest_point = np.array(closest_point).reshape(-1, 2)
 
         return closest_point, closest_idx, optimal_point
