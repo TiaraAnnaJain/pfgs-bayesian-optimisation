@@ -12,15 +12,15 @@ class AlphaCalculator:
 
     Parameters:
         pareto_front (NDArray[np.float64]): pareto front points.
-        optimal_points (NDArray[np.float64]): optimal point on the pareto front.
+        closest_point (NDArray[np.float64]): optimal point on the pareto front.
     """
 
     def __init__(
-        self, pareto_front: NDArray[np.float64], optimal_points: NDArray[np.float64]
+        self, pareto_front: NDArray[np.float64], closest_point: NDArray[np.float64]
     ) -> None:
         self.pareto_front = pareto_front
-        self.optimal_mean = float(optimal_points[0, 0])
-        self.optimal_var = float(optimal_points[0, 1])
+        self.optimal_mean = float(closest_point[0, 0])
+        self.optimal_var = float(closest_point[0, 1])
 
     def calculate_alpha(self) -> Tuple[float, float]:
         """
