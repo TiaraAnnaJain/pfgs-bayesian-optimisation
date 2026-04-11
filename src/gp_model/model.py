@@ -12,7 +12,7 @@ from src.data.data_models import Dataset
 
 class GPModel:
     """
-    Gaussian Process model.
+    Gaussian Process model with LBFGS optimizer.
     """
 
     def __init__(self):
@@ -42,7 +42,6 @@ class GPModel:
         self.model.train()
         self.model.likelihood.train()
         fit_gpytorch_mll(self.mll)
-
 
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         """
