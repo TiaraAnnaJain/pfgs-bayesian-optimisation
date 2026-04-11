@@ -29,7 +29,7 @@ warnings.filterwarnings(
 
 
 def main():
-    train_data, test_data, test_design_space = generate_data()
+    train, test, test_design_space = generate_data()
     model = GPModel()
 
     rrmse_plot = []
@@ -39,14 +39,14 @@ def main():
     num_iter = 95
 
     for i in range(num_iter):
-        dataset = Dataset(train_data.x, train_data.y)
+        train_data = Dataset(train.x, train.y)
 
-        train_set_mean, train_set_std = dataset.standardize()
+        train_data.standardize()
 
-        model.train(dataset)
+        model.train(train_data)
 
         problem = GPProblem(
-            model=model, train_set_mean=train_set_mean, train_set_std=train_set_std
+            model=model, train_set_mean=train_data.x_standardiser_mean, train_set_std=train_data.x_standardiser_std
         )
 
         optimizer = GPOptimiser(problem=problem, pop_size=100, n_gen=10)
@@ -70,22 +70,22 @@ def main():
         alpha_min, alpha_max = alpha_calculator.calculate_alpha()
 
         x_new = input_values[optimal_idx]
-        x_new_raw = x_new * train_set_std + train_set_mean
+        x_new_raw = x_new * train_data.x_standardiser_std + train_data.x_standardiser_mean
         x_new_raw = x_new_raw.reshape(1, -1)
 
         y_new_raw = himmelblau(x_new_raw)
 
         y_new_raw = y_new_raw.reshape(1, 1)
-        train_data.y = train_data.y.reshape(-1, 1)
+        train.y = train.y.reshape(-1, 1)
 
-        test_x, _ = dataset.transform(test_data.x)
+        test_x, _ = train_data.transform(test.x)
         predictions_std = model.predict(test_x)
 
-        predictions = dataset.de_standardize(predictions_std)
-        rrmse = compute_rrmse(predictions, test_data.y)
+        predictions = train_data.de_standardize(predictions_std)
+        rrmse = compute_rrmse(predictions, test.y)
 
-        train_data.x = np.vstack((train_data.x, x_new_raw))
-        train_data.y = np.vstack((train_data.y, y_new_raw))
+        train.x = np.vstack((train.x, x_new_raw))
+        train.y = np.vstack((train.y, y_new_raw))
 
         print(
             f"Iteration {i + 1}: alpha upper bound = {alpha_max}, alpha lower bound = {alpha_min}, RRMSE = {rrmse}, x_new: {x_new}"
