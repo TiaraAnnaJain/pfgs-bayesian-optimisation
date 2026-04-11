@@ -1,7 +1,9 @@
 """Unit tests for data model and standardisation."""
 
-import numpy as np
 import pytest
+
+import numpy as np
+
 from src.data.data_models import Dataset
 
 

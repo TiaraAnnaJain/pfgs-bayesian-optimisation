@@ -1,7 +1,8 @@
 """Data models for all GP datasets."""
 
-from dataclasses import dataclass
 from typing import Tuple, Optional, Union
+from dataclasses import dataclass
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -20,7 +21,8 @@ class Dataset:
 
     def standardize(self):
         """
-        Standardises x and y.
+        Standardises training dataset. Computes mean and standard deviation to transform
+        other datasets and de-standardise predictions.
 
         Returns:
             self.x (NDArray[np.float64]): standardised x.
@@ -51,11 +53,11 @@ class Dataset:
         Tuple[NDArray[np.float64], NDArray[np.float64]],
     ]:
         """
-        Transforms x and y.
+        Transforms x and y using mean and standard deviation from training set.
 
         Parameters:
             x_new (NDArray[np.float64]): x to be standardised.
-            y_new (Optional[NDArray[np.float64]]): y to be standardised (optional)
+            y_new (Optional[NDArray[np.float64]]): y to be standardised (optional).
 
         Returns:
             x_new (NDArray[np.float64]): transformed x.
@@ -78,7 +80,8 @@ class Dataset:
         Tuple[NDArray[np.float64], NDArray[np.float64]],
     ]:
         """
-        Inverses transformed x.
+        Inverses transformed x and y using mean and standard deviation from training
+        set.
 
         Parameters:
             x_new (NDArray[np.float64]): transformed x.
@@ -86,7 +89,8 @@ class Dataset:
 
         Returns:
             x_new (NDArray[np.float64]): de-standardised X.
-            y_new (NDArray[np.float64]) | None: de-standardised y if passed, None otherwise.
+            y_new (NDArray[np.float64]) | None: de-standardised y if passed, None
+            otherwise.
         """
         if not self.standardised:
             raise ValueError("Training data is not standardised.")
@@ -102,7 +106,8 @@ class Dataset:
         self, predictions_standardised: NDArray[np.float64]
     ) -> NDArray[np.float64]:
         """
-        De-standardises GP predictions.
+        De-standardises GP predictions using mean and standard deviation from training
+        set.
 
         Parameters:
             predictions_standardised (NDArray[np.float64]): standardised predictions.

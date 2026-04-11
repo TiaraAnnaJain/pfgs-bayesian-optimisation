@@ -1,19 +1,20 @@
 """Unit tests for data processing."""
 
 import numpy as np
+
 from src.data.data_processing import himmelblau, generate_data
 
 
 def test_himmelblau():
     """Test Himmelblau function by testing values at maxima."""
-    X_maxima = np.array([[3, 2]])
-    y = himmelblau(X_maxima).squeeze()
+    x_maxima = np.array([[3, 2]])
+    y = himmelblau(x_maxima).squeeze()
     assert float(y) == float(np.exp(8.01))
 
 
 def test_generate_data():
     """Test data generation and LHS sampling."""
-    train, test, design_space, _, _ = generate_data()
+    train, test, design_space = generate_data()
     assert train.x.shape == (5, 2)
     assert test.x.shape == (100, 2)
     assert design_space.x.shape == (100, 2)
