@@ -1,6 +1,7 @@
 """Unit tests for data processing."""
 
 import numpy as np
+import pytest
 
 from src.data.data_processing import himmelblau, generate_data
 
@@ -10,6 +11,14 @@ def test_himmelblau():
     x_maxima = np.array([[3, 2]])
     y = himmelblau(x_maxima).squeeze()
     assert float(y) == float(np.exp(8.01))
+
+
+def test_himmelblau_input_dimensions():
+    """Test the input dimensions of the Himmelblau function."""
+    x = np.array([[1], [2]])
+
+    with pytest.raises(ValueError):
+        himmelblau(x)
 
 
 def test_generate_data():
