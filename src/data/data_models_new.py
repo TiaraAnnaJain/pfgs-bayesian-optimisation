@@ -11,7 +11,24 @@ from numpy.typing import NDArray
 class Dataset:
     """
     Dataset for the GP. Contains standardisation and de-standardisation functions.
+
+    Parameters:
+        dataset_type (str): type of dataset.
+        x_data (Optional[NDArray[np.float64]]): input data.
+        y_data (Optional[NDArray[np.float64]]): output data.
+        y_errors (Optional[NDArray[np.float64]]): y error values from GP predictions.
+        standardised (bool): standardisation flag to prevent double transformations.
+        x_standardiser_mean ([NDArray[np.float64]]): mean value of x computed on
+            training dataset inputs.
+        x_standardiser_std (NDArray[np.float64]): standard deviation of x computed
+            on training dataset inputs.
+        y_standardiser_mean (NDArray[np.float64]): mean value of y computed on
+            training dataset outputs.
+        y_standardiser_std (NDArray[np.float64]): standard deviation of y computed
+            on training dataset outputs.
     """
+
+    dataset_type: str  # train, test, predictions
 
     x_data: Optional[NDArray[np.float64]] = None
     y_data: Optional[NDArray[np.float64]] = None
@@ -23,6 +40,21 @@ class Dataset:
     x_standardiser_std: NDArray[np.float64] = None
     y_standardiser_mean: NDArray[np.float64] = None
     y_standardiser_std: NDArray[np.float64] = None
+
+    def __post_init__(self):
+        if self.dataset_type not in ["train", "test", "predictions"]:
+            raise ValueError(
+                f"Dataset type {self.dataset_type} is not supported. Must be one of "
+                f"['train', 'test', 'predictions']."
+            )
+
+        if self.dataset_type == "train" or self.dataset_type == "test":
+            if self.x_data is None or self.y_data is None:
+                raise ValueError("Inputs and outputs must be provided.")
+
+        if self.dataset_type == "predictions":
+            if self.y_data is None or self.y_errors is None:
+                raise ValueError("Mean and variance must be provided.")
 
     def standardise(self):
         """
