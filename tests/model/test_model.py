@@ -8,41 +8,41 @@ def make_dummy_dataset():
     x = np.linspace(0, 1, 20).reshape(-1, 1)
     y = np.sin(2 * np.pi * x).ravel()
 
-    return Dataset(x=x, y=y)
+    return Dataset(dataset_type="train", x_data=x, y_data=y)
 
 
 def test_gp_model():
     dataset = make_dummy_dataset()
-    dataset.standardize()
+    dataset.standardise()
 
     model = GPModel()
-
     model.train(dataset)
-    predictions = model.predict(dataset.x)
 
-    mean, var = predictions[:, 0], predictions[:, 1]
+    predictions = model.predict(dataset.x_data)
 
-    assert predictions.shape[0] == dataset.x.shape[0]
-    assert predictions.shape[1] == 2
-    assert mean.shape == (len(dataset.x),)
-    assert var.shape == (len(dataset.x),)
-    assert np.all(var >= 0)
+    n = len(dataset.x_data)
+
+    assert predictions.y_data.shape == (n, )
+    assert predictions.y_errors.shape == (n, )
+    assert np.all(predictions.y_errors >= 0)
+    assert not np.isnan(predictions.y_data).any()
+
+    assert predictions.dataset_type == "predictions"
 
 
-def test_trainingdata_fit():
+def test_training_data_fit():
     dataset = make_dummy_dataset()
-    dataset.standardize()
+    dataset.standardise()
 
     model = GPModel()
 
     model.train(dataset)
-    predictions = model.predict(dataset.x)
+    predictions = model.predict(dataset.x_data)
 
-    mean = predictions[:, 0]
-    _, y_true = dataset.transform_inverse(dataset.x, dataset.y)
-    mse = ((mean - y_true) ** 2).mean()
+    dataset.de_standardise()
+    mse = ((predictions.y_data - dataset.y_data) ** 2).mean()
 
-    baseline = np.var(y_true)
+    baseline = np.var(dataset.y_data)
     assert mse.item() < baseline
 
 
@@ -50,16 +50,16 @@ def test_gp_uncertainty_behavior():
     torch.manual_seed(0)
 
     dataset = make_dummy_dataset()
-    dataset.standardize()
+    dataset.standardise()
 
     model = GPModel()
     model.train(dataset)
 
-    predictions_train = model.predict(dataset.x)
-    var_train = predictions_train[:, 1].mean()
+    predictions_train = model.predict(dataset.x_data)
+    var_train = predictions_train.y_errors.mean()
 
     test_x = np.array([[2.0]])
     predictions_test = model.predict(test_x)
-    var_test = predictions_test[:, 1].mean()
+    var_test = predictions_test.y_errors.mean()
 
     assert var_train < var_test
