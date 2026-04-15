@@ -5,7 +5,15 @@ from numpy.typing import NDArray
 
 
 def himmelblau(x: NDArray[np.float64]) -> NDArray[np.float64]:
-    """Calculates the modified Himmelblau function."""
+    """
+    Calculates the modified Himmelblau function.
+
+    Parameters:
+        x (NDArray[np.float64]): input data, must be in [-5, 5] space
+
+    Returns:
+        NDArray[np.float64]: computed Himmelblau function.
+    """
     if x.shape[1] != 2:
         raise ValueError("Input array is not 2-dimensional.")
 

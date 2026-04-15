@@ -3,7 +3,8 @@
 import numpy as np
 import pytest
 
-from src.data.data_processing import himmelblau, generate_data
+from src.data.data_processing import generate_data, generate_design_space_dataset
+from src.data.simulation import himmelblau
 
 
 def test_himmelblau():
@@ -23,17 +24,36 @@ def test_himmelblau_input_dimensions():
 
 def test_generate_data():
     """Test data generation and LHS sampling."""
-    train, test, design_space = generate_data()
-    assert train.x.shape == (5, 2)
-    assert test.x.shape == (100, 2)
-    assert design_space.x.shape == (100, 2)
-    assert train.y.shape == (5, 1)
-    assert test.y.shape == (100, 1)
-    assert design_space.y.shape == (100, 1)
+    train = generate_data(
+        n_samples=5,
+        n_vars=2,
+        lower_bound=[-5, -5],
+        upper_bound=[5, 5],
+        seed=42,
+        dataset_type="train",
+    )
+    assert train.x_data.shape == (5, 2)
+    assert train.y_data.shape == (5, 1)
+    assert train.x_data.min() >= -5
+    assert train.x_data.max() <= 5
 
-    assert train.x.min() >= -5
-    assert train.x.max() <= 5
-    assert test.x.min() >= -5
-    assert test.x.max() <= 5
-    assert design_space.x.min() >= -6
-    assert design_space.x.max() <= 6
+    test = generate_data(
+        n_samples=100,
+        n_vars=2,
+        lower_bound=[-5, -5],
+        upper_bound=[5, 5],
+        seed=10,
+        dataset_type="test",
+    )
+    assert test.x_data.shape == (100, 2)
+    assert test.y_data.shape == (100, 1)
+    assert test.x_data.min() >= -5
+    assert test.x_data.max() <= 5
+
+    design_space = generate_design_space_dataset(
+        n_samples_per_region=25, delta=1.5, seed=10, dataset_type="test"
+    )
+    assert design_space.x_data.shape == (100, 2)
+    assert design_space.y_data.shape == (100, 1)
+    assert design_space.x_data.min() >= -6
+    assert design_space.x_data.max() <= 6

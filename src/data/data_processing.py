@@ -1,6 +1,6 @@
 """Generates datasets using LHS sampling."""
 
-from typing import Tuple, Union, List
+from typing import Union, List
 
 import numpy as np
 from numpy.typing import NDArray
@@ -37,28 +37,59 @@ def lhs_sampler(
 
 
 def generate_data(
-    seed_train: int = 42,
-    seed_test: int = 10,
-    delta: int = 1.5,
-    maxima: Union[NDArray[np.float64], None] = None,
-) -> Tuple[Dataset, Dataset, Dataset]:
+    n_samples: int,
+    n_vars: int,
+    lower_bound: List[float],
+    upper_bound: List[float],
+    seed: int,
+    dataset_type: str,
+) -> Dataset:
     """
-    Uses LHS sampling to generate training and test datasets.
+    Uses LHS sampling to generate datasets.
 
     Parameters:
-        seed_train (int): random seed for reproducibility of training
-            data
-        seed_test (int): random seed for reproducibility of test data
-        delta (float): delta parameter for LHS bounds around maxima.
+        n_samples (int): Number of samples to generate.
+        n_vars (int): Number of dimensions.
+        lower_bound (List[float]): Lower bound.
+        upper_bound (List[float]): Upper bound.
+        seed (int): Random seed for reproducibility.
+        dataset_type (str): Dataset type.
+
+    Returns:
+        Dataset(x, y): dataset.
+    """
+
+    x = lhs_sampler(
+        n_samples=n_samples,
+        n_vars=n_vars,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        seed=seed,
+    )
+    y = np.array([himmelblau(x)]).reshape(-1, 1)
+    return Dataset(dataset_type=dataset_type, x_data=x, y_data=y)
+
+
+def generate_design_space_dataset(
+    n_samples_per_region: int,
+    delta: float,
+    seed: int,
+    dataset_type: str,
+    maxima: Union[NDArray[np.float64], None] = None,
+) -> Dataset:
+    """
+    Uses LHS sampling to generate dataset in the design space.
+
+    Parameters:
+        n_samples_per_region (int): Number of samples to generate per region.
+        delta (float): indicates how large the region should be.
+        seed (int): Random seed for reproducibility.
+        dataset_type (str): Dataset type.
         maxima (Union[NDArray[np.float64], None]): maxima values of the Himmelblau function.
 
     Returns:
-        Dataset(x_train, y_train): training dataset
-        Dataset(x_test, y_test): test dataset
-        Dataset(x_test_design_space_set,yx_test_design_space_set): test dataset in the
-        design space only.
+        Dataset(x_data, y_data): dataset in the design space.
     """
-
     if maxima is None:
         maxima = np.array(
             [
@@ -69,52 +100,26 @@ def generate_data(
             ]
         )
 
-    # whole space
-    n_vars = 2
-    l_bounds = [-5, -5]
-    u_bounds = [5, 5]
-
-    x_train = lhs_sampler(
-        n_samples=5,
-        n_vars=n_vars,
-        lower_bound=l_bounds,
-        upper_bound=u_bounds,
-        seed=seed_train,
-    )
-    x_test = lhs_sampler(
-        n_samples=100,
-        n_vars=n_vars,
-        lower_bound=l_bounds,
-        upper_bound=u_bounds,
-        seed=seed_test,
-    )
-
-    y_train = np.array([himmelblau(x_train)]).reshape(-1, 1)
-    y_test = np.array([himmelblau(x_test)]).reshape(-1, 1)
-
-    x_test_design_space = []
-    y_test_design_space = []
+    x_all, y_all = [], []
 
     for m in maxima:
         lower_bound = m - delta
         upper_bound = m + delta
 
-        x_test_local = lhs_sampler(
-            n_samples=25,
-            n_vars=n_vars,
+        dataset = generate_data(
+            n_samples=n_samples_per_region,
+            n_vars=2,
             lower_bound=lower_bound,
             upper_bound=upper_bound,
-            seed=seed_test,
+            seed=seed,
+            dataset_type=dataset_type,
         )
-        y_test_local = np.array([himmelblau(x_test_local)]).reshape(-1, 1)
-        x_test_design_space.append(x_test_local)
-        y_test_design_space.append(y_test_local)
 
-    x_test_design_space_set = np.vstack(x_test_design_space)
-    y_test_design_space_set = np.vstack(y_test_design_space)
+        x_all.append(dataset.x_data)
+        y_all.append(dataset.y_data)
 
-    return (
-        Dataset(x_train, y_train),
-        Dataset(x_test, y_test),
-        Dataset(x_test_design_space_set, y_test_design_space_set),
+    return Dataset(
+        dataset_type=dataset_type,
+        x_data=np.vstack(x_all),
+        y_data=np.vstack(y_all),
     )
