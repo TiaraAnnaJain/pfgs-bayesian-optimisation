@@ -56,6 +56,12 @@ class Dataset:
             if self.y_data is None or self.y_errors is None:
                 raise ValueError("Mean and variance must be provided.")
 
+    def __neg__(self) -> "Dataset":
+        if self.dataset_type == "train" or self.dataset_type == "test":
+            raise ValueError("Cannot negate a train or test dataset.")
+
+        return Dataset(y_data=-self.y_data, y_errors=-self.y_errors)
+
     def standardise(self):
         """
         Standardises the dataset. Fits and transforms the first dataset by computing the
