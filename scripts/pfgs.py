@@ -33,7 +33,11 @@ warnings.filterwarnings(
 
 
 def main():
-    train, test, test_design_space = generate_data()
+    lb = [-5, -5]
+    ub = [5, 5]
+
+    train_data = generate_data(n_samples=5, n_vars=2, lower_bound=lb, upper_bound=ub, seed=42, dataset_type="train")
+    test_data = generate_data(n_samples=100, n_vars=2, lower_bound=lb, upper_bound=ub, seed=11, dataset_type="test")
     model = GPModel()
 
     rrmse_plot = []
@@ -43,11 +47,11 @@ def main():
     num_iter = 95
 
     for i in range(num_iter):
-        train_data = Dataset(train.x, train.y)
-
-        train_data.standardize()
+        train_data.standardise()
+        standardisation_stats = train_data.get_stats()
 
         model.train(train_data)
+        train_data.de_standardise()
 
         problem = GPProblem(
             model=model,
@@ -75,35 +79,34 @@ def main():
         )
         alpha_min, alpha_max = alpha_calculator.calculate_alpha()
 
-        x_new = input_values[optimal_idx]
-        x_new_raw = (
-            x_new * train_data.x_standardiser_std + train_data.x_standardiser_mean
-        )
-        x_new_raw = x_new_raw.reshape(1, -1)
+        x_new = input_values[optimal_idx].reshape(1, -1)
+        x_new_real = x_new * train_data.x_standardiser_std + train_data.x_standardiser_mean
+        y_new = himmelblau(x_new_real).reshape(1, 1)
 
-        y_new_raw = himmelblau(x_new_raw)
+        train_data.x_data = np.vstack([train_data.x_data, x_new_real])
+        train_data.y_data = np.vstack([train_data.y_data, y_new])
 
-        y_new_raw = y_new_raw.reshape(1, 1)
-        train.y = train.y.reshape(-1, 1)
+        test_data.set_stats(standardisation_stats)
+        test_data.standardise()
 
-        test_x, _ = train_data.transform(test.x)
-        predictions_std = model.predict(test_x)
+        predictions = model.predict(test_data.x_data)
 
-        predictions = train_data.de_standardize(predictions_std)
-        rrmse = compute_rrmse(predictions, test.y)
+        predictions.set_stats(standardisation_stats)
+        predictions.de_standardise()
 
-        train.x = np.vstack((train.x, x_new_raw))
-        train.y = np.vstack((train.y, y_new_raw))
+        test_data.de_standardise()
 
-        final_dataset = train_data
+        rrmse = compute_rrmse(predictions.y_data, test_data.y_data)
 
         print(
-            f"Iteration {i + 1}: alpha upper bound = {alpha_max}, alpha lower bound = {alpha_min}, RRMSE = {rrmse}, x_new: {x_new_raw}"
+            f"Iteration {i + 1}: alpha upper bound = {alpha_max}, alpha lower bound = {alpha_min}, RRMSE = {rrmse}, x_new: {x_new_real}"
         )
 
         rrmse_plot.append(rrmse)
         alpha_upper.append(alpha_max)
         alpha_lower.append(alpha_min)
+
+    final_dataset = train_data
 
     feasible_alpha_max_nonzero = [alpha for alpha in alpha_upper if alpha != 0]
     feasible_alpha_min = max(alpha_lower)
@@ -117,7 +120,7 @@ def main():
     x = range(len(alpha_upper))
 
     train_input_1, train_input_2, x1, x2, pred_mean_train = contour_gp_plot(
-        train.x, model, final_dataset
+        train_data.x_data, model, final_dataset
     )
 
     fig_alpha = plt.figure()
