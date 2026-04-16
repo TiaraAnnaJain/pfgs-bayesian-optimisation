@@ -11,7 +11,7 @@ def contour_gp_plot(train_dataset, model, final_dataset):
     x_grid_std = (x_grid - final_dataset.x_standardiser_mean) / final_dataset.x_standardiser_std
 
     predictions = model.predict(x_grid_std)
-    mean_std = predictions[:, 0]
+    mean_std = predictions.y_data
 
     mean = mean_std * final_dataset.y_standardiser_std + final_dataset.y_standardiser_mean
     predictions_mean = mean.reshape(100, 100)
