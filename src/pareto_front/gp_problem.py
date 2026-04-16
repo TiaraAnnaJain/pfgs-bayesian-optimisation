@@ -54,6 +54,11 @@ class GPProblem(Problem):
         """
         x_tensor = torch.from_numpy(x).float()
         predictions = self.model.predict(x_tensor)
-        predictions = np.asarray(predictions, dtype=float).reshape(-1, 2)
 
-        out["F"] = -predictions
+        negated_predictions = -predictions
+        predictions_mean, predictions_var = (
+            negated_predictions.y_data,
+            negated_predictions.y_errors,
+        )
+
+        out["F"] = np.column_stack([predictions_mean, predictions_var])
