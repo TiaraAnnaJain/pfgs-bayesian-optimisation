@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error
 
 
 def compute_rmse(
-    predictions: NDArray[np.float64], y_true: NDArray[np.float64]
+    mean: NDArray[np.float64], y_true: NDArray[np.float64]
 ) -> float:
     """
     Computes the RMSE of the prediction mean values.
@@ -18,12 +18,12 @@ def compute_rmse(
     Returns:
         rmse (float): The RMSE of the prediction mean values.
     """
-    rmse = np.sqrt(mean_squared_error(y_true, predictions[:, 0]))
+    rmse = np.sqrt(mean_squared_error(y_true, mean))
     return rmse
 
 
 def compute_rrmse(
-    predictions: NDArray[np.float64], y_true: NDArray[np.float64]
+    mean: NDArray[np.float64], y_true: NDArray[np.float64]
 ) -> float:
     """
     Computes the relative RMSE of the prediction mean values.
@@ -36,7 +36,7 @@ def compute_rrmse(
         rrmse (float): The RRMSE of the prediction mean values.
     """
     std_dev = np.std(y_true)
-    rmse = compute_rmse(predictions, y_true)
+    rmse = compute_rmse(mean, y_true)
     rrmse = rmse / std_dev
 
     return rrmse
