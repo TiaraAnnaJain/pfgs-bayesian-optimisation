@@ -7,7 +7,6 @@ from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from gpytorch.constraints import GreaterThan
-from torch.utils.data import dataset
 
 from src.data.data_models import Dataset
 
@@ -53,7 +52,7 @@ class GPModel:
             x (NDArray[np.float64]): test set inputs.
 
         Returns:
-            predictions (NDArray[np.float64]): mean and variance predictions.
+            predictions (Dataset): mean and variance predictions.
         """
         test_x = torch.tensor(x, dtype=torch.float64)
 

@@ -1,7 +1,10 @@
-from src.gp_model.model import GPModel
-from src.data.data_models import Dataset
+"""Unit tests for GP Model."""
+
 import torch
 import numpy as np
+
+from src.gp_model.model import GPModel
+from src.data.data_models import Dataset
 
 
 def make_dummy_dataset():
@@ -22,8 +25,8 @@ def test_gp_model():
 
     n = len(dataset.x_data)
 
-    assert predictions.y_data.shape == (n, )
-    assert predictions.y_errors.shape == (n, )
+    assert predictions.y_data.shape == (n,)
+    assert predictions.y_errors.shape == (n,)
     assert np.all(predictions.y_errors >= 0)
     assert not np.isnan(predictions.y_data).any()
 
