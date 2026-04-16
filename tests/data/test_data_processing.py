@@ -1,0 +1,59 @@
+"""Unit tests for data processing."""
+
+import numpy as np
+import pytest
+
+from src.data.data_processing import generate_data, generate_design_space_dataset
+from src.data.simulation import himmelblau
+
+
+def test_himmelblau():
+    """Test Himmelblau function by testing values at maxima."""
+    x_maxima = np.array([[3, 2]])
+    y = himmelblau(x_maxima).squeeze()
+    assert float(y) == float(np.exp(8.01))
+
+
+def test_himmelblau_input_dimensions():
+    """Test the input dimensions of the Himmelblau function."""
+    x = np.array([[1], [2]])
+
+    with pytest.raises(ValueError):
+        himmelblau(x)
+
+
+def test_generate_data():
+    """Test data generation and LHS sampling."""
+    train = generate_data(
+        n_samples=5,
+        n_vars=2,
+        lower_bound=[-5, -5],
+        upper_bound=[5, 5],
+        seed=42,
+        dataset_type="train",
+    )
+    assert train.x_data.shape == (5, 2)
+    assert train.y_data.shape == (5, 1)
+    assert train.x_data.min() >= -5
+    assert train.x_data.max() <= 5
+
+    test = generate_data(
+        n_samples=100,
+        n_vars=2,
+        lower_bound=[-5, -5],
+        upper_bound=[5, 5],
+        seed=10,
+        dataset_type="test",
+    )
+    assert test.x_data.shape == (100, 2)
+    assert test.y_data.shape == (100, 1)
+    assert test.x_data.min() >= -5
+    assert test.x_data.max() <= 5
+
+    design_space = generate_design_space_dataset(
+        n_samples_per_region=25, delta=1.5, seed=10, dataset_type="test"
+    )
+    assert design_space.x_data.shape == (100, 2)
+    assert design_space.y_data.shape == (100, 1)
+    assert design_space.x_data.min() >= -6
+    assert design_space.x_data.max() <= 6
