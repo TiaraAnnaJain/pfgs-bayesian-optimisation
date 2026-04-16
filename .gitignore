@@ -11,3 +11,9 @@ __pycache__/
 
 # quality.sh
 scripts/quality.sh
+
+
+# Virtual environments
+.venv/
+venv/
+env/
