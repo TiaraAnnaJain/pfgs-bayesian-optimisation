@@ -3,7 +3,7 @@
 import numpy as np
 
 from src.data.data_models import Dataset
-from src.bo.acquisition_functions import compute_ucb, compute_expected_improvement
+from src.bo.acquisition_functions import compute_ucb, compute_ei
 
 
 def test_ucb():
@@ -52,6 +52,6 @@ def test_ei():
         y_labels=y_label,
     )  # best_f = 0.8
 
-    ei = compute_expected_improvement(preds, train)
+    ei = compute_ei(preds, train)
 
     assert ei[1] > ei[0]
