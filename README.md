@@ -24,6 +24,15 @@ Create environment and install dependencies:
 uv sync
 ```
 
+## Execution
+All runnable files are inside the 'scripts/' directory.
+
+### 1. Pareto Front Guided Sampling
+Runs the Pareto Front Guided Sampling workflow.
+```bash
+scripts/pfgs.py
+```
+
 # Code Components
 ## src/
 ### data/
@@ -39,3 +48,7 @@ uv sync
 2. optimizer.py - Runs NSGA-2 to generate pareto front
 3. optimal_point.py - Calculates the optimal point on the pareto front with reference to the utopia point.
 4. alpha_calculator.py - Calculates the UCB coefficient of the optimal point on pareto front. 
+
+## scripts/
+Entry-point scripts used to run experiments.
+- pfgs.py - Runs the Pareto Front Guided Sampling workflow
