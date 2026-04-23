@@ -25,7 +25,7 @@ def compute_ucb(predictions: Dataset, alpha: float) -> NDArray[np.float64]:
     return ucb
 
 
-def compute_expected_improvement(
+def compute_ei(
     predictions: Dataset, train_data: Dataset
 ) -> NDArray[np.float64]:
     """
