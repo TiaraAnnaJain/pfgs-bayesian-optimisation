@@ -60,7 +60,9 @@ class Dataset:
         if self.dataset_type == "train" or self.dataset_type == "test":
             raise ValueError("Cannot negate a train or test dataset.")
 
-        return Dataset(dataset_type="predictions", y_data=-self.y_data, y_errors=-self.y_errors)
+        return Dataset(
+            dataset_type="predictions", y_data=-self.y_data, y_errors=-self.y_errors
+        )
 
     def standardise(self):
         """
