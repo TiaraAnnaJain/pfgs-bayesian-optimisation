@@ -6,6 +6,8 @@ import numpy as np
 from src.gp_model.model import GPModel
 from src.data.data_models import Dataset
 
+torch.manual_seed(0)
+
 
 def make_dummy_dataset():
     x = np.linspace(0, 1, 20).reshape(-1, 1)
@@ -50,8 +52,6 @@ def test_training_data_fit():
 
 
 def test_gp_uncertainty_behavior():
-    torch.manual_seed(0)
-
     dataset = make_dummy_dataset()
     dataset.standardise()
 
