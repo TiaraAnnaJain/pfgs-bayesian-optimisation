@@ -26,8 +26,11 @@ class GPModel:
         Train GP on training dataset.
 
         Parameters:
-            dataset (Dataset): The training dataset.
+            dataset (Dataset): The training dataset with dataset type "train".
         """
+        if dataset.dataset_type != "train":
+            raise ValueError(f"Dataset type must be 'train', got {dataset.dataset_type}")
+
         train_x = torch.tensor(dataset.x_data, dtype=torch.float64)
         train_y = torch.tensor(dataset.y_data, dtype=torch.float64)
 
