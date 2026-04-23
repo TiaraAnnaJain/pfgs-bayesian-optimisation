@@ -49,6 +49,9 @@ scripts/pfgs.py
 3. optimal_point.py - Calculates the optimal point on the pareto front with reference to the utopia point.
 4. alpha_calculator.py - Calculates the UCB coefficient of the optimal point on pareto front. 
 
+### bo/
+1. acquisition_functions.py - Computes UCB and EI acquisition functions.
+
 ## scripts/
 Entry-point scripts used to run experiments.
 - pfgs.py - Runs the Pareto Front Guided Sampling workflow
