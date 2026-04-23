@@ -36,8 +36,22 @@ def main():
     lb = [-5, -5]
     ub = [5, 5]
 
-    train_data = generate_data(n_samples=5, n_vars=2, lower_bound=lb, upper_bound=ub, seed=42, dataset_type="train")
-    test_data = generate_data(n_samples=100, n_vars=2, lower_bound=lb, upper_bound=ub, seed=11, dataset_type="test")
+    train_data = generate_data(
+        n_samples=5,
+        n_vars=2,
+        lower_bound=lb,
+        upper_bound=ub,
+        seed=42,
+        dataset_type="train",
+    )
+    test_data = generate_data(
+        n_samples=100,
+        n_vars=2,
+        lower_bound=lb,
+        upper_bound=ub,
+        seed=11,
+        dataset_type="test",
+    )
     model = GPModel()
 
     rrmse_plot = []
@@ -80,7 +94,9 @@ def main():
         alpha_min, alpha_max = alpha_calculator.calculate_alpha()
 
         x_new = input_values[optimal_idx].reshape(1, -1)
-        x_new_real = x_new * train_data.x_standardiser_std + train_data.x_standardiser_mean
+        x_new_real = (
+            x_new * train_data.x_standardiser_std + train_data.x_standardiser_mean
+        )
         y_new = himmelblau(x_new_real).reshape(1, 1)
 
         train_data.x_data = np.vstack([train_data.x_data, x_new_real])
