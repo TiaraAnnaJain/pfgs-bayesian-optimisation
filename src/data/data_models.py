@@ -1,6 +1,6 @@
 """Data models for all GP datasets including recipes, experiments and predictions."""
 
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 @dataclass
 class Dataset:
     """
-    Dataset for the GP. Contains standardisation and de-standardisation functions.
+    Dataset for the GP. Contains normalisation and de-normalisation functions.
 
     Parameters:
         dataset_type (str): type of dataset.
@@ -19,32 +19,32 @@ class Dataset:
         x_data (Optional[NDArray[np.float64]]): input data.
         y_data (Optional[NDArray[np.float64]]): output data.
         y_errors (Optional[NDArray[np.float64]]): y error values from GP predictions.
-        standardised (bool): standardisation flag to prevent double transformations.
-        x_standardiser_mean (Dict[str, float]): mean value of x computed on
+        normalised (bool): normalisation flag to prevent double transformations.
+        x_normaliser_min (Dict[str, float]): minimum value of x computed on
             training dataset inputs.
-        x_standardiser_std (Dict[str, float]): standard deviation of x computed
+        x_normaliser_max (Dict[str, float]): maximum value of x computed
             on training dataset inputs.
-        y_standardiser_mean (Dict[str, float]): mean value of y computed on
+        y_normaliser_min (Dict[str, float]): minimum value of y computed on
             training dataset outputs.
-        y_standardiser_std (Dict[str, float]): standard deviation of y computed
+        y_normaliser_max (Dict[str, float]): maximum value of y computed
             on training dataset outputs.
     """
 
     dataset_type: str = None  # train, test, predictions
 
-    x_labels: Optional[List[str]] = None
-    y_labels: Optional[List[str]] = None
+    x_labels: Union[List[str], None] = None
+    y_labels: Union[List[str], None] = None
 
     x_data: Optional[NDArray[np.float64]] = None
     y_data: Optional[NDArray[np.float64]] = None
     y_errors: Optional[NDArray[np.float64]] = None
 
-    standardised: bool = False
+    normalised: bool = False
 
-    x_standardiser_mean: Dict[str, float] = field(default_factory=dict)
-    x_standardiser_std: Dict[str, float] = field(default_factory=dict)
-    y_standardiser_mean: Dict[str, float] = field(default_factory=dict)
-    y_standardiser_std: Dict[str, float] = field(default_factory=dict)
+    x_normaliser_min: Dict[str, float] = field(default_factory=dict)
+    x_normaliser_max: Dict[str, float] = field(default_factory=dict)
+    y_normaliser_min: Dict[str, float] = field(default_factory=dict)
+    y_normaliser_max: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
         if self.dataset_type not in ["train", "test", "predictions"]:
@@ -88,111 +88,118 @@ class Dataset:
             y_labels=self.y_labels,
         )
 
-    def standardise(self):
+    def normalise(self):
         """
-        Standardises the dataset. Fits and transforms the first dataset by computing the
-        mean and standard deviation. Transforms any later datasets by reusing the
+        Normalises the dataset. Fits and transforms the first dataset by computing the
+        minimum and maximum of the dataset. Transforms any later datasets by reusing the
         computed statistics.
         """
-        if self.standardised:
+        if self.normalised:
             return
 
         if self.x_data is None or self.x_labels is None:
             raise ValueError(
-                "Dataset standardisation requires x_data and x_labels to be provided."
+                "Dataset normalisation requires x_data and x_labels to be provided."
             )
 
         self.x_data = np.asarray(self.x_data, dtype=np.float64)
 
         for i, label in enumerate(self.x_labels):
-            if (
-                label not in self.x_standardiser_mean
-                or label not in self.x_standardiser_std
-            ):
-                self.x_standardiser_mean[label] = self.x_data[:, i].mean()
-                self.x_standardiser_std[label] = self.x_data[:, i].std()
+            if label not in self.x_normaliser_min or label not in self.x_normaliser_max:
+                self.x_normaliser_min[label] = self.x_data[:, i].min()
+                self.x_normaliser_max[label] = self.x_data[:, i].max()
 
-                if self.x_standardiser_std[label] == 0:
+                if self.x_normaliser_min[label] == self.x_normaliser_max[label]:
                     raise ValueError(
-                        f"Standard deviation for {label} is 0, cannot standardise."
+                        "Minimum value == maximum value, cannot normalise dataset."
                     )
 
-            self.x_data[:, i] = (
-                self.x_data[:, i] - self.x_standardiser_mean[label]
-            ) / self.x_standardiser_std[label]
+            self.x_data[:, i] = (self.x_data[:, i] - self.x_normaliser_min[label]) / (
+                self.x_normaliser_max[label] - self.x_normaliser_min[label]
+            )
 
         if self.y_data is not None:
             self.y_data = np.asarray(self.y_data, dtype=np.float64)
 
             for i, label in enumerate(self.y_labels):
                 if (
-                    label not in self.y_standardiser_mean
-                    or label not in self.y_standardiser_std
+                    label not in self.y_normaliser_min
+                    or label not in self.y_normaliser_max
                 ):
-                    self.y_standardiser_mean[label] = self.y_data[:, i].mean()
-                    self.y_standardiser_std[label] = self.y_data[:, i].std()
+                    self.y_normaliser_min[label] = self.y_data[:, i].min()
+                    self.y_normaliser_max[label] = self.y_data[:, i].max()
 
-                    if self.y_standardiser_std[label] == 0:
+                    if self.y_normaliser_min[label] == self.y_normaliser_max[label]:
                         raise ValueError(
-                            f"Standard deviation for {label} is 0, cannot standardise."
+                            "Minimum value == maximum value, cannot normalise dataset."
                         )
 
                 self.y_data[:, i] = (
-                    self.y_data[:, i] - self.y_standardiser_mean[label]
-                ) / self.y_standardiser_std[label]
+                    2
+                    * (self.y_data[:, i] - self.y_normaliser_min[label])
+                    / (self.y_normaliser_max[label] - self.y_normaliser_min[label])
+                    - 1
+                )
 
-        self.standardised = True
+        self.normalised = True
 
-    def de_standardise(self):
-        """De-standardises the dataset using already computed statistics."""
-        if not self.standardised:
+    def de_normalise(self):
+        """De-normalises the dataset using already computed statistics."""
+        if not self.normalised:
             return
 
         if self.x_data is not None:
             self.x_data = np.asarray(self.x_data, dtype=np.float64)
             for i, label in enumerate(self.x_labels):
                 self.x_data[:, i] = (
-                    self.x_data[:, i] * self.x_standardiser_std[label]
-                ) + self.x_standardiser_mean[label]
+                    self.x_data[:, i]
+                    * (self.x_normaliser_max[label] - self.x_normaliser_min[label])
+                    + self.x_normaliser_min[label]
+                )
 
         self.y_data = np.asarray(self.y_data, dtype=np.float64)
         for i, label in enumerate(self.y_labels):
-            self.y_data[:, i] = (
-                self.y_data[:, i] * self.y_standardiser_std[label]
-            ) + self.y_standardiser_mean[label]
+            self.y_data[:, i] = ((self.y_data[:, i] + 1) / 2) * (
+                self.y_normaliser_max[label] - self.y_normaliser_min[label]
+            ) + self.y_normaliser_min[label]
 
             if self.y_errors is not None:
                 self.y_errors = np.asarray(self.y_errors, dtype=np.float64)
                 self.y_errors[:, i] = (
-                    self.y_errors[:, i] * self.y_standardiser_std[label] ** 2
+                    self.y_errors[:, i]
+                    * (
+                        (self.y_normaliser_max[label] - self.y_normaliser_min[label])
+                        / 2
+                    )
+                    ** 2
                 )
 
-        self.standardised = False
+        self.normalised = False
 
     def get_stats(self) -> Dict[str, Dict]:
         """
-        Returns already computed statistics to be used for transformations/de-standardisation.
+        Returns already computed statistics to be used for transformations/de-normalisation.
 
         Returns:
             stats (Dict[str, NDArray[np.float64]]): computed statistics.
         """
         stats = {
-            "x_mean": self.x_standardiser_mean,
-            "x_std": self.x_standardiser_std,
-            "y_mean": self.y_standardiser_mean,
-            "y_std": self.y_standardiser_std,
+            "x_min": self.x_normaliser_min,
+            "x_max": self.x_normaliser_max,
+            "y_min": self.y_normaliser_min,
+            "y_max": self.y_normaliser_max,
         }
 
         return stats
 
     def set_stats(self, stats: Dict[str, Dict]):
         """
-        Sets pre-computed statistics to be used for transformations/de-standardisation.
+        Sets pre-computed statistics to be used for transformations/de-normalisation.
 
         Parameters:
             stats (Dict[str, NDArray[np.float64]]): computed statistics.
         """
-        self.x_standardiser_mean = stats["x_mean"]
-        self.x_standardiser_std = stats["x_std"]
-        self.y_standardiser_mean = stats["y_mean"]
-        self.y_standardiser_std = stats["y_std"]
+        self.x_normaliser_min = stats["x_min"]
+        self.x_normaliser_max = stats["x_max"]
+        self.y_normaliser_min = stats["y_min"]
+        self.y_normaliser_max = stats["y_max"]
