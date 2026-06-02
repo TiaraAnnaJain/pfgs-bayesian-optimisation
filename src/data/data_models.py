@@ -82,7 +82,7 @@ class Dataset:
             raise ValueError("Cannot negate a train or test dataset.")
 
         return Dataset(
-            dataset_type="predictions", y_data=-self.y_data, y_errors=-self.y_errors
+            dataset_type="predictions", y_data=-self.y_data, y_errors=-self.y_errors, y_labels=self.y_labels
         )
 
     def standardise(self):
