@@ -1,8 +1,8 @@
 """GP model: botorch's SingleTaskGP."""
 
+from typing import List, Optional
+
 import torch
-import numpy as np
-from numpy.typing import NDArray
 from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.mlls import ExactMarginalLogLikelihood
@@ -19,20 +19,27 @@ class GPModel:
     def __init__(self):
         self.model = None
         self.mll = None
+        self.x_labels: Optional[List[str]] = None
+        self.y_labels: Optional[List[str]] = None
         torch.manual_seed(11)
 
-    def train(self, dataset: Dataset):
+    def train(self, train_dataset: Dataset):
         """
         Train GP on training dataset.
 
         Parameters:
-            dataset (Dataset): The training dataset with dataset type "train".
+            train_dataset (Dataset): The training dataset with dataset type "train".
         """
-        if dataset.dataset_type != "train":
-            raise ValueError(f"Dataset type must be 'train', got {dataset.dataset_type}")
+        if train_dataset.dataset_type != "train":
+            raise ValueError(
+                f"Dataset type must be 'train', got {train_dataset.dataset_type}"
+            )
 
-        train_x = torch.tensor(dataset.x_data, dtype=torch.float64)
-        train_y = torch.tensor(dataset.y_data, dtype=torch.float64)
+        self.x_labels = train_dataset.x_labels.copy()
+        self.y_labels = train_dataset.y_labels.copy()
+
+        train_x = torch.tensor(train_dataset.x_data, dtype=torch.float64)
+        train_y = torch.tensor(train_dataset.y_data, dtype=torch.float64)
 
         if train_y.ndim == 1:
             train_y = train_y.unsqueeze(-1)
@@ -47,17 +54,23 @@ class GPModel:
         self.model.likelihood.train()
         fit_gpytorch_mll(self.mll)
 
-    def predict(self, x: NDArray[np.float64]) -> Dataset:
+    def predict(self, test_dataset: Dataset) -> Dataset:
         """
         Predict output based on test set.
 
         Parameters:
-            x (NDArray[np.float64]): test set inputs.
+            test_dataset (Dataset): test set.
 
         Returns:
             predictions (Dataset): mean and variance predictions.
         """
-        test_x = torch.tensor(x, dtype=torch.float64)
+
+        if test_dataset.x_labels != self.x_labels:
+            raise ValueError(
+                f"Train and test datasets must have same x_labels {self.x_labels}."
+            )
+
+        test_x = torch.tensor(test_dataset.x_data, dtype=torch.float64)
 
         self.model.eval()
         self.model.likelihood.eval()
@@ -67,7 +80,13 @@ class GPModel:
             mean = posterior.mean.squeeze(-1).cpu().numpy()
             var = posterior.variance.squeeze(-1).cpu().numpy()
 
-        predictions = Dataset(dataset_type="predictions", y_data=mean, y_errors=var)
+        predictions = Dataset(
+            dataset_type="predictions",
+            y_data=mean,
+            y_errors=var,
+        )
+
+        predictions.y_labels = self.y_labels.copy()
         predictions.standardised = True
 
         return predictions
