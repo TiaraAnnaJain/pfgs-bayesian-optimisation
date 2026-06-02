@@ -10,7 +10,13 @@ def test_standardise():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
-    train_data = Dataset(dataset_type="train", x_data=train_x, y_data=train_y)
+    train_data = Dataset(
+        dataset_type="train",
+        x_data=train_x,
+        y_data=train_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
     train_data.standardise()
 
     train_x_standardised = train_data.x_data
@@ -25,14 +31,26 @@ def test_transform():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
-    train_data = Dataset(dataset_type="train", x_data=train_x, y_data=train_y)
+    train_data = Dataset(
+        dataset_type="train",
+        x_data=train_x,
+        y_data=train_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
     train_data.standardise()
     standardisation_stats = train_data.get_stats()
 
     test_x = np.array([[1.0, 3.0]])
     test_y = np.array([[30]])
 
-    test_data = Dataset(dataset_type="test", x_data=test_x, y_data=test_y)
+    test_data = Dataset(
+        dataset_type="test",
+        x_data=test_x,
+        y_data=test_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
     test_data.set_stats(standardisation_stats)
     test_data.standardise()
 
@@ -48,7 +66,13 @@ def test_de_standardise():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
-    train_data = Dataset(dataset_type="train", x_data=train_x, y_data=train_y)
+    train_data = Dataset(
+        dataset_type="train",
+        x_data=train_x,
+        y_data=train_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
     train_data.standardise()
     standardisation_stats = train_data.get_stats()
 
@@ -56,7 +80,10 @@ def test_de_standardise():
     prediction_error = np.array([[1.0], [4.0]])
 
     predictions = Dataset(
-        dataset_type="predictions", y_data=prediction_mean, y_errors=prediction_error
+        dataset_type="predictions",
+        y_data=prediction_mean,
+        y_errors=prediction_error,
+        y_labels=["y"],
     )
     predictions.standardised = True
 
@@ -78,7 +105,13 @@ def test_double_standardisation():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
-    train_data = Dataset(dataset_type="train", x_data=train_x, y_data=train_y)
+    train_data = Dataset(
+        dataset_type="train",
+        x_data=train_x,
+        y_data=train_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
 
     train_data.standardise()
     train_data.standardise()
@@ -94,7 +127,13 @@ def test_double_standardisation():
     test_x = np.array([[1.0, 3.0]])
     test_y = np.array([[30]])
 
-    test_data = Dataset(dataset_type="test", x_data=test_x, y_data=test_y)
+    test_data = Dataset(
+        dataset_type="test",
+        x_data=test_x,
+        y_data=test_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
     test_data.set_stats(standardisation_stats)
     test_data.standardise()
     test_data.standardise()
@@ -111,7 +150,13 @@ def test_double_de_standardisation():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
-    train_data = Dataset(dataset_type="train", x_data=train_x, y_data=train_y)
+    train_data = Dataset(
+        dataset_type="train",
+        x_data=train_x,
+        y_data=train_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
     train_data.standardise()
     standardisation_stats = train_data.get_stats()
 
@@ -119,7 +164,10 @@ def test_double_de_standardisation():
     prediction_error = np.array([[1.0], [4.0]])
 
     predictions = Dataset(
-        dataset_type="predictions", y_data=prediction_mean, y_errors=prediction_error
+        dataset_type="predictions",
+        y_data=prediction_mean,
+        y_errors=prediction_error,
+        y_labels=["y"],
     )
     predictions.standardised = True
 

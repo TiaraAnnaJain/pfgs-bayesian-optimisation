@@ -31,6 +31,8 @@ def test_generate_data():
         upper_bound=[5, 5],
         seed=42,
         dataset_type="train",
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
     )
     assert train.x_data.shape == (5, 2)
     assert train.y_data.shape == (5, 1)
@@ -44,6 +46,8 @@ def test_generate_data():
         upper_bound=[5, 5],
         seed=10,
         dataset_type="test",
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
     )
     assert test.x_data.shape == (100, 2)
     assert test.y_data.shape == (100, 1)
@@ -51,7 +55,12 @@ def test_generate_data():
     assert test.x_data.max() <= 5
 
     design_space = generate_design_space_dataset(
-        n_samples_per_region=25, delta=1.5, seed=10, dataset_type="test"
+        n_samples_per_region=25,
+        delta=1.5,
+        seed=10,
+        dataset_type="test",
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
     )
     assert design_space.x_data.shape == (100, 2)
     assert design_space.y_data.shape == (100, 1)

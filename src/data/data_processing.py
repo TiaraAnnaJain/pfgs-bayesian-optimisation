@@ -43,6 +43,8 @@ def generate_data(
     upper_bound: List[float],
     seed: int,
     dataset_type: str,
+    x_labels: List[str],
+    y_labels: List[str],
 ) -> Dataset:
     """
     Uses LHS sampling to generate datasets.
@@ -54,6 +56,8 @@ def generate_data(
         upper_bound (List[float]): Upper bound.
         seed (int): Random seed for reproducibility.
         dataset_type (str): Dataset type.
+        x_labels (List[str]): Labels for the dataset input.
+        y_labels (List[str]): Labels for the dataset output.
 
     Returns:
         Dataset(x, y): dataset.
@@ -67,7 +71,14 @@ def generate_data(
         seed=seed,
     )
     y = np.array([himmelblau(x)]).reshape(-1, 1)
-    return Dataset(dataset_type=dataset_type, x_data=x, y_data=y)
+
+    return Dataset(
+        dataset_type=dataset_type,
+        x_data=x,
+        y_data=y,
+        x_labels=x_labels,
+        y_labels=y_labels,
+    )
 
 
 def generate_design_space_dataset(
@@ -75,6 +86,8 @@ def generate_design_space_dataset(
     delta: float,
     seed: int,
     dataset_type: str,
+    x_labels: List[str],
+    y_labels: List[str],
     maxima: Union[NDArray[np.float64], None] = None,
 ) -> Dataset:
     """
@@ -85,6 +98,8 @@ def generate_design_space_dataset(
         delta (float): indicates how large the region should be.
         seed (int): Random seed for reproducibility.
         dataset_type (str): Dataset type.
+        x_labels (List[str]): Labels for the dataset input.
+        y_labels (List[str]): Labels for the dataset output.
         maxima (Union[NDArray[np.float64], None]): maxima values of the Himmelblau function.
 
     Returns:
@@ -113,6 +128,8 @@ def generate_design_space_dataset(
             upper_bound=upper_bound,
             seed=seed,
             dataset_type=dataset_type,
+            x_labels=x_labels,
+            y_labels=y_labels,
         )
 
         x_all.append(dataset.x_data)
@@ -122,4 +139,6 @@ def generate_design_space_dataset(
         dataset_type=dataset_type,
         x_data=np.vstack(x_all),
         y_data=np.vstack(y_all),
+        x_labels=x_labels,
+        y_labels=y_labels,
     )
