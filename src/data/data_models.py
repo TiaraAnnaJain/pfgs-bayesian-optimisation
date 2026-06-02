@@ -53,7 +53,7 @@ class Dataset:
                 f"['train', 'test', 'predictions']."
             )
 
-        if self.dataset_type == "train" or self.dataset_type == "test":
+        if self.dataset_type in ("train", "test"):
             if self.x_data is None or self.y_data is None:
                 raise ValueError("Inputs and outputs must be provided.")
 
@@ -78,11 +78,14 @@ class Dataset:
                 )
 
     def __neg__(self) -> "Dataset":
-        if self.dataset_type == "train" or self.dataset_type == "test":
+        if self.dataset_type in ("train", "test"):
             raise ValueError("Cannot negate a train or test dataset.")
 
         return Dataset(
-            dataset_type="predictions", y_data=-self.y_data, y_errors=-self.y_errors, y_labels=self.y_labels
+            dataset_type="predictions",
+            y_data=-self.y_data,
+            y_errors=-self.y_errors,
+            y_labels=self.y_labels,
         )
 
     def standardise(self):
