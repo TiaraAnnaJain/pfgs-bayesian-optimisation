@@ -20,7 +20,7 @@ def make_dummy_dataset():
 
 def test_gp_model():
     dataset = make_dummy_dataset()
-    dataset.standardise()
+    dataset.normalise()
 
     model = GPModel()
     model.train(dataset)
@@ -39,14 +39,14 @@ def test_gp_model():
 
 def test_training_data_fit():
     dataset = make_dummy_dataset()
-    dataset.standardise()
+    dataset.normalise()
 
     model = GPModel()
 
     model.train(dataset)
     predictions = model.predict(dataset)
 
-    dataset.de_standardise()
+    dataset.de_normalise()
     mse = ((predictions.y_data.reshape(-1, 1) - dataset.y_data) ** 2).mean()
 
     baseline = np.var(dataset.y_data)
@@ -55,7 +55,7 @@ def test_training_data_fit():
 
 def test_gp_uncertainty_behavior():
     dataset = make_dummy_dataset()
-    dataset.standardise()
+    dataset.normalise()
 
     model = GPModel()
     model.train(dataset)

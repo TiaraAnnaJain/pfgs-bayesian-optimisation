@@ -35,8 +35,8 @@ class GPModel:
                 f"Dataset type must be 'train', got {train_dataset.dataset_type}"
             )
 
-        self.x_labels = train_dataset.x_labels.copy()
-        self.y_labels = train_dataset.y_labels.copy()
+        self.x_labels = train_dataset.x_labels
+        self.y_labels = train_dataset.y_labels
 
         train_x = torch.tensor(train_dataset.x_data, dtype=torch.float64)
         train_y = torch.tensor(train_dataset.y_data, dtype=torch.float64)
@@ -82,11 +82,13 @@ class GPModel:
 
         predictions = Dataset(
             dataset_type="predictions",
+            x_data=test_dataset.x_data,
             y_data=mean,
             y_errors=var,
+            x_labels=self.x_labels,
+            y_labels=self.y_labels,
         )
 
-        predictions.y_labels = self.y_labels.copy()
         predictions.standardised = True
 
         return predictions
