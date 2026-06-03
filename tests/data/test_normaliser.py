@@ -183,3 +183,47 @@ def test_double_de_normalisation():
 
     assert np.allclose(predictions_mean_de_normalised, expected_mean)
     assert np.allclose(predictions_error_de_normalised, expected_error)
+
+
+def test_normalisation_double_de_normalisation():
+    """Test de-normalisation, normalisation and then de-normalisation of predictions."""
+    train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
+    train_y = np.array([[10.0], [20.0]])
+
+    train_data = Dataset(
+        dataset_type="train",
+        x_data=train_x,
+        y_data=train_y,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
+    train_data.normalise()
+    normalisation_stats = train_data.get_stats()
+
+    prediction_mean = np.array([[0.0], [1.0]])
+    prediction_error = np.array([[1.0], [4.0]])
+
+    predictions = Dataset(
+        dataset_type="predictions",
+        x_data=train_x,
+        y_data=prediction_mean,
+        y_errors=prediction_error,
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+    )
+    predictions.normalised = True
+
+    predictions.set_stats(normalisation_stats)
+
+    predictions.de_normalise()
+    predictions.normalise()
+    predictions.de_normalise()
+
+    predictions_mean_de_normalised = predictions.y_data
+    predictions_error_de_normalised = predictions.y_errors
+
+    expected_mean = np.array([[15.0], [20.0]])
+    expected_error = np.array([[25.0], [100.0]])
+
+    assert np.allclose(predictions_mean_de_normalised, expected_mean)
+    assert np.allclose(predictions_error_de_normalised, expected_error)

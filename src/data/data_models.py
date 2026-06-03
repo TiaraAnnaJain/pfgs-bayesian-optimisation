@@ -90,8 +90,9 @@ class Dataset:
 
     def normalise(self):
         """
-        Normalises the dataset. Fits and transforms the first dataset by computing the
-        minimum and maximum of the dataset. Transforms any later datasets by reusing the
+        Normalises (inputs) and standardises (outputs) the dataset. Fits and transforms the
+        first dataset by computing the minimum and maximum of the inputs and mean and standard
+        deviation of the outputs of the dataset. Transforms any later datasets by reusing the
         computed statistics.
         """
         if self.normalised:
@@ -134,7 +135,14 @@ class Dataset:
                             "Standard deviation is 0, cannot normalise dataset."
                         )
 
-                self.y_data[:, i] = (self.y_data[:, i] - self.y_standardiser_mean[label]) / self.y_standardiser_std[label]
+                self.y_data[:, i] = (
+                    self.y_data[:, i] - self.y_standardiser_mean[label]
+                ) / self.y_standardiser_std[label]
+
+                if self.y_errors is not None:
+                    self.y_errors[:, i] = self.y_errors[:, i] / (
+                        self.y_standardiser_std[label] ** 2
+                    )
 
         self.normalised = True
 
@@ -154,11 +162,15 @@ class Dataset:
 
         self.y_data = np.asarray(self.y_data, dtype=np.float64)
         for i, label in enumerate(self.y_labels):
-            self.y_data[:, i] = (self.y_data[:, i] * self.y_standardiser_std[label]) + self.y_standardiser_mean[label]
+            self.y_data[:, i] = (
+                self.y_data[:, i] * self.y_standardiser_std[label]
+            ) + self.y_standardiser_mean[label]
 
             if self.y_errors is not None:
                 self.y_errors = np.asarray(self.y_errors, dtype=np.float64)
-                self.y_errors[:, i] = self.y_errors[:, i] * self.y_standardiser_std[label]**2
+                self.y_errors[:, i] = (
+                    self.y_errors[:, i] * self.y_standardiser_std[label] ** 2
+                )
 
         self.normalised = False
 
