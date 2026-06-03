@@ -24,9 +24,9 @@ class Dataset:
             training dataset inputs.
         x_normaliser_max (Dict[str, float]): maximum value of x computed
             on training dataset inputs.
-        y_normaliser_min (Dict[str, float]): minimum value of y computed on
+        y_standardiser_mean (Dict[str, float]): mean value of y computed on
             training dataset outputs.
-        y_normaliser_max (Dict[str, float]): maximum value of y computed
+        y_standardiser_std (Dict[str, float]): standard deviation value of y computed
             on training dataset outputs.
     """
 
@@ -43,8 +43,8 @@ class Dataset:
 
     x_normaliser_min: Dict[str, float] = field(default_factory=dict)
     x_normaliser_max: Dict[str, float] = field(default_factory=dict)
-    y_normaliser_min: Dict[str, float] = field(default_factory=dict)
-    y_normaliser_max: Dict[str, float] = field(default_factory=dict)
+    y_standardiser_mean: Dict[str, float] = field(default_factory=dict)
+    y_standardiser_std: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
         if self.dataset_type not in ["train", "test", "predictions"]:
@@ -123,23 +123,18 @@ class Dataset:
 
             for i, label in enumerate(self.y_labels):
                 if (
-                    label not in self.y_normaliser_min
-                    or label not in self.y_normaliser_max
+                    label not in self.y_standardiser_mean
+                    or label not in self.y_standardiser_std
                 ):
-                    self.y_normaliser_min[label] = self.y_data[:, i].min()
-                    self.y_normaliser_max[label] = self.y_data[:, i].max()
+                    self.y_standardiser_mean[label] = self.y_data[:, i].mean()
+                    self.y_standardiser_std[label] = self.y_data[:, i].std()
 
-                    if self.y_normaliser_min[label] == self.y_normaliser_max[label]:
+                    if self.y_standardiser_std[label] == 0:
                         raise ValueError(
-                            "Minimum value == maximum value, cannot normalise dataset."
+                            "Standard deviation is 0, cannot normalise dataset."
                         )
 
-                self.y_data[:, i] = (
-                    2
-                    * (self.y_data[:, i] - self.y_normaliser_min[label])
-                    / (self.y_normaliser_max[label] - self.y_normaliser_min[label])
-                    - 1
-                )
+                self.y_data[:, i] = (self.y_data[:, i] - self.y_standardiser_mean[label]) / self.y_standardiser_std[label]
 
         self.normalised = True
 
@@ -159,20 +154,11 @@ class Dataset:
 
         self.y_data = np.asarray(self.y_data, dtype=np.float64)
         for i, label in enumerate(self.y_labels):
-            self.y_data[:, i] = ((self.y_data[:, i] + 1) / 2) * (
-                self.y_normaliser_max[label] - self.y_normaliser_min[label]
-            ) + self.y_normaliser_min[label]
+            self.y_data[:, i] = (self.y_data[:, i] * self.y_standardiser_std[label]) + self.y_standardiser_mean[label]
 
             if self.y_errors is not None:
                 self.y_errors = np.asarray(self.y_errors, dtype=np.float64)
-                self.y_errors[:, i] = (
-                    self.y_errors[:, i]
-                    * (
-                        (self.y_normaliser_max[label] - self.y_normaliser_min[label])
-                        / 2
-                    )
-                    ** 2
-                )
+                self.y_errors[:, i] = self.y_errors[:, i] * self.y_standardiser_std[label]**2
 
         self.normalised = False
 
@@ -186,8 +172,8 @@ class Dataset:
         stats = {
             "x_min": self.x_normaliser_min,
             "x_max": self.x_normaliser_max,
-            "y_min": self.y_normaliser_min,
-            "y_max": self.y_normaliser_max,
+            "y_mean": self.y_standardiser_mean,
+            "y_std": self.y_standardiser_std,
         }
 
         return stats
@@ -201,5 +187,5 @@ class Dataset:
         """
         self.x_normaliser_min = stats["x_min"]
         self.x_normaliser_max = stats["x_max"]
-        self.y_normaliser_min = stats["y_min"]
-        self.y_normaliser_max = stats["y_max"]
+        self.y_standardiser_mean = stats["y_mean"]
+        self.y_standardiser_std = stats["y_std"]
