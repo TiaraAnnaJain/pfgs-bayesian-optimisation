@@ -12,8 +12,11 @@ __pycache__/
 # quality.sh
 scripts/quality.sh
 
-
-# Virtual environments
+# Virtual evironments
 .venv/
 venv/
 env/
+.env
+
+# OS files
+.DS_Store
