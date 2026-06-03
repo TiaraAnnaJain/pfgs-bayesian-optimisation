@@ -8,7 +8,7 @@ This model:
 - Generates training and testing data using LHS sampling between $[-5, 5]$ in both dimensions
 - Evaluates $f(x, y)$
 - Fits a GP with a RBF kernel
-- Evaluates model accuracy using RMSE
+- Evaluates model accuracy using RMSE and RRMSE
 
 
 # How to Run
@@ -26,5 +26,10 @@ uv sync
 
 # Code Components
 ## src/
+### data/
+1. data_processing.py - himmelblau function, data generation, LHS sampling 
+2. data_models.py - data model for GP + standardisation and de-standardisation
+
 ### gp_model/
-1. data_processing.py - LHS sampling + standardisation and de-standardisation + converts arrays to tensors 
+1. model.py - Gaussian Process model. 
+2. analysis.py - computes rmse and rrmse. 
