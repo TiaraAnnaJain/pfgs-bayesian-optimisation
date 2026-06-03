@@ -1,0 +1,8 @@
+[experiment]
+method = "PFGS"
+test_set_types = ["Design Space Only", "Entire Domain"]
+utopia_point = [1.0, 1.0]
+
+[nsga_parameters]
+population_size = 200
+number_of_generations = 10

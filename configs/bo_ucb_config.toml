@@ -1,0 +1,13 @@
+[pso_parameters]
+c1 = 2.0
+c2 = 2.0
+w = 0.9
+particles = 200
+dimensions = 2
+bounds = [[-5, 5], [-5, 5]]
+
+[experiment]
+method = "BO"
+acquisition_function = "UCB"
+alphas = [1.0, 1.5, 1.96, 2.0, 2.5]
+test_set_types = ["Design Space Only", "Entire Domain"]
