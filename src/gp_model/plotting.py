@@ -84,14 +84,10 @@ def contour_slice_plot(
             else:
                 x_grid[:, i] = train_dataset.x_data[:, i].mean()
 
-    y_dummy = np.zeros((x_grid.shape[0], len(train_dataset.y_labels)))
-
     x_grid_standardised = Dataset(
         dataset_type="test",
         x_data=x_grid,
-        y_data=y_dummy,
         x_labels=train_dataset.x_labels,
-        y_labels=train_dataset.y_labels,
     )
 
     normalisation_stats = train_dataset.get_stats()
