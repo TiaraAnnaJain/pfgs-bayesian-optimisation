@@ -53,9 +53,13 @@ class Dataset:
                 f"['train', 'test', 'predictions']."
             )
 
-        if self.dataset_type in ("train", "test"):
+        if self.dataset_type == "train":
             if self.x_data is None or self.y_data is None:
                 raise ValueError("Inputs and outputs must be provided.")
+
+        if self.dataset_type == "test":
+            if self.x_data is None:
+                raise ValueError("Inputs must be provided.")
 
         if self.dataset_type == "predictions":
             if self.y_data is None or self.y_errors is None:
