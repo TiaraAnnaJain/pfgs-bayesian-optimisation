@@ -89,6 +89,6 @@ class GPModel:
             y_labels=self.y_labels,
         )
 
-        predictions.standardised = True
+        predictions.normalised = True
 
         return predictions
