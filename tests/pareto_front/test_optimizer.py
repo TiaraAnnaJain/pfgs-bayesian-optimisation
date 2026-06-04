@@ -1,19 +1,52 @@
 """Tests for NSGA-2 optimizer."""
 
 import numpy as np
-import torch
+
 from src.pareto_front.gp_problem import GPProblem
 from src.pareto_front.optimizer import GPOptimiser
+from src.data.data_models import Dataset
 
 
 class DummyModel:
-    def predict(self, x):
-        return torch.stack([x[:, 0], x[:, 1]], dim=1)
+    def predict(self, dataset):
+        x = dataset.x_data
+
+        return Dataset(
+            dataset_type="predictions",
+            x_labels=dataset.x_labels,
+            x_data=x,
+            y_labels=["mean"],
+            y_data=x[:, 0].reshape(-1, 1),
+            y_errors=x[:, 1].reshape(-1, 1),
+        )
+
+
+def test_gp_problem_evaluate():
+    xl = np.array([1, 2])
+    xu = np.array([3, 4])
+
+    model = DummyModel()
+    problem = GPProblem(model=model, bounds=(xl, xu), x_labels=["x1", "x2"])
+
+    x = np.array([[1.0, 2.0], [3.0, 4.0]])
+    out = {}
+
+    problem._evaluate(x, out)
+
+    expected = -np.array([[1.0, 2.0], [3.0, 4.0]])
+
+    assert "F" in out
+    assert out["F"].shape == (2, 2)
+    assert np.allclose(out["F"], expected)
 
 
 def test_gp_optimiser_shapes():
     model = DummyModel()
-    problem = GPProblem(model=model, train_set_mean=0, train_set_std=1)
+
+    xl = np.array([1, 2])
+    xu = np.array([3, 4])
+
+    problem = GPProblem(model=model, bounds=(xl, xu), x_labels=["x1", "x2"])
 
     optimiser = GPOptimiser(problem, pop_size=50, n_gen=2)
     scaled, unscaled, X = optimiser.run()
@@ -25,7 +58,11 @@ def test_gp_optimiser_shapes():
 
 def test_gp_optimiser_scaling_range():
     model = DummyModel()
-    problem = GPProblem(model=model, train_set_mean=0, train_set_std=1)
+
+    xl = np.array([1, 2])
+    xu = np.array([3, 4])
+
+    problem = GPProblem(model=model, bounds=(xl, xu), x_labels=["x1", "x2"])
 
     optimiser = GPOptimiser(problem, pop_size=50, n_gen=2)
     scaled, _, _ = optimiser.run()

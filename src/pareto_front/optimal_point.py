@@ -1,6 +1,7 @@
 """Calculations for optimal point on pareto front."""
 
 from typing import Tuple
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -54,7 +55,7 @@ class OptimalPoints:
 
         Parameters:
             filtered_scaled_pareto_front (NDArray[np.float64]): filtered scaled pareto
-            front points.
+                front points.
 
         Returns:
             distance (NDArray[np.float64]): vector of Euclidean distances.
@@ -77,7 +78,7 @@ class OptimalPoints:
         Returns:
             closest_point (NDArray[np.float64]): closest point on scaled Pareto front.
             closest_idx (NDArray[np.float64]): indices of closest point on Pareto front.
-            optimal_point (NDArray[np.float64]): closest point on uscaled Pareto front.
+            optimal_point (NDArray[np.float64]): closest point on unscaled Pareto front.
         """
         distance = self.distance_calculator(scaled_pareto_front)
         min_distance = distance.min()
