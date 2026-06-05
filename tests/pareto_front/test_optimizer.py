@@ -3,11 +3,14 @@
 import numpy as np
 
 from src.pareto_front.gp_problem import GPProblem
-from src.pareto_front.optimizer import GPOptimiser
+from src.pareto_front.optimizer import NSGAOptimiser
 from src.data.data_models import Dataset
 
 
 class DummyModel:
+    def __init__(self):
+        self.x_labels = ["x1", "x2"]
+
     def predict(self, dataset):
         x = dataset.x_data
 
@@ -26,7 +29,7 @@ def test_gp_problem_evaluate():
     xu = np.array([3, 4])
 
     model = DummyModel()
-    problem = GPProblem(model=model, bounds=(xl, xu), x_labels=["x1", "x2"])
+    problem = GPProblem(model=model, bounds=(xl, xu))
 
     x = np.array([[1.0, 2.0], [3.0, 4.0]])
     out = {}
@@ -46,9 +49,9 @@ def test_gp_optimiser_shapes():
     xl = np.array([1, 2])
     xu = np.array([3, 4])
 
-    problem = GPProblem(model=model, bounds=(xl, xu), x_labels=["x1", "x2"])
+    problem = GPProblem(model=model, bounds=(xl, xu))
 
-    optimiser = GPOptimiser(problem, pop_size=50, n_gen=2)
+    optimiser = NSGAOptimiser(problem, pop_size=50, n_gen=2)
     scaled, unscaled, X = optimiser.run()
 
     assert scaled.shape[1] == 2
@@ -62,9 +65,9 @@ def test_gp_optimiser_scaling_range():
     xl = np.array([1, 2])
     xu = np.array([3, 4])
 
-    problem = GPProblem(model=model, bounds=(xl, xu), x_labels=["x1", "x2"])
+    problem = GPProblem(model=model, bounds=(xl, xu))
 
-    optimiser = GPOptimiser(problem, pop_size=50, n_gen=2)
+    optimiser = NSGAOptimiser(problem, pop_size=50, n_gen=2)
     scaled, _, _ = optimiser.run()
 
     assert np.all(scaled >= 0)

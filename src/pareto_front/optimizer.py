@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-class GPOptimiser:
+class NSGAOptimiser:
     def __init__(self, problem: Any, pop_size: int = 500, n_gen: int = 10) -> None:
         self.problem = problem
         self.algorithm = NSGA2(pop_size)

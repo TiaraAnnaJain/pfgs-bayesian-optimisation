@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-class OptimalPoints:
+class ParetoPointSelector:
     """
     Calculates the optimal point on Pareto front using the Euclidean distance from the
     defined utopia point.
@@ -29,21 +29,42 @@ class OptimalPoints:
 
     def discard_areas(
         self,
+        mean_discard_threshold: NDArray[np.float64],
+        variance_discard_threshold: NDArray[np.float64],
     ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
         """
-        Discards points on Pareto front with mean and variance values lower than 0.3.
+        Discards points on Pareto front with mean and variance values lower than the threshold input.
+
+        Parameters:
+            mean_discard_threshold (NDArray[np.float64]): threshold below which mean values
+                will be discarded.
+            variance_discard_threshold (NDArray[np.float64]): threshold below which variance
+                values will be discarded.
 
         Returns:
             mask (NDArray[np.float64]): mask of points discarded.
-            filtered_scaled_pareto_front (NDArray[np.float64]): filtered pareto front points.
-            filtered_unscaled_pareto_front (NDArray[np.float64]): original pareto front points.
+            filtered_scaled_pareto_front (NDArray[np.float64]): filtered pareto front
+                points.
+            filtered_unscaled_pareto_front (NDArray[np.float64]): original pareto front
+                points.
         """
-        mask = (self.scaled_pareto_front >= 0.3).all(axis=1)
+        discard_thresholds = np.hstack(
+            [mean_discard_threshold, variance_discard_threshold]
+        )
+
+        if discard_thresholds.shape[0] != self.scaled_pareto_front.shape[1]:
+            raise ValueError(
+                "Number of mean + variance thresholds must match Pareto objectives."
+            )
+
+        mask = (self.scaled_pareto_front >= discard_thresholds).all(axis=1)
+
         filtered_scaled_pareto_front = self.scaled_pareto_front[mask]
         filtered_unscaled_pareto_front = self.unscaled_pareto_front[mask]
 
         if filtered_unscaled_pareto_front.shape[0] == 0:
             filtered_scaled_pareto_front = self.scaled_pareto_front
+            filtered_unscaled_pareto_front = self.unscaled_pareto_front
 
         return mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front
 
