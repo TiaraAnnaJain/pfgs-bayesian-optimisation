@@ -63,7 +63,7 @@ class Dataset:
         )
 
     def _check(self):
-        if self.dataset_type not in ["train", "test", "recipes", "predictions"]:
+        if self.dataset_type not in ["train", "test", "recipe", "predictions"]:
             raise ValueError(
                 f"Dataset type {self.dataset_type} is not supported. Must be one of "
                 f"['train', 'test', 'recipes', 'predictions']."
