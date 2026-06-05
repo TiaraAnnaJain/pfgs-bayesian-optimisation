@@ -1,9 +1,41 @@
 """Unit tests for data model and normalisation"""
 
 import numpy as np
+import pytest
 
 from src.data.data_models import Dataset
 
+
+def test_dataset_validation():
+    """Test validation for different types of datasets."""
+    train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
+    train_y = np.array([[10.0], [20.0]])
+
+    test_x = np.array([[1.0, 3.0]])
+
+    recipe_y = np.array([[30]])
+
+    prediction_mean = np.array([[0.0], [1.0]])
+
+    with pytest.raises(ValueError):
+        Dataset(
+            dataset_type="train",
+            x_data=train_x,
+            y_data=train_y,
+        )
+
+    with pytest.raises(ValueError):
+        Dataset(
+            dataset_type="test",
+            x_data=test_x,
+            x_labels=["x1", "x2"],
+        )
+
+    with pytest.raises(ValueError):
+        Dataset(dataset_type="recipe", y_data=recipe_y)
+
+    with pytest.raises(ValueError):
+        Dataset(dataset_type="predictions", y_data=prediction_mean)
 
 def test_normalise():
     """Test normalisation function to fit and transform."""
@@ -227,3 +259,24 @@ def test_normalisation_double_de_normalisation():
 
     assert np.allclose(predictions_mean_de_normalised, expected_mean)
     assert np.allclose(predictions_error_de_normalised, expected_error)
+
+def test_copy():
+    """Test copy function."""
+    train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
+    train_y = np.array([[10.0], [20.0]])
+    train_data = Dataset(
+        dataset_type="train",
+        x_data=train_x,
+        y_data=train_y,
+        x_labels=["x1", "x2"],
+    )
+
+    train_copy = train_data.copy()
+
+    assert np.allclose(train_copy.x_data, train_data.x_data)
+    assert np.allclose(train_copy.y_data, train_data.y_data)
+    assert train_copy.x_labels == train_data.x_labels
+
+    train_data.y_data = np.array([[10.0], [10.0]])
+
+    assert not np.allclose(train_copy.y_data, train_data.y_data)

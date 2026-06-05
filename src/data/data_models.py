@@ -2,9 +2,11 @@
 
 from typing import Optional, Dict, List, Union
 from dataclasses import dataclass, field
+from copy import deepcopy
 
 import numpy as np
 from numpy.typing import NDArray
+from torch.utils.data import Dataset
 
 
 @dataclass
@@ -47,19 +49,35 @@ class Dataset:
     y_standardiser_std: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
-        if self.dataset_type not in ["train", "test", "predictions"]:
+        self._check()
+
+    def __neg__(self) -> "Dataset":
+        if self.dataset_type in ("train", "test"):
+            raise ValueError("Cannot negate a train or test dataset.")
+
+        return Dataset(
+            dataset_type="predictions",
+            y_data=-self.y_data,
+            y_errors=-self.y_errors,
+            y_labels=self.y_labels,
+        )
+
+    def _check(self):
+        if self.dataset_type not in ["train", "test", "recipes", "predictions"]:
             raise ValueError(
                 f"Dataset type {self.dataset_type} is not supported. Must be one of "
-                f"['train', 'test', 'predictions']."
+                f"['train', 'test', 'recipes', 'predictions']."
             )
 
-        if self.dataset_type == "train":
+        if self.dataset_type in ("train", "test"):
             if self.x_data is None or self.y_data is None:
                 raise ValueError("Inputs and outputs must be provided.")
+            if self.x_labels is None:
+                raise ValueError("Labels must be provided.")
 
-        if self.dataset_type == "test":
+        if self.dataset_type == "recipe":
             if self.x_data is None:
-                raise ValueError("Inputs must be provided.")
+                raise ValueError("Recipe inputs must be provided.")
 
         if self.dataset_type == "predictions":
             if self.y_data is None or self.y_errors is None:
@@ -80,17 +98,6 @@ class Dataset:
                     f"\nNumber of labels provided: {len(self.x_labels)} "
                     f"\nNumber of columns in x_data: {self.x_data.shape[1]}"
                 )
-
-    def __neg__(self) -> "Dataset":
-        if self.dataset_type in ("train", "test"):
-            raise ValueError("Cannot negate a train or test dataset.")
-
-        return Dataset(
-            dataset_type="predictions",
-            y_data=-self.y_data,
-            y_errors=-self.y_errors,
-            y_labels=self.y_labels,
-        )
 
     def normalise(self):
         """
@@ -205,3 +212,7 @@ class Dataset:
         self.x_normaliser_max = stats["x_max"]
         self.y_standardiser_mean = stats["y_mean"]
         self.y_standardiser_std = stats["y_std"]
+
+    def copy(self) -> Dataset:
+        """Creates a deepcopy of a dataset."""
+        return deepcopy(self)
