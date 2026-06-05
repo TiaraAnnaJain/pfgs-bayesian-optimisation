@@ -44,7 +44,9 @@ def test_training_data_fit():
     model = GPModel()
 
     model.train(dataset)
-    predictions = model.predict(dataset)
+
+    recipes = dataset.copy()
+    predictions = model.predict(recipes)
 
     dataset.de_normalise()
     mse = ((predictions.y_data.reshape(-1, 1) - dataset.y_data) ** 2).mean()
@@ -63,14 +65,15 @@ def test_gp_uncertainty_behavior():
     predictions_train = model.predict(dataset)
     var_train = predictions_train.y_errors.mean()
 
-    test_x_data = np.array([[2.0]])
-    test_x = Dataset(
-        dataset_type="test",
-        x_data=test_x_data,
-        y_data=np.array([[2.0]]),
+    recipe_x = np.array([[2.0]])
+    recipe_dataset = Dataset(
+        dataset_type="recipe",
+        x_data=recipe_x,
         x_labels=["x"],
     )
-    predictions_test = model.predict(test_x)
+
+    recipe_copy = recipe_dataset.copy()
+    predictions_test = model.predict(recipe_copy)
     var_test = predictions_test.y_errors.mean()
 
     assert var_train < var_test

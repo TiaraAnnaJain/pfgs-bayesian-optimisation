@@ -54,23 +54,24 @@ class GPModel:
         self.model.likelihood.train()
         fit_gpytorch_mll(self.mll)
 
-    def predict(self, test_dataset: Dataset) -> Dataset:
+    def predict(self, dataset: Dataset) -> Dataset:
         """
         Predict output based on test set.
 
         Parameters:
-            test_dataset (Dataset): test set.
+            dataset (Dataset): copy of recipes for predictions, only contains x_data.
 
         Returns:
             predictions (Dataset): mean and variance predictions.
         """
 
-        if test_dataset.x_labels != self.x_labels:
+        if dataset.x_labels != self.x_labels:
             raise ValueError(
                 f"Train and test datasets must have same x_labels {self.x_labels}."
             )
+        dataset.check()
 
-        test_x = torch.tensor(test_dataset.x_data, dtype=torch.float64)
+        test_x = torch.tensor(dataset.x_data, dtype=torch.float64)
 
         self.model.eval()
         self.model.likelihood.eval()
@@ -80,15 +81,11 @@ class GPModel:
             mean = posterior.mean.squeeze(-1).cpu().numpy()
             var = posterior.variance.squeeze(-1).cpu().numpy()
 
-        predictions = Dataset(
-            dataset_type="predictions",
-            x_data=test_dataset.x_data,
-            y_data=mean,
-            y_errors=var,
-            x_labels=self.x_labels,
-            y_labels=self.y_labels,
-        )
+        dataset.dataset_type = "predictions"
+        dataset.y_data = mean
+        dataset.y_errors = var
+        dataset.y_labels = self.y_labels
+        dataset.normalised = True
+        dataset.check()
 
-        predictions.normalised = True
-
-        return predictions
+        return dataset
