@@ -69,6 +69,7 @@ def test_gp_uncertainty_behavior():
         x_data=test_x_data,
         y_data=np.array([[2.0]]),
         x_labels=["x"],
+        y_labels=["y"],
     )
     predictions_test = model.predict(test_x)
     var_test = predictions_test.y_errors.mean()

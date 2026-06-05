@@ -59,7 +59,7 @@ class GPModel:
         Predict output based on test set.
 
         Parameters:
-            test_dataset (Dataset): test set.
+            test_dataset (Dataset): test set for predictions, only contains x_data.
 
         Returns:
             predictions (Dataset): mean and variance predictions.
