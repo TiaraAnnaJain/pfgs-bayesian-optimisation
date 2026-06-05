@@ -80,15 +80,10 @@ class GPModel:
             mean = posterior.mean.squeeze(-1).cpu().numpy()
             var = posterior.variance.squeeze(-1).cpu().numpy()
 
-        predictions = Dataset(
-            dataset_type="predictions",
-            x_data=test_dataset.x_data,
-            y_data=mean,
-            y_errors=var,
-            x_labels=self.x_labels,
-            y_labels=self.y_labels,
-        )
-
+        predictions = test_dataset.copy()
+        predictions.dataset_type = "predictions"
+        predictions.y_data = mean
+        predictions.y_errors = var
         predictions.normalised = True
 
         return predictions
