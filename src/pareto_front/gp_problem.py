@@ -49,18 +49,19 @@ class GPProblem(Problem):
             *args, **kwargs: Additional arguments required by pymoo.
         """
         candidate_dataset = Dataset(
-            dataset_type="test",
+            dataset_type="recipe",
             x_data=x,
             x_labels=self.x_labels,
             normalised=True,
         )
 
-        predictions = self.model.predict(candidate_dataset)
+        candidate_dataset_copy = candidate_dataset.copy()
 
-        negated_predictions = -predictions
+        predictions = self.model.predict(candidate_dataset_copy)
+
         predictions_mean, predictions_var = (
-            negated_predictions.y_data,
-            negated_predictions.y_errors,
+            predictions.y_data,
+            predictions.y_errors,
         )
 
-        out["F"] = np.column_stack([predictions_mean, predictions_var])
+        out["F"] = np.column_stack([-predictions_mean, -predictions_var])

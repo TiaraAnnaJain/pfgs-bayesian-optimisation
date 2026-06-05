@@ -1,4 +1,4 @@
-"""Tests for NSGA-2 optimizer."""
+"""Tests for GP Problem and NSGA-2 optimizer."""
 
 import numpy as np
 
