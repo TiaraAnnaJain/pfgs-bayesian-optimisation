@@ -84,21 +84,19 @@ def contour_slice_plot(
             else:
                 x_grid[:, i] = train_dataset.x_data[:, i].mean()
 
-    y_dummy = np.zeros((x_grid.shape[0], len(train_dataset.y_labels)))
-
     x_grid_standardised = Dataset(
-        dataset_type="test",
+        dataset_type="recipe",
         x_data=x_grid,
-        y_data=y_dummy,
         x_labels=train_dataset.x_labels,
-        y_labels=train_dataset.y_labels,
     )
 
     normalisation_stats = train_dataset.get_stats()
     x_grid_standardised.set_stats(normalisation_stats)
     x_grid_standardised.normalise()
 
-    predictions = trained_model.predict(x_grid_standardised)
+    predict_dataset = x_grid_standardised.copy()
+
+    predictions = trained_model.predict(predict_dataset)
 
     predictions.set_stats(normalisation_stats)
     predictions.de_normalise()
