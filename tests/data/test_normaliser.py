@@ -113,8 +113,10 @@ def test_de_normalise():
 
     predictions = Dataset(
         dataset_type="predictions",
+        x_data=train_x,
         y_data=prediction_mean,
         y_errors=prediction_error,
+        x_labels=["x1", "x2"],
         y_labels=["y"],
     )
     predictions.normalised = True
@@ -197,6 +199,8 @@ def test_double_de_normalisation():
 
     predictions = Dataset(
         dataset_type="predictions",
+        x_data=train_x,
+        x_labels=["x1", "x2"],
         y_data=prediction_mean,
         y_errors=prediction_error,
         y_labels=["y"],
@@ -269,6 +273,7 @@ def test_copy():
         x_data=train_x,
         y_data=train_y,
         x_labels=["x1", "x2"],
+        y_labels=["y"],
     )
 
     train_copy = train_data.copy()

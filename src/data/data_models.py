@@ -72,16 +72,24 @@ class Dataset:
         if self.dataset_type in ("train", "test"):
             if self.x_data is None or self.y_data is None:
                 raise ValueError("Inputs and outputs must be provided.")
-            if self.x_labels is None:
+            if self.x_labels is None or self.y_labels is None:
                 raise ValueError("Labels must be provided.")
 
         if self.dataset_type == "recipe":
             if self.x_data is None:
                 raise ValueError("Recipe inputs must be provided.")
+            if self.x_labels is None:
+                raise ValueError("Labels must be provided.")
+            if self.y_data is not None:
+                raise ValueError("Recipe outputs should not be provided.")
 
         if self.dataset_type == "predictions":
+            if self.x_data is None:
+                raise ValueError("Inputs must be provided.")
             if self.y_data is None or self.y_errors is None:
                 raise ValueError("Mean and variance must be provided.")
+            if self.x_labels is None or self.y_labels is None:
+                raise ValueError("Labels must be provided.")
 
         if self.x_labels is not None:
             if not isinstance(self.x_labels, list) or not all(
