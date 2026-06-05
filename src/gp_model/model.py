@@ -81,12 +81,11 @@ class GPModel:
             mean = posterior.mean.squeeze(-1).cpu().numpy()
             var = posterior.variance.squeeze(-1).cpu().numpy()
 
-        predictions = dataset
-        predictions.dataset_type = "predictions"
-        predictions.y_data = mean
-        predictions.y_errors = var
-        predictions.y_labels = self.y_labels
-        predictions.normalised = True
-        predictions.check()
+        dataset.dataset_type = "predictions"
+        dataset.y_data = mean
+        dataset.y_errors = var
+        dataset.y_labels = self.y_labels
+        dataset.normalised = True
+        dataset.check()
 
-        return predictions
+        return dataset
