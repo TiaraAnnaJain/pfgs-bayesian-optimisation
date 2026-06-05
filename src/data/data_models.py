@@ -49,7 +49,7 @@ class Dataset:
     y_standardiser_std: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
-        self._check()
+        self.check()
 
     def __neg__(self) -> "Dataset":
         if self.dataset_type in ("train", "test"):
@@ -62,7 +62,7 @@ class Dataset:
             y_labels=self.y_labels,
         )
 
-    def _check(self):
+    def check(self):
         if self.dataset_type not in ["train", "test", "recipe", "predictions"]:
             raise ValueError(
                 f"Dataset type {self.dataset_type} is not supported. Must be one of "
