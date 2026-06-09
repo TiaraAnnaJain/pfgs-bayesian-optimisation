@@ -42,6 +42,6 @@ def calculate_alpha(
     alpha_max = float(min(upper_bounds)) if upper_bounds else 0
 
     if alpha_min > alpha_max:
-        return 0, 0
+        return np.nan, np.nan
 
     return alpha_min, alpha_max

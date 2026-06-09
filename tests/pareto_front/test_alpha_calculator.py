@@ -1,7 +1,7 @@
 """Tests for alpha calculator"""
 
 import numpy as np
-from src.pareto_front.alpha_calculator import AlphaCalculator
+from src.pareto_front.alpha_calculator import calculate_alpha
 
 
 def test_alpha_valid_range():
@@ -9,8 +9,7 @@ def test_alpha_valid_range():
 
     optimal = np.array([[0.8, 0.5]])
 
-    calc = AlphaCalculator(pareto, optimal)
-    alpha_min, alpha_max = calc.calculate_alpha()
+    alpha_min, alpha_max = calculate_alpha(pareto, optimal)
 
     expected_lower = (1.0 - 0.8) / (0.5 - 0.2)
     expected_upper = (0.5 - 0.8) / (0.5 - 0.8)
@@ -25,8 +24,7 @@ def test_alpha_invalid_range_returns_zero():
 
     optimal = np.array([[1.0, 0.5]])
 
-    calc = AlphaCalculator(pareto, optimal)
-    alpha_min, alpha_max = calc.calculate_alpha()
+    alpha_min, alpha_max = calculate_alpha(pareto, optimal)
 
-    assert alpha_min == 0
-    assert alpha_max == 0
+    assert np.isnan(alpha_min)
+    assert np.isnan(alpha_max)
