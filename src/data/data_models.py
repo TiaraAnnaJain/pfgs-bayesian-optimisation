@@ -210,22 +210,28 @@ class Dataset:
             self.x_data = np.asarray(self.x_data, dtype=np.float64)
             for i, label in enumerate(self.x_labels):
                 self.x_data[:, i] = (
-                    self.x_data[:, i]
-                    * (self.x_normaliser_max[label] - self.x_normaliser_min[label])
-                    + self.x_normaliser_min[label]
+                        self.x_data[:, i]
+                        * (self.x_normaliser_max[label] - self.x_normaliser_min[label])
+                        + self.x_normaliser_min[label]
                 )
 
-        self.y_data = np.asarray(self.y_data, dtype=np.float64)
-        for i, label in enumerate(self.y_labels):
-            self.y_data[:, i] = (
-                self.y_data[:, i] * self.y_standardiser_std[label]
-            ) + self.y_standardiser_mean[label]
+        if self.y_data is not None:
+            self.y_data = np.asarray(self.y_data, dtype=np.float64)
 
-            if self.y_errors is not None:
-                self.y_errors = np.asarray(self.y_errors, dtype=np.float64)
-                self.y_errors[:, i] = (
-                    self.y_errors[:, i] * self.y_standardiser_std[label] ** 2
-                )
+            if self.y_data.ndim == 1:
+                self.y_data = self.y_data.reshape(-1, 1)
+
+            for i, label in enumerate(self.y_labels):
+                self.y_data[:, i] = (self.y_data[:, i] * self.y_standardiser_std[label]) + self.y_standardiser_mean[
+                    label]
+
+                if self.y_errors is not None:
+                    if self.y_errors.ndim == 1:
+                        self.y_errors = self.y_errors.reshape(-1, 1)
+                    self.y_errors = np.asarray(self.y_errors, dtype=np.float64)
+                    self.y_errors[:, i] = (
+                            self.y_errors[:, i] * self.y_standardiser_std[label] ** 2
+                    )
 
         self.normalised = False
 
