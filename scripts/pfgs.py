@@ -6,7 +6,7 @@ import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 import matplotlib.pyplot as plt
 
-from data.investigation_space import InvestigationSpace
+from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
 from src.data.data_processing import generate_data
 from src.data.simulation import himmelblau
 from src.data.data_processing import Dataset
@@ -34,20 +34,24 @@ warnings.filterwarnings(
 
 
 def main():
-    lower_bound = [-5, -5]
-    upper_bound = [5, 5]
+    variables = [
+        InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
+        InvestigationSpaceVariable(label="x2", lower_bound=-5, upper_bound=5),
+    ]
+
+    space = InvestigationSpace(variables=variables)
 
     lower_bound_normalised = [0, 0]
     upper_bound_normalised = [1.0, 1.0]
 
-    x_labels = ["x1", "x2"]
+    x_labels = space.labels
     y_labels = ["y"]
 
     train_data = generate_data(
         n_samples=5,
         n_vars=2,
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
+        lower_bound=space.lower_bound_list,
+        upper_bound=space.upper_bound_list,
         seed=42,
         dataset_type="train",
         x_labels=x_labels,
@@ -56,8 +60,8 @@ def main():
     test_data = generate_data(
         n_samples=100,
         n_vars=2,
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
+        lower_bound=space.lower_bound_list,
+        upper_bound=space.upper_bound_list,
         seed=11,
         dataset_type="test",
         x_labels=x_labels,
@@ -70,21 +74,20 @@ def main():
     alpha_upper = []
     alpha_lower = []
 
-    num_iter = 10
+    num_iter = 95
 
     for i in range(num_iter):
+        train_data.add_normalisation_params(lower_bound=space.lower_bounds, upper_bound=space.upper_bounds)
         train_data.normalise()
         normalisation_stats = train_data.get_stats()
 
         model.train(train_data)
         train_data.de_normalise()
 
-        # investigation_space = InvestigationSpace(train_dataset=train_data, lower_bounds=np.array(lower_bound), upper_bounds=np.array(upper_bound))
-        # lower_bound_normalised, upper_bound_normalised = investigation_space.normalised_bounds()
-
         problem = GPProblem(
             model=model,
-            bounds=(lower_bound_normalised, upper_bound_normalised),
+            lower_bound=lower_bound_normalised,
+            upper_bound=upper_bound_normalised,
         )
 
         optimizer = NSGAOptimiser(problem=problem, pop_size=100, n_gen=10)
