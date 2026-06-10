@@ -56,11 +56,14 @@ def contour_slice_plot(
     x1_index = train_dataset.x_labels.index(x_plot_labels[0])
     x2_index = train_dataset.x_labels.index(x_plot_labels[1])
 
-    x1_lb = train_dataset.x_data[:, x1_index].min()
-    x2_lb = train_dataset.x_data[:, x2_index].min()
+    x1_label = train_dataset.x_labels[x1_index]
+    x2_label = train_dataset.x_labels[x2_index]
 
-    x1_ub = train_dataset.x_data[:, x1_index].max()
-    x2_ub = train_dataset.x_data[:, x2_index].max()
+    x1_lb = train_dataset.x_normaliser_min[x1_label]
+    x2_lb = train_dataset.x_normaliser_min[x2_label]
+
+    x1_ub = train_dataset.x_normaliser_max[x1_label]
+    x2_ub = train_dataset.x_normaliser_max[x2_label]
 
     x_1 = np.linspace(x1_lb, x1_ub, 100)
     x_2 = np.linspace(x2_lb, x2_ub, 100)
