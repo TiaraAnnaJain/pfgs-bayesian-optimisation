@@ -6,16 +6,17 @@ import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 import matplotlib.pyplot as plt
 
+from data.investigation_space import InvestigationSpace
 from src.data.data_processing import generate_data
 from src.data.simulation import himmelblau
 from src.data.data_processing import Dataset
 from src.gp_model.model import GPModel
 from src.gp_model.analysis import compute_rrmse
 from src.pareto_front.gp_problem import GPProblem
-from src.pareto_front.optimizer import GPOptimiser
-from src.pareto_front.optimal_point import OptimalPoints
-from src.pareto_front.alpha_calculator import AlphaCalculator
-from src.gp_model.plotting import contour_gp_plot
+from src.pareto_front.optimizer import NSGAOptimiser
+from src.pareto_front.optimal_point import ParetoPointSelector
+from src.pareto_front.alpha_calculator import calculate_alpha
+from src.gp_model.plotting import contour_slice_plot
 
 warnings.filterwarnings(
     "ignore", message=r".*To copy construct from a tensor.*", category=UserWarning
@@ -33,51 +34,64 @@ warnings.filterwarnings(
 
 
 def main():
-    lb = [-5, -5]
-    ub = [5, 5]
+    lower_bound = [-5, -5]
+    upper_bound = [5, 5]
+
+    lower_bound_normalised = [0, 0]
+    upper_bound_normalised = [1.0, 1.0]
+
+    x_labels = ["x1", "x2"]
+    y_labels = ["y"]
 
     train_data = generate_data(
         n_samples=5,
         n_vars=2,
-        lower_bound=lb,
-        upper_bound=ub,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
         seed=42,
         dataset_type="train",
+        x_labels=x_labels,
+        y_labels=y_labels,
     )
     test_data = generate_data(
         n_samples=100,
         n_vars=2,
-        lower_bound=lb,
-        upper_bound=ub,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
         seed=11,
         dataset_type="test",
+        x_labels=x_labels,
+        y_labels=y_labels,
     )
+
     model = GPModel()
 
     rrmse_plot = []
     alpha_upper = []
     alpha_lower = []
 
-    num_iter = 95
+    num_iter = 10
 
     for i in range(num_iter):
-        train_data.standardise()
-        standardisation_stats = train_data.get_stats()
+        train_data.normalise()
+        normalisation_stats = train_data.get_stats()
 
         model.train(train_data)
-        train_data.de_standardise()
+        train_data.de_normalise()
+
+        # investigation_space = InvestigationSpace(train_dataset=train_data, lower_bounds=np.array(lower_bound), upper_bounds=np.array(upper_bound))
+        # lower_bound_normalised, upper_bound_normalised = investigation_space.normalised_bounds()
 
         problem = GPProblem(
             model=model,
-            train_set_mean=train_data.x_standardiser_mean,
-            train_set_std=train_data.x_standardiser_std,
+            bounds=(lower_bound_normalised, upper_bound_normalised),
         )
 
-        optimizer = GPOptimiser(problem=problem, pop_size=100, n_gen=10)
+        optimizer = NSGAOptimiser(problem=problem, pop_size=100, n_gen=10)
         scaled_pareto_front, unscaled_pareto_front, input_values = optimizer.run()
 
         utopia_point = np.array([1.0, 1.0])
-        optimal_point_evaluator = OptimalPoints(
+        optimal_point_evaluator = ParetoPointSelector(
             scaled_pareto_front=scaled_pareto_front,
             unscaled_pareto_front=unscaled_pareto_front,
             utopia_point=utopia_point,
@@ -88,41 +102,47 @@ def main():
             )
         )
 
-        alpha_calculator = AlphaCalculator(
-            pareto_front=scaled_pareto_front, closest_point=closest_point
-        )
-        alpha_min, alpha_max = alpha_calculator.calculate_alpha()
+        alpha_min, alpha_max = calculate_alpha(pareto_front=scaled_pareto_front, closest_point=closest_point)
 
         x_new = input_values[optimal_idx].reshape(1, -1)
-        x_new_real = (
-            x_new * train_data.x_standardiser_std + train_data.x_standardiser_mean
-        )
-        y_new = himmelblau(x_new_real).reshape(1, 1)
 
-        train_data.x_data = np.vstack([train_data.x_data, x_new_real])
+        x_new = Dataset(
+            dataset_type="recipe",
+            x_labels=x_labels,
+            x_data=x_new,
+            normalised=True,
+        )
+
+        x_new.set_stats(normalisation_stats)
+
+        x_new.de_normalise()
+        y_new = himmelblau(x_new.x_data).reshape(1, 1)
+
+        train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
         train_data.y_data = np.vstack([train_data.y_data, y_new])
 
-        test_data.set_stats(standardisation_stats)
-        test_data.standardise()
+        recipe = test_data.copy()
+        recipe.dataset_type = "recipe"
+        recipe.y_data = None
+        recipe.y_labels = None
 
-        predictions = model.predict(test_data.x_data)
+        recipe.set_stats(normalisation_stats)
+        recipe.normalise()
 
-        predictions.set_stats(standardisation_stats)
-        predictions.de_standardise()
+        predictions = model.predict(recipe)
 
-        test_data.de_standardise()
+        predictions.set_stats(normalisation_stats)
+        predictions.de_normalise()
 
-        rrmse = compute_rrmse(predictions.y_data, test_data.y_data)
+        rrmse = compute_rrmse(predictions.y_data.reshape(-1, 1), test_data.y_data)
 
         print(
-            f"Iteration {i + 1}: alpha upper bound = {alpha_max}, alpha lower bound = {alpha_min}, RRMSE = {rrmse}, x_new: {x_new_real}"
+            f"Iteration {i + 1}: alpha upper bound = {alpha_max}, alpha lower bound = {alpha_min}, RRMSE = {rrmse}, x_new: {x_new.x_data}"
         )
 
         rrmse_plot.append(rrmse)
         alpha_upper.append(alpha_max)
         alpha_lower.append(alpha_min)
-
-    final_dataset = train_data
 
     feasible_alpha_max_nonzero = [alpha for alpha in alpha_upper if alpha != 0]
     feasible_alpha_min = max(alpha_lower)
@@ -135,25 +155,25 @@ def main():
 
     x = range(len(alpha_upper))
 
-    train_input_1, train_input_2, x1, x2, pred_mean_train = contour_gp_plot(
-        train_data.x_data, model, final_dataset
+    train_input_1, train_input_2, x1, x2, pred_mean_train = contour_slice_plot(
+        trained_model=model, train_dataset=train_data, x_plot_labels=x_labels, y_plot_label="y"
     )
 
-    fig_alpha = plt.figure()
+    plt.figure()
     for x_i, alpha_upper_i, alpha_lower_i in zip(x, alpha_upper, alpha_lower):
         plt.plot([x_i, x_i], [alpha_lower_i, alpha_upper_i], color="blue")
     plt.xlabel("iterations")
     plt.ylabel("alpha")
 
-    fig_rrmse = plt.figure()
+    plt.figure()
     plt.plot(x, rrmse_plot)
     plt.title("RRMSE over iterations")
     plt.xlabel("iterations")
     plt.ylabel("RRMSE")
 
-    gp_fig_train = plt.figure()
+    plt.figure()
     cs = plt.contourf(
-        x1.numpy(), x2.numpy(), pred_mean_train, levels=50, cmap="viridis_r"
+        x1, x2, pred_mean_train, levels=50, cmap="viridis_r"
     )
 
     plt.scatter(train_input_1, train_input_2, c="r")
