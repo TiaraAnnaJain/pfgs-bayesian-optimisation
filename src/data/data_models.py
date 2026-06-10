@@ -1,12 +1,12 @@
 """Data models for all GP datasets including recipes, experiments and predictions."""
 
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, Self
+import logging as log
 from dataclasses import dataclass, field
 from copy import deepcopy
 
 import numpy as np
 from numpy.typing import NDArray
-from torch.utils.data import Dataset
 
 
 @dataclass
@@ -22,17 +22,15 @@ class Dataset:
         y_data (Optional[NDArray[np.float64]]): output data.
         y_errors (Optional[NDArray[np.float64]]): y error values from GP predictions.
         normalised (bool): normalisation flag to prevent double transformations.
-        x_normaliser_min (Dict[str, float]): minimum value of x computed on
-            training dataset inputs.
-        x_normaliser_max (Dict[str, float]): maximum value of x computed
-            on training dataset inputs.
+        x_normaliser_min (Dict[str, float]): minimum value of x taken from bounds.
+        x_normaliser_max (Dict[str, float]): maximum value of x taken from bounds.
         y_standardiser_mean (Dict[str, float]): mean value of y computed on
             training dataset outputs.
         y_standardiser_std (Dict[str, float]): standard deviation value of y computed
             on training dataset outputs.
     """
 
-    dataset_type: str = None  # train, test, predictions
+    dataset_type: str  # train, test, predictions, recipe, pareto_front
 
     x_labels: Union[List[str], None] = None
     y_labels: Union[List[str], None] = None
@@ -51,61 +49,100 @@ class Dataset:
     def __post_init__(self):
         self.check()
 
-    def __neg__(self) -> "Dataset":
+    def __neg__(self) -> Self:
         if self.dataset_type in ("train", "test"):
             raise ValueError("Cannot negate a train or test dataset.")
 
         return Dataset(
             dataset_type="predictions",
+            x_labels=self.x_labels,
+            y_labels=self.y_labels,
+            x_data=self.x_data,
             y_data=-self.y_data,
             y_errors=-self.y_errors,
-            y_labels=self.y_labels,
         )
 
     def check(self):
-        if self.dataset_type not in ["train", "test", "recipe", "predictions"]:
+        """Runs basic sanity checks."""
+        if self.dataset_type not in [
+            "train",
+            "test",
+            "pareto_front",
+            "recipe",
+            "predictions",
+        ]:
             raise ValueError(
                 f"Dataset type {self.dataset_type} is not supported. Must be one of "
-                f"['train', 'test', 'recipes', 'predictions']."
+                f"['train', 'test', 'recipe', 'pareto_front', 'predictions']."
             )
 
+        if self.x_labels is None:
+            raise ValueError("x_labels must be provided.")
+
+        if self.x_data is None:
+            raise ValueError("Inputs must be provided.")
+
         if self.dataset_type in ("train", "test"):
-            if self.x_data is None or self.y_data is None:
-                raise ValueError("Inputs and outputs must be provided.")
-            if self.x_labels is None or self.y_labels is None:
-                raise ValueError("Labels must be provided.")
+            if self.y_data is None:
+                raise ValueError("Outputs must be provided.")
+            if self.y_labels is None:
+                raise ValueError("y_labels must be provided.")
 
         if self.dataset_type == "recipe":
-            if self.x_data is None:
-                raise ValueError("Recipe inputs must be provided.")
-            if self.x_labels is None:
-                raise ValueError("Labels must be provided.")
             if self.y_data is not None:
                 raise ValueError("Recipe outputs should not be provided.")
 
-        if self.dataset_type == "predictions":
-            if self.x_data is None:
-                raise ValueError("Inputs must be provided.")
+        if self.dataset_type in ("predictions", "pareto_front"):
             if self.y_data is None or self.y_errors is None:
                 raise ValueError("Mean and variance must be provided.")
-            if self.x_labels is None or self.y_labels is None:
-                raise ValueError("Labels must be provided.")
+            if self.y_labels is None:
+                raise ValueError("y_labels must be provided.")
 
-        if self.x_labels is not None:
-            if not isinstance(self.x_labels, list) or not all(
-                isinstance(label, str) for label in self.x_labels
-            ):
+        if not isinstance(self.x_labels, list) or not all(
+            isinstance(label, str) for label in self.x_labels
+        ):
+            raise ValueError(
+                f"Labels {self.x_labels} is not supported. Labels must be a list of strings."
+            )
+
+        if len(self.x_labels) != self.x_data.shape[1]:
+            raise ValueError(
+                f"Number of x_labels must match number of columns in x_data. "
+                f"\nNumber of labels provided: {len(self.x_labels)} "
+                f"\nNumber of columns in x_data: {self.x_data.shape[1]}"
+            )
+
+    def add_normalisation_params(
+        self, lower_bound: Dict[str, float], upper_bound: Dict[str, float]
+    ) -> None:
+        """
+        Takes the lower and upper bounds of the investigation space and sets them as
+        the normalisation parameters for x.
+
+        Parameters:
+            lower_bound (Dict[str, float]): Lower bounds of the investigation space, will be
+                set as x_normaliser_min.
+            upper_bound (Dict[str, float]): Upper bounds of the investigation space, will be
+                set as x_normaliser_max.
+
+        """
+        if self.normalised:
+            log.warning("Dataset already has normalisation parameters.")
+
+        if set(lower_bound.keys()) != set(self.x_labels):
+            raise ValueError("Lower bound labels do not match x_labels.")
+
+        if set(upper_bound.keys()) != set(self.x_labels):
+            raise ValueError("Upper bound labels do not match x_labels.")
+
+        for label in self.x_labels:
+            if lower_bound[label] >= upper_bound[label]:
                 raise ValueError(
-                    f"Labels {self.x_labels} is not supported. Labels must be a list of strings."
+                    f"Lower bound must be less than upper bound for {label}."
                 )
 
-        if self.x_labels is not None and self.x_data is not None:
-            if len(self.x_labels) != self.x_data.shape[1]:
-                raise ValueError(
-                    f"Number of x_labels must match number of columns in x_data. "
-                    f"\nNumber of labels provided: {len(self.x_labels)} "
-                    f"\nNumber of columns in x_data: {self.x_data.shape[1]}"
-                )
+            self.x_normaliser_min[label] = lower_bound[label]
+            self.x_normaliser_max[label] = upper_bound[label]
 
     def normalise(self):
         """
@@ -126,13 +163,12 @@ class Dataset:
 
         for i, label in enumerate(self.x_labels):
             if label not in self.x_normaliser_min or label not in self.x_normaliser_max:
-                self.x_normaliser_min[label] = self.x_data[:, i].min()
-                self.x_normaliser_max[label] = self.x_data[:, i].max()
+                raise ValueError("Must provide both minimum and maximum values of x.")
 
-                if self.x_normaliser_min[label] == self.x_normaliser_max[label]:
-                    raise ValueError(
-                        "Minimum value == maximum value, cannot normalise dataset."
-                    )
+            if self.x_normaliser_min[label] == self.x_normaliser_max[label]:
+                raise ValueError(
+                    "Minimum value == maximum value, cannot normalise dataset."
+                )
 
             self.x_data[:, i] = (self.x_data[:, i] - self.x_normaliser_min[label]) / (
                 self.x_normaliser_max[label] - self.x_normaliser_min[label]
@@ -221,6 +257,6 @@ class Dataset:
         self.y_standardiser_mean = stats["y_mean"]
         self.y_standardiser_std = stats["y_std"]
 
-    def copy(self) -> Dataset:
+    def copy(self) -> Self:
         """Creates a deepcopy of a dataset."""
         return deepcopy(self)
