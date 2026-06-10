@@ -1,30 +1,52 @@
-import numpy as np
+import pytest
 
-from src.data.data_models import Dataset
-from src.data.investigation_space import InvestigationSpace
+from src.data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
 
 
-def test_investigation_space_normalised_bounds():
-    train_dataset = Dataset(
-        dataset_type="train",
-        x_labels=["x1", "x2"],
-        x_data=np.array([[0.0, 10.0], [100.0, 20.0]]),
-        y_labels=["y"],
-        y_data=np.array([[10.0], [20.0]]),
-    )
-
-    train_dataset.normalise()
-
+def test_investigation_space_properties():
     investigation_space = InvestigationSpace(
-        train_dataset=train_dataset,
-        lower_bounds=np.array([25.0, 12.5]),
-        upper_bounds=np.array([75.0, 17.5]),
+        variables=[
+            InvestigationSpaceVariable(
+                label="temperature",
+                lower_bound=20,
+                upper_bound=100,
+            ),
+            InvestigationSpaceVariable(
+                label="pressure",
+                lower_bound=1,
+                upper_bound=10,
+            ),
+        ]
     )
 
-    lower, upper = investigation_space.normalised_bounds()
+    assert investigation_space.labels == ["temperature", "pressure"]
 
-    expected_lower = np.array([0.25, 0.25])
-    expected_upper = np.array([0.75, 0.75])
+    assert investigation_space.lower_bounds == {
+        "temperature": 20,
+        "pressure": 1,
+    }
 
-    assert np.allclose(lower, expected_lower)
-    assert np.allclose(upper, expected_upper)
+    assert investigation_space.upper_bounds == {
+        "temperature": 100,
+        "pressure": 10,
+    }
+
+    assert investigation_space.lower_bound_list == [20, 1]
+    assert investigation_space.upper_bound_list == [100, 10]
+
+
+def test_investigation_space_validation():
+    with pytest.raises(ValueError):
+        InvestigationSpaceVariable(
+            label="temperature",
+            lower_bound=100,
+            upper_bound=20,
+        )
+
+    with pytest.raises(ValueError):
+        InvestigationSpace(
+            variables=[
+                InvestigationSpaceVariable("temperature", 20, 100),
+                InvestigationSpaceVariable("temperature", 30, 90),
+            ]
+        )
