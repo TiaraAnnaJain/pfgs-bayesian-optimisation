@@ -77,12 +77,13 @@ def main():
     num_iter = 95
 
     for i in range(num_iter):
-        train_data.add_normalisation_params(lower_bound=space.lower_bounds, upper_bound=space.upper_bounds)
+        train_data.add_normalisation_params(
+            lower_bound=space.lower_bounds, upper_bound=space.upper_bounds
+        )
         train_data.normalise()
         normalisation_stats = train_data.get_stats()
 
         model.train(train_data)
-        train_data.de_normalise()
 
         problem = GPProblem(
             model=model,
@@ -99,13 +100,23 @@ def main():
             unscaled_pareto_front=unscaled_pareto_front,
             utopia_point=utopia_point,
         )
+        mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front = (
+            optimal_point_evaluator.discard_areas(
+                mean_discard_threshold=np.array([0.3]),
+                variance_discard_threshold=np.array([0.3]),
+            )
+        )
         closest_point, optimal_idx, optimal_point = (
             optimal_point_evaluator.closest_points(
-                scaled_pareto_front=scaled_pareto_front
+                scaled_pareto_front=filtered_scaled_pareto_front,
             )
         )
 
-        alpha_min, alpha_max = calculate_alpha(pareto_front=scaled_pareto_front, closest_point=closest_point)
+        alpha_min, alpha_max = calculate_alpha(
+            pareto_front=scaled_pareto_front, closest_point=closest_point
+        )
+
+        train_data.de_normalise()
 
         x_new = input_values[optimal_idx].reshape(1, -1)
 
@@ -159,7 +170,10 @@ def main():
     x = range(len(alpha_upper))
 
     train_input_1, train_input_2, x1, x2, pred_mean_train = contour_slice_plot(
-        trained_model=model, train_dataset=train_data, x_plot_labels=x_labels, y_plot_label="y"
+        trained_model=model,
+        train_dataset=train_data,
+        x_plot_labels=x_labels,
+        y_plot_label="y",
     )
 
     plt.figure()
@@ -175,9 +189,7 @@ def main():
     plt.ylabel("RRMSE")
 
     plt.figure()
-    cs = plt.contourf(
-        x1, x2, pred_mean_train, levels=50, cmap="viridis_r"
-    )
+    cs = plt.contourf(x1, x2, pred_mean_train, levels=50, cmap="viridis_r")
 
     plt.scatter(train_input_1, train_input_2, c="r")
     plt.xlabel("x1")
