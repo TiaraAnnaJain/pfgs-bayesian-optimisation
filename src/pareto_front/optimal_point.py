@@ -31,8 +31,13 @@ class ParetoPointSelector:
         self,
         mean_discard_threshold: NDArray[np.float64],
         variance_discard_threshold: NDArray[np.float64],
-        step: Union[float, None] = None
-    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+        step: Union[float, None] = None,
+    ) -> Tuple[
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+    ]:
         """
         Discards points on Pareto front with mean and variance values lower than the
         threshold input. If no point survives, the discard threshold is lowered incrementally.
@@ -88,7 +93,12 @@ class ParetoPointSelector:
             filtered_scaled_pareto_front = self.scaled_pareto_front
             filtered_unscaled_pareto_front = self.unscaled_pareto_front
 
-        return mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front, adjusted_thresholds
+        return (
+            mask,
+            filtered_scaled_pareto_front,
+            filtered_unscaled_pareto_front,
+            adjusted_thresholds,
+        )
 
     def distance_calculator(
         self, filtered_scaled_pareto_front: NDArray[np.float64]
@@ -109,7 +119,9 @@ class ParetoPointSelector:
         return distance
 
     def closest_points(
-        self, scaled_pareto_front: NDArray[np.float64], unscaled_pareto_front: NDArray[np.float64]
+        self,
+        scaled_pareto_front: NDArray[np.float64],
+        unscaled_pareto_front: NDArray[np.float64],
     ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
         """
         Finds the closest point on Pareto front by minimising Euclidean distance from
