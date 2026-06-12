@@ -18,7 +18,7 @@ class NSGAOptimiser:
 
     def run(
         self,
-    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], MinMaxScaler]:
         """
         Run the multi-objective optimiser and compute the Pareto front.
 
@@ -26,6 +26,7 @@ class NSGAOptimiser:
             scaled_pareto_front_points (NDArray[np.float64]): scaled pareto front points.
             unscaled_results (NDArray[np.float64]): unscaled pareto front points.
             results.X (NDArray[np.float64]): input values.
+            scaler (MinMaxScaler): min-max scaler used to scale pareto front points.
 
         """
         results = minimize(self.problem, self.algorithm, self.termination)
@@ -33,4 +34,4 @@ class NSGAOptimiser:
         unscaled_pareto_front_points = -results.F
         scaler = MinMaxScaler(feature_range=(0, 1))
         scaled_pareto_front_points = scaler.fit_transform(unscaled_pareto_front_points)
-        return scaled_pareto_front_points, unscaled_pareto_front_points, results.X
+        return scaled_pareto_front_points, unscaled_pareto_front_points, results.X, scaler
