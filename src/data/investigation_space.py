@@ -10,7 +10,9 @@ class InvestigationSpaceVariable:
 
     def __post_init__(self):
         if self.lower_bound >= self.upper_bound:
-            raise ValueError(f"Lower bound must be smaller than upper bound for {self.label}")
+            raise ValueError(
+                f"Lower bound must be smaller than upper bound for {self.label}"
+            )
 
 
 @dataclass(frozen=True)

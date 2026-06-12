@@ -92,7 +92,12 @@ def main():
         )
 
         optimizer = NSGAOptimiser(problem=problem, pop_size=100, n_gen=10)
-        scaled_pareto_front, unscaled_pareto_front, input_values = optimizer.run()
+        (
+            scaled_pareto_front,
+            unscaled_pareto_front,
+            input_values,
+            pareto_front_scaler,
+        ) = optimizer.run()
 
         utopia_point = np.array([1.0, 1.0])
         optimal_point_evaluator = ParetoPointSelector(
@@ -100,15 +105,19 @@ def main():
             unscaled_pareto_front=unscaled_pareto_front,
             utopia_point=utopia_point,
         )
-        mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front = (
-            optimal_point_evaluator.discard_areas(
-                mean_discard_threshold=np.array([0.3]),
-                variance_discard_threshold=np.array([0.3]),
-            )
+        (
+            mask,
+            filtered_scaled_pareto_front,
+            filtered_unscaled_pareto_front,
+            adjusted_thresholds,
+        ) = optimal_point_evaluator.discard_areas(
+            mean_discard_threshold=np.array([0.3]),
+            variance_discard_threshold=np.array([0.3]),
         )
         closest_point, optimal_idx, optimal_point = (
             optimal_point_evaluator.closest_points(
                 scaled_pareto_front=filtered_scaled_pareto_front,
+                unscaled_pareto_front=filtered_unscaled_pareto_front,
             )
         )
 
