@@ -92,7 +92,7 @@ def main():
         )
 
         optimizer = NSGAOptimiser(problem=problem, pop_size=100, n_gen=10)
-        scaled_pareto_front, unscaled_pareto_front, input_values = optimizer.run()
+        scaled_pareto_front, unscaled_pareto_front, input_values, pareto_front_scaler = optimizer.run()
 
         utopia_point = np.array([1.0, 1.0])
         optimal_point_evaluator = ParetoPointSelector(
@@ -109,6 +109,7 @@ def main():
         closest_point, optimal_idx, optimal_point = (
             optimal_point_evaluator.closest_points(
                 scaled_pareto_front=filtered_scaled_pareto_front,
+                unscaled_pareto_front=filtered_unscaled_pareto_front,
             )
         )
 
