@@ -11,7 +11,7 @@ def test_closest_to_utopia_point():
 
     calculator = ParetoPointSelector(array, array_unscaled, utopia_point)
 
-    closest_point, closest_idx, _ = calculator.closest_points(array)
+    closest_point, closest_idx, _ = calculator.closest_points(array, array_unscaled)
 
     assert np.allclose(closest_point, [[0.9, 0.8]])
     assert closest_idx == 3
@@ -31,6 +31,6 @@ def test_discard_areas():
         variance_discard_threshold=variance_discard_threshold,
     )
 
-    closest_point, _, _ = calculator.closest_points(array_scaled)
+    closest_point, _, _ = calculator.closest_points(array_scaled, array_unscaled)
 
     assert np.allclose(closest_point, [[0.5, 0.5]])

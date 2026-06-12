@@ -25,11 +25,11 @@ class DummyModel:
 
 
 def test_gp_problem_evaluate():
-    xl = np.array([1, 2])
-    xu = np.array([3, 4])
+    xl = [1, 2]
+    xu = [3, 4]
 
     model = DummyModel()
-    problem = GPProblem(model=model, bounds=(xl, xu))
+    problem = GPProblem(model=model, lower_bound=xl, upper_bound=xu)
 
     x = np.array([[1.0, 2.0], [3.0, 4.0]])
     out = {}
@@ -46,13 +46,14 @@ def test_gp_problem_evaluate():
 def test_gp_optimiser_shapes():
     model = DummyModel()
 
-    xl = np.array([1, 2])
-    xu = np.array([3, 4])
+    xl = [1, 2]
+    xu = [3, 4]
 
-    problem = GPProblem(model=model, bounds=(xl, xu))
+    model = DummyModel()
+    problem = GPProblem(model=model, lower_bound=xl, upper_bound=xu)
 
     optimiser = NSGAOptimiser(problem, pop_size=50, n_gen=2)
-    scaled, unscaled, X = optimiser.run()
+    scaled, unscaled, X, scalar = optimiser.run()
 
     assert scaled.shape[1] == 2
     assert unscaled.shape[1] == 2
@@ -62,13 +63,14 @@ def test_gp_optimiser_shapes():
 def test_gp_optimiser_scaling_range():
     model = DummyModel()
 
-    xl = np.array([1, 2])
-    xu = np.array([3, 4])
+    xl = [1, 2]
+    xu = [3, 4]
 
-    problem = GPProblem(model=model, bounds=(xl, xu))
+    model = DummyModel()
+    problem = GPProblem(model=model, lower_bound=xl, upper_bound=xu)
 
     optimiser = NSGAOptimiser(problem, pop_size=50, n_gen=2)
-    scaled, _, _ = optimiser.run()
+    scaled, _, _, _ = optimiser.run()
 
     assert np.all(scaled >= 0)
     assert np.all(scaled <= 1)
