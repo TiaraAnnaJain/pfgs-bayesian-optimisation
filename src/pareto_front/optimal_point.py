@@ -63,6 +63,7 @@ class ParetoPointSelector:
         filtered_unscaled_pareto_front = self.unscaled_pareto_front[mask]
 
         if filtered_unscaled_pareto_front.shape[0] == 0:
+            mask = np.ones(self.scaled_pareto_front.shape[0], dtype=bool)
             filtered_scaled_pareto_front = self.scaled_pareto_front
             filtered_unscaled_pareto_front = self.unscaled_pareto_front
 
@@ -87,14 +88,15 @@ class ParetoPointSelector:
         return distance
 
     def closest_points(
-        self, scaled_pareto_front: NDArray[np.float64]
+        self, scaled_pareto_front: NDArray[np.float64], unscaled_pareto_front: NDArray[np.float64]
     ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
         """
         Finds the closest point on Pareto front by minimising Euclidean distance from
         utopia point.
 
         Parameters:
-            scaled_pareto_front (NDArray[np.float64]): filtered pareto front.
+            scaled_pareto_front (NDArray[np.float64]): filtered, scaled pareto front.
+            unscaled_pareto_front (NDArray[np.float64]): filtered, unscaled pareto front
 
         Returns:
             closest_point (NDArray[np.float64]): closest point on scaled Pareto front.
@@ -106,7 +108,7 @@ class ParetoPointSelector:
 
         closest_idx = np.where(distance == min_distance)[0][0]
 
-        optimal_point = scaled_pareto_front[closest_idx]
+        optimal_point = unscaled_pareto_front[closest_idx]
         optimal_point = np.array(optimal_point).reshape(-1, 2)
 
         closest_point = scaled_pareto_front[closest_idx]
