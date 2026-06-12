@@ -16,7 +16,8 @@ from src.pareto_front.gp_problem import GPProblem
 from src.pareto_front.optimizer import NSGAOptimiser
 from src.pareto_front.optimal_point import ParetoPointSelector
 from src.pareto_front.alpha_calculator import calculate_alpha
-from src.gp_model.plotting import contour_slice_plot
+from plotting.gp_plotting import contour_slice_plot
+from plotting.pareto_front_plot import plot_pareto_front
 
 warnings.filterwarnings(
     "ignore", message=r".*To copy construct from a tensor.*", category=UserWarning
@@ -166,6 +167,14 @@ def main():
         rrmse_plot.append(rrmse)
         alpha_upper.append(alpha_max)
         alpha_lower.append(alpha_min)
+
+        plot_pareto_front(
+            unscaled_pareto_front=unscaled_pareto_front,
+            train_data=train_data,
+            discard_thresholds=adjusted_thresholds,
+            optimal_point=optimal_point,
+            scaler=pareto_front_scaler,
+        )
 
     feasible_alpha_max_nonzero = [alpha for alpha in alpha_upper if alpha != 0]
     feasible_alpha_min = max(alpha_lower)
