@@ -1,6 +1,6 @@
 """Optimisation problem wrapper for GP model for pareto front generation."""
 
-from typing import Any, Tuple
+from typing import Any, Tuple, List
 
 from pymoo.core.problem import Problem
 import numpy as np
@@ -16,17 +16,18 @@ class GPProblem(Problem):
 
     Parameters:
         model (Any): GP model that outputs a predicted mean and variance.
-        bounds (Tuple[NDArray[np.float64], NDArray[np.float64]]): lower and
-            upper bounds for the input variables.
+        lower_bound (List[float]): The lower bounds of GP inputs.
+        upper_bound (List[float]): The upper bounds of GP inputs.
     """
 
     def __init__(
         self,
         model: Any,
-        bounds: Tuple[NDArray[np.float64], NDArray[np.float64]],
+        lower_bound: List[float],
+        upper_bound: List[float],
     ) -> None:
-
-        xl, xu = bounds
+        xl = np.array(lower_bound, dtype=np.float64)
+        xu = np.array(upper_bound, dtype=np.float64)
 
         super().__init__(n_var=len(xl), n_obj=2, n_ieq_constr=0, xl=xl, xu=xu)
 

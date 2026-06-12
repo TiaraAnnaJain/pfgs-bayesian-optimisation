@@ -37,10 +37,14 @@ def test_dataset_validation():
     with pytest.raises(ValueError):
         Dataset(dataset_type="predictions", y_data=prediction_mean)
 
+
 def test_normalise():
     """Test normalisation function to fit and transform."""
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
+
+    lower_bound = {"x1": 1.0, "x2": 2.0}
+    upper_bound = {"x1": 3.0, "x2": 4.0}
 
     train_data = Dataset(
         dataset_type="train",
@@ -48,6 +52,10 @@ def test_normalise():
         y_data=train_y,
         x_labels=["x1", "x2"],
         y_labels=["y"],
+    )
+
+    train_data.add_normalisation_params(
+        lower_bound=lower_bound, upper_bound=upper_bound
     )
     train_data.normalise()
 
@@ -63,12 +71,19 @@ def test_transform():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
+    lower_bound = {"x1": 1.0, "x2": 2.0}
+    upper_bound = {"x1": 3.0, "x2": 4.0}
+
     train_data = Dataset(
         dataset_type="train",
         x_data=train_x,
         y_data=train_y,
         x_labels=["x1", "x2"],
         y_labels=["y"],
+    )
+
+    train_data.add_normalisation_params(
+        lower_bound=lower_bound, upper_bound=upper_bound
     )
     train_data.normalise()
     normalisation_stats = train_data.get_stats()
@@ -98,12 +113,19 @@ def test_de_normalise():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
+    lower_bound = {"x1": 1.0, "x2": 2.0}
+    upper_bound = {"x1": 3.0, "x2": 4.0}
+
     train_data = Dataset(
         dataset_type="train",
         x_data=train_x,
         y_data=train_y,
         x_labels=["x1", "x2"],
         y_labels=["y"],
+    )
+
+    train_data.add_normalisation_params(
+        lower_bound=lower_bound, upper_bound=upper_bound
     )
     train_data.normalise()
     normalisation_stats = train_data.get_stats()
@@ -139,6 +161,9 @@ def test_double_normalisation():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
+    lower_bound = {"x1": 1.0, "x2": 2.0}
+    upper_bound = {"x1": 3.0, "x2": 4.0}
+
     train_data = Dataset(
         dataset_type="train",
         x_data=train_x,
@@ -147,6 +172,9 @@ def test_double_normalisation():
         y_labels=["y"],
     )
 
+    train_data.add_normalisation_params(
+        lower_bound=lower_bound, upper_bound=upper_bound
+    )
     train_data.normalise()
     train_data.normalise()
 
@@ -184,12 +212,19 @@ def test_double_de_normalisation():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
+    lower_bound = {"x1": 1.0, "x2": 2.0}
+    upper_bound = {"x1": 3.0, "x2": 4.0}
+
     train_data = Dataset(
         dataset_type="train",
         x_data=train_x,
         y_data=train_y,
         x_labels=["x1", "x2"],
         y_labels=["y"],
+    )
+
+    train_data.add_normalisation_params(
+        lower_bound=lower_bound, upper_bound=upper_bound
     )
     train_data.normalise()
     normalisation_stats = train_data.get_stats()
@@ -226,12 +261,19 @@ def test_normalisation_double_de_normalisation():
     train_x = np.array([[1.0, 2.0], [3.0, 4.0]])
     train_y = np.array([[10.0], [20.0]])
 
+    lower_bound = {"x1": 1.0, "x2": 2.0}
+    upper_bound = {"x1": 3.0, "x2": 4.0}
+
     train_data = Dataset(
         dataset_type="train",
         x_data=train_x,
         y_data=train_y,
         x_labels=["x1", "x2"],
         y_labels=["y"],
+    )
+
+    train_data.add_normalisation_params(
+        lower_bound=lower_bound, upper_bound=upper_bound
     )
     train_data.normalise()
     normalisation_stats = train_data.get_stats()
@@ -263,6 +305,7 @@ def test_normalisation_double_de_normalisation():
 
     assert np.allclose(predictions_mean_de_normalised, expected_mean)
     assert np.allclose(predictions_error_de_normalised, expected_error)
+
 
 def test_copy():
     """Test copy function."""
