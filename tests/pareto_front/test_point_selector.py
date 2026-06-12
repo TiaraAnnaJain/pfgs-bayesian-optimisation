@@ -26,7 +26,7 @@ def test_discard_areas():
     variance_discard_threshold = np.array([0.3])
 
     calculator = ParetoPointSelector(array, array_unscaled, utopia_point)
-    _, array_scaled, _ = calculator.discard_areas(
+    _, array_scaled, _, _ = calculator.discard_areas(
         mean_discard_threshold=mean_discard_threshold,
         variance_discard_threshold=variance_discard_threshold,
     )

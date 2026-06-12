@@ -100,7 +100,7 @@ def main():
             unscaled_pareto_front=unscaled_pareto_front,
             utopia_point=utopia_point,
         )
-        mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front = (
+        mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front, adjusted_thresholds = (
             optimal_point_evaluator.discard_areas(
                 mean_discard_threshold=np.array([0.3]),
                 variance_discard_threshold=np.array([0.3]),

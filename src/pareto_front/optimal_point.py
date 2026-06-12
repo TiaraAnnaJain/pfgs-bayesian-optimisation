@@ -1,6 +1,6 @@
 """Calculations for optimal point on pareto front."""
 
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -31,15 +31,19 @@ class ParetoPointSelector:
         self,
         mean_discard_threshold: NDArray[np.float64],
         variance_discard_threshold: NDArray[np.float64],
-    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+        step: Union[float, None] = None
+    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
         """
-        Discards points on Pareto front with mean and variance values lower than the threshold input.
+        Discards points on Pareto front with mean and variance values lower than the
+        threshold input. If no point survives, the discard threshold is lowered incrementally.
 
         Parameters:
-            mean_discard_threshold (NDArray[np.float64]): threshold below which mean values
-                will be discarded.
-            variance_discard_threshold (NDArray[np.float64]): threshold below which variance
-                values will be discarded.
+            mean_discard_threshold (NDArray[np.float64]): threshold below which mean
+            values will be discarded.
+            variance_discard_threshold (NDArray[np.float64]): threshold below which
+                variance values will be discarded.
+            step (Union[float, None]): the step by which the threshold decreases if no
+                points are accessible with current threshold, defaults to 0.05.
 
         Returns:
             mask (NDArray[np.float64]): mask of points discarded.
@@ -47,7 +51,12 @@ class ParetoPointSelector:
                 points.
             filtered_unscaled_pareto_front (NDArray[np.float64]): original pareto front
                 points.
+            adjusted_thresholds (NDArray[np.float64]): adjusted discard thresholds if
+                the set threshold is too strict.
         """
+        if step is None:
+            step = 0.05
+
         discard_thresholds = np.hstack(
             [mean_discard_threshold, variance_discard_threshold]
         )
@@ -57,7 +66,19 @@ class ParetoPointSelector:
                 "Number of mean + variance thresholds must match Pareto objectives."
             )
 
-        mask = (self.scaled_pareto_front >= discard_thresholds).all(axis=1)
+        adjusted_thresholds = discard_thresholds.copy()
+
+        while True:
+            mask = (self.scaled_pareto_front >= adjusted_thresholds).all(axis=1)
+
+            if mask.any():
+                break
+
+            adjusted_thresholds = np.maximum(adjusted_thresholds - step, 0.0)
+
+            if np.all(adjusted_thresholds == 0.0):
+                mask = np.ones(self.scaled_pareto_front.shape[0], dtype=bool)
+                break
 
         filtered_scaled_pareto_front = self.scaled_pareto_front[mask]
         filtered_unscaled_pareto_front = self.unscaled_pareto_front[mask]
@@ -67,7 +88,7 @@ class ParetoPointSelector:
             filtered_scaled_pareto_front = self.scaled_pareto_front
             filtered_unscaled_pareto_front = self.unscaled_pareto_front
 
-        return mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front
+        return mask, filtered_scaled_pareto_front, filtered_unscaled_pareto_front, adjusted_thresholds
 
     def distance_calculator(
         self, filtered_scaled_pareto_front: NDArray[np.float64]
