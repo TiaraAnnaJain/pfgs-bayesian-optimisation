@@ -14,7 +14,8 @@ def plot_pareto_front(
     discard_thresholds: NDArray[np.float64],
     optimal_point: NDArray[np.float64],
     scaler: MinMaxScaler,
-) -> None:
+    iteration: int,
+) -> plt.Figure:
     """
     Plots the pareto front with discard thresholds and optimal point
 
@@ -27,6 +28,7 @@ def plot_pareto_front(
         optimal_point (NDArray[np.float64]): unscaled, standardised optimal point
             calculated.
         scaler (MinMaxScaler): scaler used to scale pareto front points.
+        iteration (int): current iteration, passed into plot title.
     """
     pareto_front = train_data.copy()
     pareto_front.y_data = unscaled_pareto_front[:, 0].reshape(-1, 1).copy()
@@ -55,7 +57,7 @@ def plot_pareto_front(
         discard_thresholds[:, 1] * train_data.y_standardiser_std["y"] ** 2
     )
 
-    plt.figure()
+    pareto_plot = plt.figure()
 
     plt.scatter(
         pareto_front.y_data,
@@ -82,7 +84,9 @@ def plot_pareto_front(
         label="Optimal point",
         zorder=5,
     )
-    plt.title("Pareto Front")
+    plt.title(f"Pareto front at iteration {iteration}")
     plt.xlabel("Mean")
     plt.ylabel("Variance")
     plt.legend()
+
+    return pareto_plot
