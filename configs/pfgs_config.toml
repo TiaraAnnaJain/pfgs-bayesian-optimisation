@@ -1,6 +1,5 @@
-[experiment]
 method = "PFGS"
-test_set_types = ["Design Space Only", "Entire Domain"]
+test_set_type = ["Design Space Only", "Entire Domain"]
 utopia_point = [1.0, 1.0]
 
 [nsga_parameters]
