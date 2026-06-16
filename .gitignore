@@ -20,3 +20,12 @@ env/
 
 # OS files
 .DS_Store
+
+#mlflow
+mlflow.db
+mlflow.db-shm
+mlflow.db-wal
+mlruns/
+.mlruns/
+.mlflow.db
+scripts/start_mlflow.sh
