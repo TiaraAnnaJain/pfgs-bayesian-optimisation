@@ -17,7 +17,8 @@ class PSOObjective:
         model (Any): GP model.
         acq_fun (Callable): Acquisition function.
         acq_kwargs: Extra keyword arguments passed to the acquisition function.
-            """
+    """
+
     def __init__(self, model: Any, acq_fun: Callable, device="cpu", **acq_kwargs):
         self.model = model
         self.x_labels = model.x_labels
@@ -44,7 +45,7 @@ class PSOObjective:
         predictions = self.model.predict(candidate_dataset)
         acq_values = self.acq_fun(predictions, **self.acq_kwargs)
 
-        return -acq_values
+        return -np.asarray(acq_values, dtype=np.float64).reshape(-1)
 
 
 class PSOptimiser:
@@ -70,7 +71,7 @@ class PSOptimiser:
     ):
         xl = np.array(lower_bound, dtype=np.float64)
         xu = np.array(upper_bound, dtype=np.float64)
-        bounds = [xl, xu]
+        bounds = (xl, xu)
 
         if n_particles is None:
             n_particles = 200
@@ -78,11 +79,13 @@ class PSOptimiser:
             options = {"c1": 2.0, "c2": 2.0, "w": 0.9}
 
         self.objective = objective
+        init_pos = np.random.uniform(0, 1, size=(n_particles, len(xl)))
         self.optimizer = ps.single.GlobalBestPSO(
             n_particles=n_particles,
             dimensions=len(xl),
             options=options,
             bounds=bounds,
+            init_pos=init_pos,
         )
 
     def run(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
