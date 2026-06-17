@@ -44,8 +44,6 @@ def test_gp_problem_evaluate():
 
 
 def test_gp_optimiser_shapes():
-    model = DummyModel()
-
     xl = [1, 2]
     xu = [3, 4]
 
@@ -61,8 +59,6 @@ def test_gp_optimiser_shapes():
 
 
 def test_gp_optimiser_scaling_range():
-    model = DummyModel()
-
     xl = [1, 2]
     xu = [3, 4]
 
