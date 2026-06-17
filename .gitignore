@@ -29,3 +29,6 @@ mlruns/
 .mlruns/
 .mlflow.db
 scripts/start_mlflow.sh
+
+.report.log
+report.log
