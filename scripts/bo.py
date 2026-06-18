@@ -6,6 +6,7 @@ import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 import matplotlib.pyplot as plt
 
+from src.tracking.config_loader import load_config, resolve_config
 from src.data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
 from src.data.data_processing import generate_data, generate_design_space_dataset
 from src.data.simulation import himmelblau
@@ -33,6 +34,13 @@ warnings.filterwarnings(
 
 
 def main():
+    config = load_config("bo_ucb_config.toml")
+
+    resolved = resolve_config(config, {
+        "alphas": 1.96,
+        "test_set_types": "Entire Domain"
+    })
+
     variables = [
         InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
         InvestigationSpaceVariable(label="x2", lower_bound=-5, upper_bound=5),
@@ -70,9 +78,9 @@ def main():
     model = GPModel()
 
     with MLflowTracker(
-        experiment_name="himmelblau-bo-ei", run_name="test-1"
+        experiment_name="himmelblau-bo-ucb", run_name="test-1"
     ) as tracker:
-        tracker.log_config_from_toml(file_name="bo_ei_config.toml")
+        tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
             x_label=x_labels,
@@ -94,7 +102,7 @@ def main():
             model.train(train_data)
 
             objective = PSOObjective(
-                model=model, acq_fun=compute_ei, train_data=train_data
+                model=model, acq_fun=compute_ucb, alpha=resolved["alphas"]
             )
             optimiser = PSOptimiser(
                 objective=objective,
