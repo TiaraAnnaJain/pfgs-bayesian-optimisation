@@ -2,9 +2,8 @@
 
 import tempfile
 import os
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from pathlib import Path
-import tomllib
 
 import mlflow
 import numpy as np
@@ -26,20 +25,15 @@ class MLflowTracker:
         self._artifact_dir = tempfile.mkdtemp()
         print(mlflow.get_tracking_uri())
 
-    def log_config_from_toml(self, file_name: str):
+    def log_resolved_config(self, resolved_config: Dict[str, Any]):
         """
-        Logs config file details as parameters.
+        Log only parameters used in the run from config file.
 
         Parameters:
-            file_name (str): name of the config file.
+            resolved_config (Dict[str, Any]): fully resolved config.
         """
-        toml_path = PROJECT_ROOT / "configs" / file_name
-        with open(toml_path, "rb") as f:
-            config = tomllib.load(f)
-
-        params = self._flatten(config)
+        params = self._flatten(resolved_config)
         mlflow.log_params(params)
-        mlflow.log_artifact(str(toml_path), artifact_path="config")
 
     @staticmethod
     def _flatten(d: dict, parent_key: str = "") -> dict:
