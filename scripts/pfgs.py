@@ -6,6 +6,7 @@ import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 import matplotlib.pyplot as plt
 
+from src.tracking.config_loader import load_config, resolve_config
 from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
 from src.data.data_processing import generate_data
 from src.data.simulation import himmelblau
@@ -36,6 +37,12 @@ warnings.filterwarnings(
 
 
 def main():
+    config = load_config("pfgs_config.toml")
+
+    resolved = resolve_config(config, {
+        "test_set_type": "Entire Domain"
+    })
+
     variables = [
         InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
         InvestigationSpaceVariable(label="x2", lower_bound=-5, upper_bound=5),
@@ -78,7 +85,7 @@ def main():
     model = GPModel()
 
     with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-1") as tracker:
-        tracker.log_config_from_toml(file_name="pfgs_config.toml")
+        tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
             x_label=x_labels,
