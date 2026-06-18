@@ -4,6 +4,7 @@ from typing import Any, Optional, List, Dict, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+import matplotlib.pyplot as plt
 
 from src.data.data_models import Dataset
 
@@ -14,13 +15,7 @@ def contour_slice_plot(
     x_plot_labels: List[str],
     y_plot_label: str,
     fixed_x_values: Optional[Dict[str, float]] = None,
-) -> Tuple[
-    NDArray[np.float64],
-    NDArray[np.float64],
-    NDArray[np.float64],
-    NDArray[np.float64],
-    NDArray[np.float64],
-]:
+) -> plt.Figure:
     """
     Generate a contour plot of the trained model for any two inputs specified.
 
@@ -33,14 +28,7 @@ def contour_slice_plot(
             inputs which are not to be plotted.
 
     Returns:
-        training_sample_1 (NDArray[np.float64]): Training data values for input 1.
-        training_sample_2 (NDArray[np.float64]): Training data values for input 2.
-        x1 (NDArray[np.float64]): Meshgrid array containing the first input variable
-            values used for the contour plot.
-        x2 (NDArray[np.float64]): Meshgrid array containing the second input variable
-            values used for the contour plot.
-        preds (NDArray[np.float64]): Predicted mean output from the trained model over
-            the x1-x2 grid.
+        gp_plot (plt.Figure): The contour plot.
 
     """
     if len(x_plot_labels) != 2:
@@ -110,4 +98,12 @@ def contour_slice_plot(
     training_sample_1 = train_dataset.x_data[:, x1_index]
     training_sample_2 = train_dataset.x_data[:, x2_index]
 
-    return training_sample_1, training_sample_2, x1, x2, preds
+    gp_plot = plt.figure()
+    cs = plt.contourf(x1, x2, preds, levels=50, cmap="viridis_r")
+    plt.scatter(training_sample_1, training_sample_2, c="r")
+    plt.xlabel(x_plot_labels[0])
+    plt.ylabel(x_plot_labels[1])
+    plt.colorbar(cs)
+    plt.title("GP Predictive Mean post iterations with training points")
+
+    return gp_plot
