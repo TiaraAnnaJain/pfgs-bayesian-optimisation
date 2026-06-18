@@ -1,6 +1,8 @@
 method = "PFGS"
-test_set_type = ["Design Space Only", "Entire Domain"]
 utopia_point = [1.0, 1.0]
+
+[sweep]
+test_set_type = ["Design Space Only", "Entire Domain"]
 
 [nsga_parameters]
 population_size = 200
