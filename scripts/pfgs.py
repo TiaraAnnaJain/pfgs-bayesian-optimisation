@@ -2,23 +2,22 @@
 
 import warnings
 
+import matplotlib.pyplot as plt
 import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
-import matplotlib.pyplot as plt
 
-from src.tracking.config_loader import load_config, resolve_config
 from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
-from src.data.data_processing import generate_data
-from src.data.simulation import himmelblau
-from src.data.data_processing import Dataset
-from src.gp_model.model import GPModel
-from src.gp_model.analysis import compute_rrmse
-from src.pareto_front.gp_problem import GPProblem
-from src.pareto_front.optimizer import NSGAOptimiser
-from src.pareto_front.optimal_point import ParetoPointSelector
-from src.pareto_front.alpha_calculator import calculate_alpha
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
+from src.data.data_processing import Dataset, generate_data
+from src.data.simulation import himmelblau
+from src.gp_model.analysis import compute_rrmse
+from src.gp_model.model import GPModel
+from src.pareto_front.alpha_calculator import calculate_alpha
+from src.pareto_front.gp_problem import GPProblem
+from src.pareto_front.optimal_point import ParetoPointSelector
+from src.pareto_front.optimizer import NSGAOptimiser
+from src.tracking.config_loader import load_config, resolve_config
 from src.tracking.mlflow_logging import MLflowTracker
 
 warnings.filterwarnings(
