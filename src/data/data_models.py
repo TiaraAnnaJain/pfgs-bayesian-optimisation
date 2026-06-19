@@ -94,7 +94,7 @@ class Dataset:
 
         if self.dataset_type in ("predictions", "pareto_front"):
             if self.y_data is None or self.y_errors is None:
-                raise ValueError("Mean and variance must be provided.")
+                raise ValueError("Mean and standard deviation must be provided.")
             if self.y_labels is None:
                 raise ValueError("y_labels must be provided.")
 
@@ -231,7 +231,7 @@ class Dataset:
                         self.y_errors = self.y_errors.reshape(-1, 1)
                     self.y_errors = np.asarray(self.y_errors, dtype=np.float64)
                     self.y_errors[:, i] = (
-                        self.y_errors[:, i] * self.y_standardiser_std[label] ** 2
+                        self.y_errors[:, i] * self.y_standardiser_std[label]
                     )
 
         self.normalised = False

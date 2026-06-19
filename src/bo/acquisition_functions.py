@@ -13,15 +13,14 @@ def compute_ucb(predictions: Dataset, alpha: float) -> NDArray[np.float64]:
     Computes the UCB function for a given mean and variance.
 
     Parameters:
-        predictions (Dataset): mean and variance predictions from GP output.
+        predictions (Dataset): mean and standard deviation predictions from GP output.
         alpha (float): alpha parameter
 
     Returns:
         ucb (NDArray[np.float64]): UCB function values
     """
-    std_dev = np.sqrt(predictions.y_errors)
 
-    ucb = predictions.y_data + (std_dev * alpha)
+    ucb = predictions.y_data + (predictions.y_errors * alpha)
     return ucb
 
 
@@ -30,15 +29,13 @@ def compute_ei(predictions: Dataset, train_data: Dataset) -> NDArray[np.float64]
     Computes the expected improvement acquisition function for a given mean and variance.
 
     Parameters:
-        predictions (Dataset): mean and variance predictions from GP output.
+        predictions (Dataset): mean and standard deviation predictions from GP output.
         train_data (Dataset): training data for train outputs.
 
     Returns:
         ei (NDArray[np.float64]): EI function values.
     """
-    std = np.sqrt(predictions.y_errors)
-
-    std_tensor = torch.tensor(std, dtype=torch.float64)
+    std_tensor = torch.tensor(predictions.y_errors, dtype=torch.float64)
     mean_tensor = torch.tensor(predictions.y_data, dtype=torch.float64)
 
     normal = Normal(torch.zeros_like(mean_tensor), torch.ones_like(mean_tensor))

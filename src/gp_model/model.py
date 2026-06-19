@@ -62,7 +62,7 @@ class GPModel:
             dataset (Dataset): copy of recipes for predictions, only contains x_data.
 
         Returns:
-            predictions (Dataset): mean and variance predictions.
+            predictions (Dataset): mean and standard deviation predictions.
         """
 
         if dataset.x_labels != self.x_labels:
@@ -79,11 +79,11 @@ class GPModel:
         with torch.no_grad():
             posterior = self.model.posterior(test_x, observation_noise=False)
             mean = posterior.mean.squeeze(-1).cpu().numpy()
-            var = posterior.variance.squeeze(-1).cpu().numpy()
+            std_dev = posterior.variance.squeeze(-1).sqrt().cpu().numpy()
 
         dataset.dataset_type = "predictions"
         dataset.y_data = mean
-        dataset.y_errors = var
+        dataset.y_errors = std_dev
         dataset.y_labels = self.y_labels
         dataset.normalised = True
         dataset.check()

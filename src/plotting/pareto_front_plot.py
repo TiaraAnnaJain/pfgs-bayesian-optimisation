@@ -43,7 +43,7 @@ def plot_pareto_front(
         + train_data.y_standardiser_mean["y"]
     )
     optimal_point_destandardised[:, 1] = (
-        optimal_point[:, 1] * train_data.y_standardiser_std["y"] ** 2
+        optimal_point[:, 1] * train_data.y_standardiser_std["y"]
     )
 
     discard_thresholds = scaler.inverse_transform(discard_thresholds.reshape(1, -1))
@@ -54,7 +54,7 @@ def plot_pareto_front(
         + train_data.y_standardiser_mean["y"]
     )
     discard_thresholds_destandardised[:, 1] = (
-        discard_thresholds[:, 1] * train_data.y_standardiser_std["y"] ** 2
+        discard_thresholds[:, 1] * train_data.y_standardiser_std["y"]
     )
 
     pareto_plot = plt.figure()

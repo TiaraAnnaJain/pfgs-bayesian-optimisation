@@ -21,17 +21,17 @@ def calculate_alpha(
              alpha values.
     """
     optimal_mean = float(closest_point[0, 0])
-    optimal_var = float(closest_point[0, 1])
+    optimal_std_dev = float(closest_point[0, 1])
 
     lower_bounds = []
     upper_bounds = []
 
-    for mean, var in pareto_front:
-        if var < optimal_var:
-            alpha_lower = (mean - optimal_mean) / (optimal_var - var)
+    for mean, std_dev in pareto_front:
+        if std_dev < optimal_std_dev:
+            alpha_lower = (mean - optimal_mean) / (optimal_std_dev - std_dev)
             lower_bounds.append(alpha_lower)
-        elif var > optimal_var:
-            alpha_upper = (mean - optimal_mean) / (optimal_var - var)
+        elif std_dev > optimal_std_dev:
+            alpha_upper = (mean - optimal_mean) / (optimal_std_dev - std_dev)
             upper_bounds.append(alpha_upper)
         else:
             if optimal_mean < mean:

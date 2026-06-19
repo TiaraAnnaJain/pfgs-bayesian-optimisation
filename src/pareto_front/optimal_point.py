@@ -30,7 +30,7 @@ class ParetoPointSelector:
     def discard_areas(
         self,
         mean_discard_threshold: NDArray[np.float64],
-        variance_discard_threshold: NDArray[np.float64],
+        std_dev_discard_threshold: NDArray[np.float64],
         step: Union[float, None] = None,
     ) -> Tuple[
         NDArray[np.float64],
@@ -39,14 +39,14 @@ class ParetoPointSelector:
         NDArray[np.float64],
     ]:
         """
-        Discards points on Pareto front with mean and variance values lower than the
+        Discards points on Pareto front with mean and standard deviation values lower than the
         threshold input. If no point survives, the discard threshold is lowered incrementally.
 
         Parameters:
             mean_discard_threshold (NDArray[np.float64]): threshold below which mean
             values will be discarded.
-            variance_discard_threshold (NDArray[np.float64]): threshold below which
-                variance values will be discarded.
+            std_dev_discard_threshold (NDArray[np.float64]): threshold below which
+                standard deviation values will be discarded.
             step (Union[float, None]): the step by which the threshold decreases if no
                 points are accessible with current threshold, defaults to 0.05.
 
@@ -63,12 +63,12 @@ class ParetoPointSelector:
             step = 0.05
 
         discard_thresholds = np.hstack(
-            [mean_discard_threshold, variance_discard_threshold]
+            [mean_discard_threshold, std_dev_discard_threshold]
         )
 
         if discard_thresholds.shape[0] != self.scaled_pareto_front.shape[1]:
             raise ValueError(
-                "Number of mean + variance thresholds must match Pareto objectives."
+                "Number of mean + standard deviation thresholds must match Pareto objectives."
             )
 
         adjusted_thresholds = discard_thresholds.copy()

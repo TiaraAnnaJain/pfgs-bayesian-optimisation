@@ -83,7 +83,7 @@ def main():
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-1") as tracker:
+    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="change-model-output-sd") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
