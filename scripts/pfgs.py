@@ -79,7 +79,7 @@ def main():
     utopia_point = np.array([1.0, 1.0])
 
     mean_discard_threshold = np.array([0.3])
-    variance_discard_threshold = np.array([0.3])
+    std_dev_discard_threshold = np.array([0.3])
 
     model = GPModel()
 
@@ -90,7 +90,7 @@ def main():
             x_label=x_labels,
             y_label=y_labels,
             mean_discard_threshold=mean_discard_threshold,
-            variance_discard_threshold=variance_discard_threshold,
+            std_dev_discard_threshold=std_dev_discard_threshold,
             simulation_name="himmelblau",
             variables=variables,
         )
@@ -136,7 +136,7 @@ def main():
                 adjusted_thresholds,
             ) = optimal_point_evaluator.discard_areas(
                 mean_discard_threshold=mean_discard_threshold,
-                variance_discard_threshold=variance_discard_threshold,
+                std_dev_discard_threshold=std_dev_discard_threshold,
             )
             closest_point, optimal_idx, optimal_point = (
                 optimal_point_evaluator.closest_points(

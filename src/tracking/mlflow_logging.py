@@ -54,7 +54,7 @@ class MLflowTracker:
         simulation_name: str,
         variables: List[InvestigationSpaceVariable],
         mean_discard_threshold: Optional[NDArray[np.float64]] = None,
-        variance_discard_threshold: Optional[NDArray[np.float64]] = None,
+        std_dev_discard_threshold: Optional[NDArray[np.float64]] = None,
     ):
         """
         Logs experiment setup as parameters.
@@ -66,7 +66,7 @@ class MLflowTracker:
             variables (List[InvestigationSpaceVariable]): variables to be logged.
             mean_discard_threshold (Optional[NDArray[np.float64]]): mean discard
                 threshold on pareto front.
-            variance_discard_threshold (Optional[NDArray[np.float64]]): variance
+            std_dev_discard_threshold (Optional[NDArray[np.float64]]): std_dev
                 discard threshold on pareto front.
         """
         bounds = {
@@ -84,13 +84,13 @@ class MLflowTracker:
 
         if (
             mean_discard_threshold is not None
-            and variance_discard_threshold is not None
+            and std_dev_discard_threshold is not None
         ):
             mlflow.log_params(
                 {
                     "discard_thresholds": [
                         mean_discard_threshold.item(),
-                        variance_discard_threshold.item(),
+                        std_dev_discard_threshold.item(),
                     ],
                 }
             )
@@ -145,7 +145,7 @@ class MLflowTracker:
             mlflow.log_metrics(
                 {
                     "adjusted_thresholds_mean": round(float(adjusted_thresholds[0]), 2),
-                    "adjusted_thresholds_variance": round(
+                    "adjusted_thresholds_std_dev": round(
                         float(adjusted_thresholds[1]), 2
                     ),
                 },
