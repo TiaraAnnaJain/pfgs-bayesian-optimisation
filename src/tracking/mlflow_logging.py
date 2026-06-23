@@ -157,6 +157,7 @@ class MLflowTracker:
         final_gp_fig: plt.Figure,
         rrmse_fig: plt.Figure,
         alpha_fig: Optional[plt.Figure] = None,
+        train_data_max_fig: Optional[plt.Figure] = None,
     ):
         """
         Logs final results and figures.
@@ -171,6 +172,9 @@ class MLflowTracker:
 
         if alpha_fig is not None:
             self._log_fig(alpha_fig, "final/alpha_plot.png")
+
+        if train_data_max_fig is not None:
+            self._log_fig(train_data_max_fig, "final/train_data_max_final.png")
 
     def _log_fig(self, fig: plt.Figure, artifact_path: str):
         """
