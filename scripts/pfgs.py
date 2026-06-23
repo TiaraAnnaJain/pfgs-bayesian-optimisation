@@ -203,23 +203,21 @@ def main():
                 iteration=i + 1,
             )
 
-            """
             gp_plot_iter = contour_slice_plot(
                 trained_model=model,
                 train_dataset=train_data,
                 x_plot_labels=x_labels,
-                y_plot_label="y"
+                y_plot_label="y",
             )
-            """
 
             tracker.log_iteration(
-                step=i,
+                step=i+1,
                 rrmse=rrmse,
                 alpha_min=alpha_min,
                 alpha_max=alpha_max,
                 adjusted_thresholds=discard_thresholds,
                 pareto_fig=pareto_front_plot,
-                # gp_fig=gp_plot_iter,
+                gp_fig=gp_plot_iter,
             )
 
         feasible_alpha_max_nonzero = [alpha for alpha in alpha_upper if alpha != 0]

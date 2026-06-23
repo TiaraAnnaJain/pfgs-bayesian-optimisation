@@ -55,8 +55,9 @@ def contour_slice_plot(
     x1_ub = train_dataset.x_normaliser_max[x1_label]
     x2_ub = train_dataset.x_normaliser_max[x2_label]
 
-    x_1 = np.linspace(x1_lb, x1_ub, 100)
-    x_2 = np.linspace(x2_lb, x2_ub, 100)
+    x_1 = np.linspace(x1_lb, x1_ub, 10)
+    x_2 = np.linspace(x2_lb, x2_ub, 10)
+
     x1, x2 = np.meshgrid(x_1, x_2, indexing="xy")
 
     n_points = x1.size
@@ -95,7 +96,7 @@ def contour_slice_plot(
     predictions.de_normalise()
 
     y_index = train_dataset.y_labels.index(y_plot_label)
-    preds = predictions.y_data[:, y_index].reshape(100, 100)
+    preds = predictions.y_data[:, y_index].reshape(10, 10)
 
     training_sample_1 = train_dataset.x_data[:, x1_index]
     training_sample_2 = train_dataset.x_data[:, x2_index]
