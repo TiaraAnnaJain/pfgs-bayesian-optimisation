@@ -38,9 +38,7 @@ warnings.filterwarnings(
 def main():
     config = load_config("pfgs_config.toml")
 
-    resolved = resolve_config(config, {
-        "test_set_type": "Entire Domain"
-    })
+    resolved = resolve_config(config, {"test_set_type": "Entire Domain"})
 
     variables = [
         InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
@@ -78,12 +76,14 @@ def main():
 
     utopia_point = np.array([1.0, 1.0])
 
-    mean_discard_threshold = np.array([0.3])
-    std_dev_discard_threshold = np.array([0.3])
+    mean_discard_threshold = np.array([1200])
+    std_dev_discard_threshold = np.array([200])
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="change-model-output-sd") as tracker:
+    with MLflowTracker(
+        experiment_name="himmelblau-pfgs", run_name="test-1"
+    ) as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
@@ -100,6 +100,7 @@ def main():
         alpha_lower = []
 
         num_iter = 95
+        relaxed_thresholds = False
 
         for i in range(num_iter):
             train_data.add_normalisation_params(
@@ -118,30 +119,39 @@ def main():
 
             optimizer = NSGAOptimiser(problem=problem, pop_size=100, n_gen=10)
             (
-                scaled_pareto_front,
-                unscaled_pareto_front,
+                pareto_front_points,
                 input_values,
-                pareto_front_scaler,
             ) = optimizer.run()
 
+            pareto_front = train_data.copy()
+            pareto_front.dataset_type = "pareto_front"
+            pareto_front.y_data = pareto_front_points[:, 0]
+            pareto_front.y_errors = pareto_front_points[:, 1]
+            pareto_front.normalised = True
+            pareto_front.de_normalise()
+
             optimal_point_evaluator = ParetoPointSelector(
-                scaled_pareto_front=scaled_pareto_front,
-                unscaled_pareto_front=unscaled_pareto_front,
+                pareto_front=pareto_front,
                 utopia_point=utopia_point,
             )
             (
                 mask,
-                filtered_scaled_pareto_front,
-                filtered_unscaled_pareto_front,
-                adjusted_thresholds,
+                filtered_pareto_front,
+                discard_thresholds,
+                stop_optimisation,
+                relaxed_thresholds,
             ) = optimal_point_evaluator.discard_areas(
                 mean_discard_threshold=mean_discard_threshold,
                 std_dev_discard_threshold=std_dev_discard_threshold,
+                has_relaxed_threshold=relaxed_thresholds,
             )
-            closest_point, optimal_idx, optimal_point = (
+
+            if stop_optimisation:
+                break
+
+            closest_point, optimal_idx, optimal_point, scaled_pareto_front = (
                 optimal_point_evaluator.closest_points(
-                    scaled_pareto_front=filtered_scaled_pareto_front,
-                    unscaled_pareto_front=filtered_unscaled_pareto_front,
+                    filtered_pareto_front=filtered_pareto_front
                 )
             )
 
@@ -192,11 +202,9 @@ def main():
             alpha_lower.append(alpha_min)
 
             pareto_front_plot = plot_pareto_front(
-                unscaled_pareto_front=unscaled_pareto_front,
-                train_data=train_data,
-                discard_thresholds=adjusted_thresholds,
+                pareto_front=pareto_front,
+                discard_thresholds=discard_thresholds,
                 optimal_point=optimal_point,
-                scaler=pareto_front_scaler,
                 iteration=i + 1,
             )
 
@@ -214,7 +222,7 @@ def main():
                 rrmse=rrmse,
                 alpha_min=alpha_min,
                 alpha_max=alpha_max,
-                adjusted_thresholds=adjusted_thresholds,
+                adjusted_thresholds=discard_thresholds,
                 pareto_fig=pareto_front_plot,
                 # gp_fig=gp_plot_iter,
             )

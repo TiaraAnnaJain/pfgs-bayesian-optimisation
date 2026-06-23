@@ -31,6 +31,8 @@ def contour_slice_plot(
         gp_plot (plt.Figure): The contour plot.
 
     """
+    train_dataset.de_normalise()
+
     if len(x_plot_labels) != 2:
         raise ValueError("Exactly two x labels must be provided.")
 

@@ -4,6 +4,9 @@ from typing import Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
+from sklearn.preprocessing import MinMaxScaler
+
+from src.data.data_models import Dataset
 
 
 class ParetoPointSelector:
@@ -12,26 +15,115 @@ class ParetoPointSelector:
     defined utopia point.
 
     Parameters:
-        scaled_pareto_front (NDArray[np.float64]): scaled pareto front points.
-        unscaled_pareto_front (NDArray[np.float64]): unscaled pareto front points.
+        pareto_front (Dataset): unscaled, de-normalised pareto front points.
         utopia_point (NDArray[np.float64]): utopia point as reference point.
     """
 
     def __init__(
         self,
-        scaled_pareto_front: NDArray[np.float64],
-        unscaled_pareto_front: NDArray[np.float64],
+        pareto_front: Dataset,
         utopia_point: NDArray[np.float64],
     ) -> None:
-        self.scaled_pareto_front = scaled_pareto_front
-        self.unscaled_pareto_front = unscaled_pareto_front
+        self.pareto_front = pareto_front
         self.utopia_point = utopia_point
+
+    def __post__init(self):
+        """Validations to make sure pareto front is de-normalised."""
+        if self.pareto_front.normalised:
+            raise ValueError("Pareto front must not be normalised.")
+
+        if self.pareto_front.y_data is None or self.pareto_front.y_errors is None:
+            raise ValueError(
+                "Pareto front must contain both mean and standard deviation."
+            )
 
     def discard_areas(
         self,
         mean_discard_threshold: NDArray[np.float64],
         std_dev_discard_threshold: NDArray[np.float64],
-        step: Union[float, None] = None,
+        has_relaxed_threshold: bool,
+    ) -> Tuple[
+        NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], bool, bool
+    ]:
+        """
+        Discards points on Pareto front with mean and standard deviation values lower than the
+        threshold input. If no point survives, the standard deviation discard threshold is halved
+        once after which optimisation loop breaks.
+
+        Parameters:
+            mean_discard_threshold (NDArray[np.float64]): threshold below which mean
+            values will be discarded.
+            std_dev_discard_threshold (NDArray[np.float64]): threshold below which
+                standard deviation values will be discarded.
+            has_relaxed_threshold (bool): flag to see if standard deviation discard
+                thresholds have been relaxed.
+
+        Returns:
+            mask (NDArray[np.float64]): mask of points discarded.
+            filtered_pareto_front (NDArray[np.float64]): filtered pareto front
+                points.
+            stop_optimisation (bool): flag to stop optimisation.
+            has_relaxed_threshold (bool): flag to see if standard deviation discard
+                thresholds have been relaxed.
+        """
+        pareto_front_points = np.column_stack(
+            (self.pareto_front.y_data, self.pareto_front.y_errors)
+        )
+        discard_thresholds = np.hstack(
+            [mean_discard_threshold, std_dev_discard_threshold]
+        )
+
+        if discard_thresholds.shape[0] != pareto_front_points.shape[1]:
+            raise ValueError(
+                "Number of mean + standard deviation thresholds must match Pareto objectives."
+            )
+
+        stop_optimisation = False
+
+        mask = (pareto_front_points >= discard_thresholds).all(axis=1)
+
+        if not mask.any():
+            if not has_relaxed_threshold:
+                adjusted_std_dev = std_dev_discard_threshold / 2
+                discard_thresholds = np.hstack(
+                    [mean_discard_threshold, adjusted_std_dev]
+                )
+                mask = (pareto_front_points >= discard_thresholds).all(axis=1)
+                has_relaxed_threshold = True
+            else:
+                stop_optimisation = True
+
+        filtered_pareto_front = pareto_front_points[mask]
+
+        return (
+            mask,
+            filtered_pareto_front,
+            discard_thresholds,
+            stop_optimisation,
+            has_relaxed_threshold,
+        )
+
+    def distance_calculator(
+        self, scaled_filtered_pareto_front: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
+        """
+        Euclidean distance calculator between points on pareto front and utopia point.
+
+        Parameters:
+            scaled_filtered_pareto_front (NDArray[np.float64]): filtered scaled pareto
+                front points.
+
+        Returns:
+            distance (NDArray[np.float64]): vector of Euclidean distances.
+        """
+        distance = np.linalg.norm(
+            scaled_filtered_pareto_front - self.utopia_point, axis=1
+        )
+        return distance
+
+    def closest_points(
+        self,
+        filtered_pareto_front: NDArray[np.float64],
     ) -> Tuple[
         NDArray[np.float64],
         NDArray[np.float64],
@@ -39,112 +131,33 @@ class ParetoPointSelector:
         NDArray[np.float64],
     ]:
         """
-        Discards points on Pareto front with mean and standard deviation values lower than the
-        threshold input. If no point survives, the discard threshold is lowered incrementally.
-
-        Parameters:
-            mean_discard_threshold (NDArray[np.float64]): threshold below which mean
-            values will be discarded.
-            std_dev_discard_threshold (NDArray[np.float64]): threshold below which
-                standard deviation values will be discarded.
-            step (Union[float, None]): the step by which the threshold decreases if no
-                points are accessible with current threshold, defaults to 0.05.
-
-        Returns:
-            mask (NDArray[np.float64]): mask of points discarded.
-            filtered_scaled_pareto_front (NDArray[np.float64]): filtered pareto front
-                points.
-            filtered_unscaled_pareto_front (NDArray[np.float64]): original pareto front
-                points.
-            adjusted_thresholds (NDArray[np.float64]): adjusted discard thresholds if
-                the set threshold is too strict.
-        """
-        if step is None:
-            step = 0.05
-
-        discard_thresholds = np.hstack(
-            [mean_discard_threshold, std_dev_discard_threshold]
-        )
-
-        if discard_thresholds.shape[0] != self.scaled_pareto_front.shape[1]:
-            raise ValueError(
-                "Number of mean + standard deviation thresholds must match Pareto objectives."
-            )
-
-        adjusted_thresholds = discard_thresholds.copy()
-
-        while True:
-            mask = (self.scaled_pareto_front >= adjusted_thresholds).all(axis=1)
-
-            if mask.any():
-                break
-
-            adjusted_thresholds = np.maximum(adjusted_thresholds - step, 0.0)
-
-            if np.all(adjusted_thresholds == 0.0):
-                mask = np.ones(self.scaled_pareto_front.shape[0], dtype=bool)
-                break
-
-        filtered_scaled_pareto_front = self.scaled_pareto_front[mask]
-        filtered_unscaled_pareto_front = self.unscaled_pareto_front[mask]
-
-        if filtered_unscaled_pareto_front.shape[0] == 0:
-            mask = np.ones(self.scaled_pareto_front.shape[0], dtype=bool)
-            filtered_scaled_pareto_front = self.scaled_pareto_front
-            filtered_unscaled_pareto_front = self.unscaled_pareto_front
-
-        return (
-            mask,
-            filtered_scaled_pareto_front,
-            filtered_unscaled_pareto_front,
-            adjusted_thresholds,
-        )
-
-    def distance_calculator(
-        self, filtered_scaled_pareto_front: NDArray[np.float64]
-    ) -> NDArray[np.float64]:
-        """
-        Euclidean distance calculator between points on pareto front and utopia point.
-
-        Parameters:
-            filtered_scaled_pareto_front (NDArray[np.float64]): filtered scaled pareto
-                front points.
-
-        Returns:
-            distance (NDArray[np.float64]): vector of Euclidean distances.
-        """
-        distance = np.linalg.norm(
-            filtered_scaled_pareto_front - self.utopia_point, axis=1
-        )
-        return distance
-
-    def closest_points(
-        self,
-        scaled_pareto_front: NDArray[np.float64],
-        unscaled_pareto_front: NDArray[np.float64],
-    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
-        """
         Finds the closest point on Pareto front by minimising Euclidean distance from
         utopia point.
 
         Parameters:
-            scaled_pareto_front (NDArray[np.float64]): filtered, scaled pareto front.
-            unscaled_pareto_front (NDArray[np.float64]): filtered, unscaled pareto front
+            filtered_pareto_front (NDArray[np.float64]): filtered pareto front.
 
         Returns:
             closest_point (NDArray[np.float64]): closest point on scaled Pareto front.
             closest_idx (NDArray[np.float64]): indices of closest point on Pareto front.
             optimal_point (NDArray[np.float64]): closest point on unscaled Pareto front.
+            scaled_pareto_front (NDArray[np.float64]): scaled, unfiltered Pareto front.
         """
-        distance = self.distance_calculator(scaled_pareto_front)
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        scaled_filtered_pareto_front = scaler.fit_transform(filtered_pareto_front)
+        scaled_pareto_front = scaler.fit_transform(
+            np.column_stack((self.pareto_front.y_data, self.pareto_front.y_errors))
+        )
+
+        distance = self.distance_calculator(scaled_filtered_pareto_front)
         min_distance = distance.min()
 
         closest_idx = np.where(distance == min_distance)[0][0]
 
-        optimal_point = unscaled_pareto_front[closest_idx]
+        optimal_point = filtered_pareto_front[closest_idx]
         optimal_point = np.array(optimal_point).reshape(-1, 2)
 
-        closest_point = scaled_pareto_front[closest_idx]
+        closest_point = scaled_filtered_pareto_front[closest_idx]
         closest_point = np.array(closest_point).reshape(-1, 2)
 
-        return closest_point, closest_idx, optimal_point
+        return closest_point, closest_idx, optimal_point, scaled_pareto_front

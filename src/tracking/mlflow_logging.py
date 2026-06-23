@@ -82,10 +82,7 @@ class MLflowTracker:
             }
         )
 
-        if (
-            mean_discard_threshold is not None
-            and std_dev_discard_threshold is not None
-        ):
+        if mean_discard_threshold is not None and std_dev_discard_threshold is not None:
             mlflow.log_params(
                 {
                     "discard_thresholds": [
