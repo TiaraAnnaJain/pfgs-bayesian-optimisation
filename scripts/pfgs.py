@@ -81,7 +81,7 @@ def main():
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-2") as tracker:
+    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-3") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
@@ -96,6 +96,7 @@ def main():
         rrmse_plot = []
         alpha_upper = []
         alpha_lower = []
+        train_data_max = []
 
         num_iter = 95
 
@@ -195,6 +196,7 @@ def main():
             rrmse_plot.append(rrmse)
             alpha_upper.append(alpha_max)
             alpha_lower.append(alpha_min)
+            train_data_max.append(train_data.y_data.max())
 
             pareto_front_plot = plot_pareto_front(
                 pareto_front=pareto_front,
@@ -241,6 +243,10 @@ def main():
         plt.plot(x, rrmse_plot)
         ax.set(title="RRMSE over iterations", xlabel="iterations", ylabel="RRMSE")
 
+        train_data_max_fig, ax = plt.subplots()
+        plt.plot(x, train_data_max)
+        ax.set(title="Maximum value of train data", xlabel="iterations", ylabel="training data max")
+
         gp_final_fig = contour_slice_plot(
             trained_model=model,
             train_dataset=train_data,
@@ -253,6 +259,7 @@ def main():
             final_gp_fig=gp_final_fig,
             rrmse_fig=rrmse_fig,
             alpha_fig=alpha_fig,
+            train_data_max_fig=train_data_max_fig,
         )
 
         tracker.finish()
