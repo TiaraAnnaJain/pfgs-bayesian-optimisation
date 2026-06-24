@@ -41,30 +41,24 @@ class ParetoPointSelector:
         self,
         mean_discard_threshold: NDArray[np.float64],
         std_dev_discard_threshold: NDArray[np.float64],
-        has_relaxed_threshold: bool,
     ) -> Tuple[
-        NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], bool, bool
+        NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], bool,
     ]:
         """
         Discards points on Pareto front with mean and standard deviation values lower than the
-        threshold input. If no point survives, the standard deviation discard threshold is halved
-        once after which optimisation loop breaks.
+        threshold input. If no point survives, the optimisation loop breaks.
 
         Parameters:
             mean_discard_threshold (NDArray[np.float64]): threshold below which mean
             values will be discarded.
             std_dev_discard_threshold (NDArray[np.float64]): threshold below which
                 standard deviation values will be discarded.
-            has_relaxed_threshold (bool): flag to see if standard deviation discard
-                thresholds have been relaxed.
 
         Returns:
             mask (NDArray[np.float64]): mask of points discarded.
             filtered_pareto_front (NDArray[np.float64]): filtered pareto front
                 points.
             stop_optimisation (bool): flag to stop optimisation.
-            has_relaxed_threshold (bool): flag to see if standard deviation discard
-                thresholds have been relaxed.
         """
         pareto_front_points = np.column_stack(
             (self.pareto_front.y_data, self.pareto_front.y_errors)
@@ -79,19 +73,10 @@ class ParetoPointSelector:
             )
 
         stop_optimisation = False
-
         mask = (pareto_front_points >= discard_thresholds).all(axis=1)
 
         if not mask.any():
-            if not has_relaxed_threshold:
-                adjusted_std_dev = std_dev_discard_threshold / 2
-                discard_thresholds = np.hstack(
-                    [mean_discard_threshold, adjusted_std_dev]
-                )
-                mask = (pareto_front_points >= discard_thresholds).all(axis=1)
-                has_relaxed_threshold = True
-            else:
-                stop_optimisation = True
+            stop_optimisation = True
 
         filtered_pareto_front = pareto_front_points[mask]
 
@@ -100,7 +85,6 @@ class ParetoPointSelector:
             filtered_pareto_front,
             discard_thresholds,
             stop_optimisation,
-            has_relaxed_threshold,
         )
 
     def distance_calculator(

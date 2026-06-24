@@ -81,9 +81,7 @@ def main():
 
     model = GPModel()
 
-    with MLflowTracker(
-        experiment_name="himmelblau-pfgs", run_name="test-1"
-    ) as tracker:
+    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-2") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
@@ -100,7 +98,6 @@ def main():
         alpha_lower = []
 
         num_iter = 95
-        relaxed_thresholds = False
 
         for i in range(num_iter):
             train_data.add_normalisation_params(
@@ -139,11 +136,9 @@ def main():
                 filtered_pareto_front,
                 discard_thresholds,
                 stop_optimisation,
-                relaxed_thresholds,
             ) = optimal_point_evaluator.discard_areas(
                 mean_discard_threshold=mean_discard_threshold,
                 std_dev_discard_threshold=std_dev_discard_threshold,
-                has_relaxed_threshold=relaxed_thresholds,
             )
 
             if stop_optimisation:
