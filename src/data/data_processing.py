@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from scipy.stats import qmc
 
 from src.data.data_models import Dataset
-from src.data.simulation import himmelblau
+from src.data.simulation import himmelblau, branin
 
 
 def lhs_sampler(
@@ -70,7 +70,7 @@ def generate_data(
         upper_bound=upper_bound,
         seed=seed,
     )
-    y = np.array([himmelblau(x)]).reshape(-1, 1)
+    y = np.array([branin(x)]).reshape(-1, 1)
 
     return Dataset(
         dataset_type=dataset_type,

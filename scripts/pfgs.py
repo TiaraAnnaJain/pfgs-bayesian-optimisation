@@ -10,7 +10,7 @@ from data.investigation_space import InvestigationSpace, InvestigationSpaceVaria
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
 from src.data.data_processing import Dataset, generate_data
-from src.data.simulation import himmelblau
+from src.data.simulation import himmelblau, branin
 from src.gp_model.analysis import compute_rrmse
 from src.gp_model.model import GPModel
 from src.pareto_front.alpha_calculator import calculate_alpha
@@ -41,8 +41,8 @@ def main():
     resolved = resolve_config(config, {"test_set_type": "Entire Domain"})
 
     variables = [
-        InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
-        InvestigationSpaceVariable(label="x2", lower_bound=-5, upper_bound=5),
+        InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=10),
+        InvestigationSpaceVariable(label="x2", lower_bound=0, upper_bound=15),
     ]
 
     space = InvestigationSpace(variables=variables)
@@ -76,12 +76,12 @@ def main():
 
     utopia_point = np.array([1.0, 1.0])
 
-    mean_discard_threshold = np.array([1200])
-    std_dev_discard_threshold = np.array([200])
+    mean_discard_threshold = np.array([0])
+    std_dev_discard_threshold = np.array([0])
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-3") as tracker:
+    with MLflowTracker(experiment_name="branin-pfgs", run_name="negate-branin-with-const-1") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
@@ -89,7 +89,7 @@ def main():
             y_label=y_labels,
             mean_discard_threshold=mean_discard_threshold,
             std_dev_discard_threshold=std_dev_discard_threshold,
-            simulation_name="himmelblau",
+            simulation_name="branin",
             variables=variables,
         )
 
@@ -169,7 +169,7 @@ def main():
             x_new.set_stats(normalisation_stats)
 
             x_new.de_normalise()
-            y_new = himmelblau(x_new.x_data).reshape(1, 1)
+            y_new = branin(x_new.x_data).reshape(1, 1)
 
             train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
             train_data.y_data = np.vstack([train_data.y_data, y_new])
