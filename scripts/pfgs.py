@@ -76,8 +76,8 @@ def main():
 
     utopia_point = np.array([1.0, 1.0])
 
-    mean_discard_threshold = np.array([0])
-    std_dev_discard_threshold = np.array([0])
+    mean_discard_threshold = np.array([150])
+    std_dev_discard_threshold = np.array([1])
 
     model = GPModel()
 
