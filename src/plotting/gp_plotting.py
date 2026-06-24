@@ -1,9 +1,8 @@
 """Generates contour plots of trained GP model."""
 
-from typing import Any, Optional, List, Dict, Tuple
+from typing import Any, Optional, List, Dict, Union
 
 import numpy as np
-from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from src.data.data_models import Dataset
@@ -14,6 +13,7 @@ def contour_slice_plot(
     train_dataset: Dataset,
     x_plot_labels: List[str],
     y_plot_label: str,
+    iteration: Union[int, str],
     fixed_x_values: Optional[Dict[str, float]] = None,
 ) -> plt.Figure:
     """
@@ -24,6 +24,7 @@ def contour_slice_plot(
         train_dataset (Dataset): The training dataset.
         x_plot_labels (List[str]): Labels of input values to plot.
         y_plot_label (str): Label of output to plot.
+        iteration (Union[int, str]): Iteration number.
         fixed_x_values (Optional[Dict[str, float]], optional): Fixed values of other
             inputs which are not to be plotted.
 
@@ -107,6 +108,6 @@ def contour_slice_plot(
     plt.xlabel(x_plot_labels[0])
     plt.ylabel(x_plot_labels[1])
     plt.colorbar(cs)
-    plt.title("GP Predictive Mean post iterations with training points")
+    plt.title(f"GP Predictive Mean post iterations with training points at iteration {iteration}")
 
     return gp_plot

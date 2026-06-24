@@ -208,6 +208,7 @@ def main():
                 train_dataset=train_data,
                 x_plot_labels=x_labels,
                 y_plot_label="y",
+                iteration=i+1,
             )
 
             tracker.log_iteration(
@@ -245,6 +246,7 @@ def main():
             train_dataset=train_data,
             x_plot_labels=x_labels,
             y_plot_label="y",
+            iteration="Final"
         )
 
         tracker.log_final_results(
