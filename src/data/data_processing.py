@@ -1,13 +1,12 @@
 """Generates datasets using LHS sampling."""
 
-from typing import Union, List
+from typing import List, Callable
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import qmc
 
 from src.data.data_models import Dataset
-from src.data.simulation import himmelblau, branin
 
 
 def lhs_sampler(
@@ -37,6 +36,7 @@ def lhs_sampler(
 
 
 def generate_data(
+    simulation: Callable,
     n_samples: int,
     n_vars: int,
     lower_bound: List[float],
@@ -50,6 +50,7 @@ def generate_data(
     Uses LHS sampling to generate datasets.
 
     Parameters:
+        simulation (Callable): Simulation function.
         n_samples (int): Number of samples to generate.
         n_vars (int): Number of dimensions.
         lower_bound (List[float]): Lower bound.
@@ -70,7 +71,7 @@ def generate_data(
         upper_bound=upper_bound,
         seed=seed,
     )
-    y = np.array([branin(x)]).reshape(-1, 1)
+    y = np.array([simulation(x)]).reshape(-1, 1)
 
     return Dataset(
         dataset_type=dataset_type,
@@ -82,25 +83,27 @@ def generate_data(
 
 
 def generate_design_space_dataset(
+    simulation: Callable,
     n_samples_per_region: int,
     delta: float,
     seed: int,
     dataset_type: str,
     x_labels: List[str],
     y_labels: List[str],
-    maxima: Union[NDArray[np.float64], None] = None,
+    maxima: NDArray[np.float64],
 ) -> Dataset:
     """
     Uses LHS sampling to generate dataset in the design space.
 
     Parameters:
+        simulation (Callable): Simulation function.
         n_samples_per_region (int): Number of samples to generate per region.
         delta (float): indicates how large the region should be.
         seed (int): Random seed for reproducibility.
         dataset_type (str): Dataset type.
         x_labels (List[str]): Labels for the dataset input.
         y_labels (List[str]): Labels for the dataset output.
-        maxima (Union[NDArray[np.float64], None]): maxima values of the Himmelblau function.
+        maxima (NDArray[np.float64]): maxima values of the simulation function.
 
     Returns:
         Dataset(x_data, y_data): dataset in the design space.
@@ -122,6 +125,7 @@ def generate_design_space_dataset(
         upper_bound = m + delta
 
         dataset = generate_data(
+            simulation=simulation,
             n_samples=n_samples_per_region,
             n_vars=2,
             lower_bound=lower_bound,

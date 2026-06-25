@@ -10,7 +10,7 @@ from data.investigation_space import InvestigationSpace, InvestigationSpaceVaria
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
 from src.data.data_processing import Dataset, generate_data
-from src.data.simulation import himmelblau, branin
+from src.data.simulation import himmelblau, branin, ackley
 from src.gp_model.analysis import compute_rrmse
 from src.gp_model.model import GPModel
 from src.pareto_front.alpha_calculator import calculate_alpha
@@ -41,8 +41,8 @@ def main():
     resolved = resolve_config(config, {"test_set_type": "Entire Domain"})
 
     variables = [
-        InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=10),
-        InvestigationSpaceVariable(label="x2", lower_bound=0, upper_bound=15),
+        InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
+        InvestigationSpaceVariable(label="x2", lower_bound=-5, upper_bound=5),
     ]
 
     space = InvestigationSpace(variables=variables)
@@ -54,6 +54,7 @@ def main():
     y_labels = ["y"]
 
     train_data = generate_data(
+        simulation=himmelblau,
         n_samples=5,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -64,6 +65,7 @@ def main():
         y_labels=y_labels,
     )
     test_data = generate_data(
+        simulation=himmelblau,
         n_samples=100,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -76,12 +78,12 @@ def main():
 
     utopia_point = np.array([1.0, 1.0])
 
-    mean_discard_threshold = np.array([150])
-    std_dev_discard_threshold = np.array([1])
+    mean_discard_threshold = np.array([1200])
+    std_dev_discard_threshold = np.array([200])
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="branin-pfgs", run_name="negate-branin-with-const-1") as tracker:
+    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-1") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
@@ -89,7 +91,7 @@ def main():
             y_label=y_labels,
             mean_discard_threshold=mean_discard_threshold,
             std_dev_discard_threshold=std_dev_discard_threshold,
-            simulation_name="branin",
+            simulation_name="himmelblau",
             variables=variables,
         )
 
@@ -169,7 +171,7 @@ def main():
             x_new.set_stats(normalisation_stats)
 
             x_new.de_normalise()
-            y_new = branin(x_new.x_data).reshape(1, 1)
+            y_new = himmelblau(x_new.x_data).reshape(1, 1)
 
             train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
             train_data.y_data = np.vstack([train_data.y_data, y_new])

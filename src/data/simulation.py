@@ -48,3 +48,20 @@ def branin(x: NDArray[np.float64]) -> NDArray[np.float64]:
 
     y = 400 - (term1 + term2 + s)
     return y
+
+def ackley(x):
+    """
+        Calculates the modified Ackley function.
+
+        Parameters:
+            x (NDArray[np.float64]): input data.
+
+        Returns:
+            NDArray[np.float64]: computed modified Ackley function.
+    """
+    x1, x2 = x[:, 0], x[:, 1]
+
+    term1 = (-20 * np.exp(-0.2 * np.sqrt(0.5 * (x1**2 + x2**2))))
+    term2 = (-np.exp(0.5 * (np.cos(2 * np.pi * x1) + np.cos(2 * np.pi * x2))))
+
+    return 25 - (term1 + term2 + np.e + 20)
