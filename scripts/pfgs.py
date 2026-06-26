@@ -54,7 +54,7 @@ def main():
     y_labels = ["y"]
 
     train_data = generate_data(
-        simulation=himmelblau,
+        simulation=ackley,
         n_samples=5,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -65,7 +65,7 @@ def main():
         y_labels=y_labels,
     )
     test_data = generate_data(
-        simulation=himmelblau,
+        simulation=ackley,
         n_samples=100,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -78,12 +78,12 @@ def main():
 
     utopia_point = np.array([1.0, 1.0])
 
-    mean_discard_threshold = np.array([1200])
-    std_dev_discard_threshold = np.array([200])
+    mean_discard_threshold = np.array([14])
+    std_dev_discard_threshold = np.array([0.3])
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="himmelblau-pfgs", run_name="test-1") as tracker:
+    with MLflowTracker(experiment_name="ackley-pfgs", run_name="test-2") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
@@ -91,7 +91,7 @@ def main():
             y_label=y_labels,
             mean_discard_threshold=mean_discard_threshold,
             std_dev_discard_threshold=std_dev_discard_threshold,
-            simulation_name="himmelblau",
+            simulation_name="ackley",
             variables=variables,
         )
 
@@ -171,7 +171,7 @@ def main():
             x_new.set_stats(normalisation_stats)
 
             x_new.de_normalise()
-            y_new = himmelblau(x_new.x_data).reshape(1, 1)
+            y_new = ackley(x_new.x_data).reshape(1, 1)
 
             train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
             train_data.y_data = np.vstack([train_data.y_data, y_new])
@@ -213,6 +213,7 @@ def main():
                 x_plot_labels=x_labels,
                 y_plot_label="y",
                 iteration=i+1,
+                x_new=x_new,
             )
 
             tracker.log_iteration(

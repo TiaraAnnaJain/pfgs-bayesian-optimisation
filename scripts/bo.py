@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from src.tracking.config_loader import load_config, resolve_config
 from src.data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
 from src.data.data_processing import generate_data, generate_design_space_dataset
-from src.data.simulation import himmelblau
+from src.data.simulation import himmelblau, branin, ackley
 from src.data.data_models import Dataset
 from src.gp_model.model import GPModel
 from src.gp_model.analysis import compute_rrmse
@@ -37,7 +37,7 @@ def main():
     config = load_config("bo_ucb_config.toml")
 
     resolved = resolve_config(config, {
-        "alphas": 1.96,
+        "alphas": 5,
         "test_set_types": "Entire Domain"
     })
 
@@ -55,6 +55,7 @@ def main():
     y_labels = ["y"]
 
     train_data = generate_data(
+        simulation=ackley,
         n_samples=5,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -65,6 +66,7 @@ def main():
         y_labels=y_labels,
     )
     test_data = generate_data(
+        simulation=ackley,
         n_samples=100,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -77,19 +79,18 @@ def main():
 
     model = GPModel()
 
-    with MLflowTracker(
-        experiment_name="himmelblau-bo-ucb", run_name="test-1"
-    ) as tracker:
+    with MLflowTracker(experiment_name="ackley-bo-ucb", run_name="test-3") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
             x_label=x_labels,
             y_label=y_labels,
-            simulation_name="himmelblau",
+            simulation_name="ackley",
             variables=variables,
         )
 
         rrmse_plot = []
+        train_data_max = []
         num_iter = 95
 
         for i in range(num_iter):
@@ -124,7 +125,7 @@ def main():
             x_new.set_stats(normalisation_stats)
 
             x_new.de_normalise()
-            y_new = himmelblau(x_new.x_data).reshape(1, 1)
+            y_new = ackley(x_new.x_data).reshape(1, 1)
 
             train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
             train_data.y_data = np.vstack([train_data.y_data, y_new])
@@ -147,10 +148,21 @@ def main():
             print(f"Iteration {i + 1}: RRMSE = {rrmse}")
 
             rrmse_plot.append(rrmse)
+            train_data_max.append(train_data.y_data.max())
+
+            gp_plot_iter = contour_slice_plot(
+                trained_model=model,
+                train_dataset=train_data,
+                x_plot_labels=x_labels,
+                y_plot_label="y",
+                iteration=i + 1,
+                x_new=x_new,
+            )
 
             tracker.log_iteration(
                 step=i,
                 rrmse=rrmse,
+                gp_fig=gp_plot_iter,
             )
 
         x = range(len(rrmse_plot))
@@ -159,16 +171,22 @@ def main():
         plt.plot(x, rrmse_plot)
         ax.set(title="RRMSE over iterations", xlabel="iterations", ylabel="RRMSE")
 
+        train_data_max_fig, ax = plt.subplots()
+        plt.plot(x, train_data_max)
+        ax.set(title="Maximum value of train data", xlabel="iterations", ylabel="training data max")
+
         gp_final_fig = contour_slice_plot(
             trained_model=model,
             train_dataset=train_data,
             x_plot_labels=x_labels,
             y_plot_label="y",
+            iteration="Final"
         )
 
         tracker.log_final_results(
             final_gp_fig=gp_final_fig,
             rrmse_fig=rrmse_fig,
+            train_data_max_fig=train_data_max_fig,
         )
 
         tracker.finish()

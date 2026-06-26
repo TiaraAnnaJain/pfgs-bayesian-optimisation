@@ -15,6 +15,7 @@ def contour_slice_plot(
     y_plot_label: str,
     iteration: Union[int, str],
     fixed_x_values: Optional[Dict[str, float]] = None,
+    x_new: Dataset = None
 ) -> plt.Figure:
     """
     Generate a contour plot of the trained model for any two inputs specified.
@@ -22,6 +23,7 @@ def contour_slice_plot(
     Parameters:
         trained_model (Any): The trained model to plot.
         train_dataset (Dataset): The training dataset.
+        x_new (Dataset): new x values appended.
         x_plot_labels (List[str]): Labels of input values to plot.
         y_plot_label (str): Label of output to plot.
         iteration (Union[int, str]): Iteration number.
@@ -105,6 +107,10 @@ def contour_slice_plot(
     gp_plot = plt.figure()
     cs = plt.contourf(x1, x2, preds, levels=50, cmap="viridis_r")
     plt.scatter(training_sample_1, training_sample_2, c="r")
+
+    if x_new is not None:
+        plt.scatter(x_new.x_data[:, 0], x_new.x_data[:, 1], c="w")
+
     plt.xlabel(x_plot_labels[0])
     plt.ylabel(x_plot_labels[1])
     plt.colorbar(cs)
