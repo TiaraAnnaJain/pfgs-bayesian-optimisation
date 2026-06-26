@@ -25,6 +25,7 @@ def test_himmelblau_input_dimensions():
 def test_generate_data():
     """Test data generation and LHS sampling."""
     train = generate_data(
+        simulation=himmelblau,
         n_samples=5,
         n_vars=2,
         lower_bound=[-5, -5],
@@ -40,6 +41,7 @@ def test_generate_data():
     assert train.x_data.max() <= 5
 
     test = generate_data(
+        simulation=himmelblau,
         n_samples=100,
         n_vars=2,
         lower_bound=[-5, -5],
@@ -55,12 +57,21 @@ def test_generate_data():
     assert test.x_data.max() <= 5
 
     design_space = generate_design_space_dataset(
+        simulation=himmelblau,
         n_samples_per_region=25,
         delta=1.5,
         seed=10,
         dataset_type="test",
         x_labels=["x1", "x2"],
         y_labels=["y"],
+        maxima=np.array(
+            [
+                [3.0, 2.0],
+                [-2.805118, 3.131312],
+                [-3.779310, -3.283186],
+                [3.584428, -1.848126],
+            ]
+        )
     )
     assert design_space.x_data.shape == (100, 2)
     assert design_space.y_data.shape == (100, 1)

@@ -1,6 +1,7 @@
 """Loading function for TOML file."""
 
 import tomllib
+
 from typing import Tuple, Union
 from src.config.data_config import (
     PSOConfig,
@@ -28,17 +29,17 @@ def load_config(
     with open(path, "rb") as f:
         cfg = tomllib.load(f)
 
-    experiment_raw = cfg["experiment"]
-    method = experiment_raw["method"]
+    method = cfg["method"]
+    sweep_raw = cfg["sweep"]
 
     if method == "PFGS":
         if "nsga_parameters" not in cfg:
             raise ValueError("PFGS experiment requires [nsga_parameters]")
 
         experiment = ExperimentConfigPFGS(
-            method=experiment_raw["method"],
-            test_set_types=experiment_raw["test_set_types"],
-            utopia_point=experiment_raw["utopia_point"],
+            method=cfg["method"],
+            test_set_types=sweep_raw["test_set_types"],
+            utopia_point=cfg["utopia_point"],
         )
 
         nsga_raw = cfg["nsga_parameters"]
@@ -52,10 +53,10 @@ def load_config(
             raise ValueError("BO experiment requires [pso_parameters]")
 
         experiment = ExperimentConfigBO(
-            method=experiment_raw["method"],
-            acquisition_function=experiment_raw["acquisition_function"],
-            alphas=experiment_raw.get("alphas"),
-            test_set_types=experiment_raw["test_set_types"],
+            method=cfg["method"],
+            acquisition_function=cfg["acquisition_function"],
+            alphas=sweep_raw.get("alphas"),
+            test_set_types=sweep_raw["test_set_types"],
         )
 
         pso_raw = cfg["pso_parameters"]
@@ -65,7 +66,6 @@ def load_config(
             w=pso_raw["w"],
             particles=pso_raw["particles"],
             dimensions=pso_raw["dimensions"],
-            bounds=pso_raw["bounds"],
         )
 
     else:

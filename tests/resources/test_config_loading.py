@@ -8,9 +8,11 @@ from src.config.config_loading import load_config
 def test_config_loading():
     """Test configuration loading from TOML file for experiment and optimizer configurations."""
 
-    experiment_ucb, pso_ucb = load_config("configs/bo_ucb_config.toml")
-    experiment_ei, pso_ei = load_config("configs/bo_ei_config.toml")
-    experiment_pfgs, nsga = load_config("configs/pfgs_config.toml")
+    CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
+
+    experiment_ucb, pso_ucb = load_config(CONFIG_DIR / "bo_ucb_config.toml")
+    experiment_ei, pso_ei = load_config(CONFIG_DIR / "bo_ei_config.toml")
+    experiment_pfgs, nsga = load_config(CONFIG_DIR / "pfgs_config.toml")
 
     assert experiment_ucb.acquisition_function == "UCB"
     assert experiment_ucb.alphas is not None
@@ -23,14 +25,15 @@ def test_config_loading():
     assert experiment_pfgs.method == "PFGS"
     assert nsga.population_size == 200
 
-
 def test_pfgs_missing_nsga_parameters(tmp_path: Path):
-    """PFGS config without [nsga_parameters] should raise ValueError."""
+    """PFGS config without nsga_parameters should raise ValueError."""
 
     config_content = """
-[experiment]
 method = "PFGS"
+
+[sweep]
 test_set_types = ["Design Space Only"]
+
 utopia_point = [0.0, 0.0]
 """
 

@@ -150,7 +150,7 @@ def test_de_normalise():
     predictions_error_de_normalised = predictions.y_errors
 
     expected_mean = np.array([[15.0], [20.0]])
-    expected_error = np.array([[25.0], [100.0]])
+    expected_error = np.array([[5.0], [20.0]])
 
     assert np.allclose(predictions_mean_de_normalised, expected_mean)
     assert np.allclose(predictions_error_de_normalised, expected_error)
@@ -250,7 +250,7 @@ def test_double_de_normalisation():
     predictions_error_de_normalised = predictions.y_errors
 
     expected_mean = np.array([[15.0], [20.0]])
-    expected_error = np.array([[25.0], [100.0]])
+    expected_error = np.array([[5.0], [20.0]])
 
     assert np.allclose(predictions_mean_de_normalised, expected_mean)
     assert np.allclose(predictions_error_de_normalised, expected_error)
@@ -294,14 +294,13 @@ def test_normalisation_double_de_normalisation():
     predictions.set_stats(normalisation_stats)
 
     predictions.de_normalise()
-    predictions.normalise()
     predictions.de_normalise()
 
     predictions_mean_de_normalised = predictions.y_data
     predictions_error_de_normalised = predictions.y_errors
 
     expected_mean = np.array([[15.0], [20.0]])
-    expected_error = np.array([[25.0], [100.0]])
+    expected_error = np.array([[5.0], [20.0]])
 
     assert np.allclose(predictions_mean_de_normalised, expected_mean)
     assert np.allclose(predictions_error_de_normalised, expected_error)

@@ -20,6 +20,7 @@ def make_dummy_dataset():
 
 def test_gp_model():
     dataset = make_dummy_dataset()
+    dataset.add_normalisation_params(lower_bound={"x": 0}, upper_bound={"x": 1})
     dataset.normalise()
 
     model = GPModel()
@@ -39,6 +40,7 @@ def test_gp_model():
 
 def test_training_data_fit():
     dataset = make_dummy_dataset()
+    dataset.add_normalisation_params(lower_bound={"x": 0}, upper_bound={"x": 1})
     dataset.normalise()
 
     model = GPModel()
@@ -57,6 +59,7 @@ def test_training_data_fit():
 
 def test_gp_uncertainty_behavior():
     dataset = make_dummy_dataset()
+    dataset.add_normalisation_params(lower_bound={"x": 0}, upper_bound={"x": 1})
     dataset.normalise()
 
     model = GPModel()

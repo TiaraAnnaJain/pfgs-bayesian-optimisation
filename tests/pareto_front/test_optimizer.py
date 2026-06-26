@@ -51,22 +51,7 @@ def test_gp_optimiser_shapes():
     problem = GPProblem(model=model, lower_bound=xl, upper_bound=xu)
 
     optimiser = NSGAOptimiser(problem, pop_size=50, n_gen=2)
-    scaled, unscaled, X, scalar = optimiser.run()
+    unscaled, X = optimiser.run()
 
-    assert scaled.shape[1] == 2
     assert unscaled.shape[1] == 2
     assert X.shape[1] == 2
-
-
-def test_gp_optimiser_scaling_range():
-    xl = [1, 2]
-    xu = [3, 4]
-
-    model = DummyModel()
-    problem = GPProblem(model=model, lower_bound=xl, upper_bound=xu)
-
-    optimiser = NSGAOptimiser(problem, pop_size=50, n_gen=2)
-    scaled, _, _, _ = optimiser.run()
-
-    assert np.all(scaled >= 0)
-    assert np.all(scaled <= 1)

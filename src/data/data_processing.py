@@ -108,16 +108,6 @@ def generate_design_space_dataset(
     Returns:
         Dataset(x_data, y_data): dataset in the design space.
     """
-    if maxima is None:
-        maxima = np.array(
-            [
-                [3.0, 2.0],
-                [-2.805118, 3.131312],
-                [-3.779310, -3.283186],
-                [3.584428, -1.848126],
-            ]
-        )
-
     x_all, y_all = [], []
 
     for m in maxima:

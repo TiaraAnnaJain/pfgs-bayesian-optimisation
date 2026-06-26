@@ -11,7 +11,6 @@ class PSOConfig:
     w: float
     particles: int
     dimensions: int
-    bounds: list
 
 
 @dataclass(frozen=True)
