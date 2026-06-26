@@ -219,9 +219,9 @@ def main():
             tracker.log_iteration(
                 step=i+1,
                 rrmse=rrmse,
+                train_data_max=train_data.y_data.max(),
                 alpha_min=alpha_min,
                 alpha_max=alpha_max,
-                adjusted_thresholds=discard_thresholds,
                 pareto_fig=pareto_front_plot,
                 gp_fig=gp_plot_iter,
             )

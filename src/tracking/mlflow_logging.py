@@ -96,6 +96,7 @@ class MLflowTracker:
         self,
         step: int,
         rrmse: float,
+        train_data_max: float,
         gp_fig: Optional[plt.Figure] = None,
         pareto_fig: Optional[plt.Figure] = None,
         alpha_min: Optional[float] = None,
@@ -108,6 +109,7 @@ class MLflowTracker:
         Parameters:
             step (int): current iteration.
             rrmse (float): RRMSE value at current iteration.
+            train_data_max (float): maximum training data value.
             gp_fig (Optional[plt.Figure]): GP contour plot at current iteration.
             pareto_fig (Optional[plt.Figure]): Pareto front plot at current iteration.
             alpha_min (Optional[float]): lower bound of the alpha range.
@@ -116,6 +118,7 @@ class MLflowTracker:
                 thresholds on pareto front.
         """
         mlflow.log_metrics({"rrmse": round(rrmse, 4)}, step=step)
+        mlflow.log_metrics({"train_data_max": round(train_data_max, 4)}, step=step)
 
         if gp_fig is not None:
             self._log_fig(gp_fig, f"gp_contour/iter_{step:03d}.png")
