@@ -3,8 +3,8 @@
 import torch
 import numpy as np
 
-from src.gp_model.model import GPModel
-from src.data.data_models import Dataset
+from data.data_models import Dataset
+from gp_model.model import GPModel
 
 torch.manual_seed(0)
 

@@ -1,6 +1,7 @@
 """Calculator to find UCB coefficient beta of the optimal point on pareto front."""
 
 from typing import Tuple
+
 import numpy as np
 from numpy.typing import NDArray
 

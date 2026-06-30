@@ -1,12 +1,12 @@
 """Calculations for optimal point on pareto front."""
 
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.preprocessing import MinMaxScaler
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 class ParetoPointSelector:

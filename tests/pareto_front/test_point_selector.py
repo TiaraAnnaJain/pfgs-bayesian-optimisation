@@ -1,8 +1,9 @@
 """Tests for optimal point calculator."""
 
 import numpy as np
-from src.pareto_front.optimal_point import ParetoPointSelector
-from src.data.data_models import Dataset
+
+from data.data_models import Dataset
+from pareto_front.optimal_point import ParetoPointSelector
 
 
 def test_closest_to_utopia_point():

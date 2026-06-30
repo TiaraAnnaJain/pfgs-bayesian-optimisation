@@ -6,17 +6,17 @@ import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 import matplotlib.pyplot as plt
 
-from src.tracking.config_loader import load_config, resolve_config
-from src.data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
-from src.data.data_processing import generate_data, generate_design_space_dataset
-from src.data.simulation import himmelblau, branin, ackley
-from src.data.data_models import Dataset
-from src.gp_model.model import GPModel
-from src.gp_model.analysis import compute_rrmse
-from src.bo.acquisition_functions import compute_ucb, compute_ei
-from src.bo.pso import PSOObjective, PSOptimiser
+from bayesian_optimisation.acquisition_functions import compute_ucb, compute_ei
+from bayesian_optimisation.pso import PSOObjective, PSOptimiser
+from data.data_models import Dataset
+from data.data_processing import generate_data, generate_design_space_dataset
+from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
+from data.simulation import ackley, branin, himmelblau
+from gp_model.analysis import compute_rrmse
+from gp_model.model import GPModel
 from plotting.gp_plotting import contour_slice_plot
-from src.tracking.mlflow_logging import MLflowTracker
+from tracking.config_loader import load_config, resolve_config
+from tracking.mlflow_logging import MLflowTracker
 
 warnings.filterwarnings(
     "ignore", message=r".*To copy construct from a tensor.*", category=UserWarning
@@ -79,7 +79,7 @@ def main():
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="ackley-bo-ucb", run_name="test-3") as tracker:
+    with MLflowTracker(experiment_name="ackley-bayesian_optimisation-ucb", run_name="test-3") as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(

@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 import torch
 from torch.distributions import Normal
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 def compute_ucb(predictions: Dataset, beta: float) -> NDArray[np.float64]:

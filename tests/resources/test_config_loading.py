@@ -1,8 +1,10 @@
 """Unit tests for configuration loading."""
 
 from pathlib import Path
+
 import pytest
-from src.config.config_loading import load_config
+
+from config.config_loading import load_config
 
 
 def test_config_loading():

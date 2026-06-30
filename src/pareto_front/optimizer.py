@@ -2,11 +2,11 @@
 
 from typing import Any, Tuple
 
+import numpy as np
+from numpy.typing import NDArray
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
-import numpy as np
-from numpy.typing import NDArray
 
 
 class NSGAOptimiser:

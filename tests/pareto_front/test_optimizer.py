@@ -2,9 +2,9 @@
 
 import numpy as np
 
-from src.pareto_front.gp_problem import GPProblem
-from src.pareto_front.optimizer import NSGAOptimiser
-from src.data.data_models import Dataset
+from data.data_models import Dataset
+from pareto_front.gp_problem import GPProblem
+from pareto_front.optimizer import NSGAOptimiser
 
 
 class DummyModel:

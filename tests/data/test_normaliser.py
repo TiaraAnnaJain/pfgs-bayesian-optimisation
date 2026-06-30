@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 def test_dataset_validation():

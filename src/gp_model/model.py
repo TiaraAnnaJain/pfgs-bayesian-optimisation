@@ -2,13 +2,13 @@
 
 from typing import List, Optional
 
-import torch
 from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from gpytorch.constraints import GreaterThan
+import torch
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 class GPModel:

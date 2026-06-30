@@ -1,16 +1,16 @@
 """Contains MLFlow tracking class to log parameters, metrics and artifacts into MLflow."""
 
-import tempfile
 import os
-from typing import List, Optional, Any, Dict
+import tempfile
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
 from numpy.typing import NDArray
-import matplotlib.pyplot as plt
 
-from src.data.investigation_space import InvestigationSpaceVariable
+from data.investigation_space import InvestigationSpaceVariable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 

@@ -1,9 +1,9 @@
 """Loading function for TOML file."""
 
 import tomllib
-
 from typing import Tuple, Union
-from src.config.data_config import (
+
+from config.data_config import (
     PSOConfig,
     ExperimentConfigBO,
     ExperimentConfigPFGS,

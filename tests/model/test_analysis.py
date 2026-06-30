@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from src.gp_model.analysis import compute_rmse, compute_rrmse
+from gp_model.analysis import compute_rmse, compute_rrmse
 
 
 def test_compute_rmse():

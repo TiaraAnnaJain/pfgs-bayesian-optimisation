@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 import pyswarms as ps
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 class PSOObjective:

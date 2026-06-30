@@ -2,10 +2,10 @@
 
 from typing import Any, Optional, List, Dict, Union
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 def contour_slice_plot(

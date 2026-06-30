@@ -1,6 +1,8 @@
+"""Unit tests for investigation space"""
+
 import pytest
 
-from src.data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
+from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
 
 
 def test_investigation_space_properties():

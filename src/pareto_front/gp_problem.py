@@ -1,12 +1,12 @@
 """Optimisation problem wrapper for GP model for pareto front generation."""
 
-from typing import Any, Tuple, List
+from typing import Any, List
 
-from pymoo.core.problem import Problem
 import numpy as np
 from numpy.typing import NDArray
+from pymoo.core.problem import Problem
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 class GPProblem(Problem):

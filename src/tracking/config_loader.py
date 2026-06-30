@@ -1,8 +1,8 @@
 """Loads config from toml files."""
 
+from pathlib import Path
 import tomllib
 from typing import Dict, Any
-from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parents[2]
 

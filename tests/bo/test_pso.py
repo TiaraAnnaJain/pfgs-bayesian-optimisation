@@ -3,7 +3,7 @@
 import numpy as np
 from unittest.mock import MagicMock, patch
 
-from src.bo.pso import PSOObjective, PSOptimiser
+from bayesian_optimisation.pso import PSOObjective, PSOptimiser
 
 
 class DummyModel:
@@ -55,7 +55,7 @@ def test_pso_objective_passes_acq_kwargs():
     assert np.allclose(result, np.array([-6.0, -14.0]))
 
 
-@patch("src.bo.pso.ps.single.GlobalBestPSO")
+@patch("src.bayesian_optimisation.pso.ps.single.GlobalBestPSO")
 def test_pso_optimiser_runs_and_returns_cost_and_best_position(mock_global_best_pso):
     mock_optimizer = MagicMock()
     mock_optimizer.optimize.return_value = (-10.0, np.array([1.0, 2.0]))

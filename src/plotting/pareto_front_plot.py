@@ -3,9 +3,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
-from sklearn.preprocessing import MinMaxScaler
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 def plot_pareto_front(

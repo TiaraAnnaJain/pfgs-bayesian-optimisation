@@ -6,19 +6,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 
+from data.data_processing import Dataset, generate_data
 from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
+from data.simulation import ackley, branin, himmelblau
+from gp_model.analysis import compute_rrmse
+from gp_model.model import GPModel
+from pareto_front.beta_calculator import calculate_beta
+from pareto_front.gp_problem import GPProblem
+from pareto_front.optimal_point import ParetoPointSelector
+from pareto_front.optimizer import NSGAOptimiser
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
-from src.data.data_processing import Dataset, generate_data
-from src.data.simulation import himmelblau, branin, ackley
-from src.gp_model.analysis import compute_rrmse
-from src.gp_model.model import GPModel
-from src.pareto_front.beta_calculator import calculate_beta
-from src.pareto_front.gp_problem import GPProblem
-from src.pareto_front.optimal_point import ParetoPointSelector
-from src.pareto_front.optimizer import NSGAOptimiser
-from src.tracking.config_loader import load_config, resolve_config
-from src.tracking.mlflow_logging import MLflowTracker
+from tracking.config_loader import load_config, resolve_config
+from tracking.mlflow_logging import MLflowTracker
 
 warnings.filterwarnings(
     "ignore", message=r".*To copy construct from a tensor.*", category=UserWarning
@@ -38,7 +38,7 @@ warnings.filterwarnings(
 def main():
     config = load_config("pfgs_config.toml")
 
-    resolved = resolve_config(config, {"test_set_type": "Entire Domain"})
+    resolved = resolve_config(config, {"test_set_types": "Entire Domain"})
 
     variables = [
         InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),

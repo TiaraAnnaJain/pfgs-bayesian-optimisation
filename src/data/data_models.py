@@ -1,9 +1,9 @@
 """Data models for all GP datasets including recipes, experiments and predictions."""
 
-from typing import Optional, Dict, List, Union, Self
-import logging as log
-from dataclasses import dataclass, field
 from copy import deepcopy
+from dataclasses import dataclass, field
+import logging as log
+from typing import Dict, List, Optional, Self, Union
 
 import numpy as np
 from numpy.typing import NDArray

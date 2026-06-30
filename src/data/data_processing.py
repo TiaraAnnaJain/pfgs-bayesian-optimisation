@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import qmc
 
-from src.data.data_models import Dataset
+from data.data_models import Dataset
 
 
 def lhs_sampler(

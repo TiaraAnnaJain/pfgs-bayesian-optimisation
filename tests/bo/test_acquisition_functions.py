@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from src.data.data_models import Dataset
-from src.bo.acquisition_functions import compute_ucb, compute_ei
+from bayesian_optimisation.acquisition_functions import compute_ucb, compute_ei
+from data.data_models import Dataset
 
 
 def test_ucb():

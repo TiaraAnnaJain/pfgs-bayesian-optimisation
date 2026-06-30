@@ -1,7 +1,8 @@
 """Tests for beta calculator"""
 
 import numpy as np
-from src.pareto_front.beta_calculator import calculate_beta
+
+from pareto_front.beta_calculator import calculate_beta
 
 
 def test_beta_valid_range():
