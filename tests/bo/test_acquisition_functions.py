@@ -22,7 +22,7 @@ def test_ucb():
         y_data=y_data,
         y_errors=y_errors,
     )
-    ucb = compute_ucb(preds, alpha=1.0)
+    ucb = compute_ucb(preds, beta=1.0)
 
     assert ucb[1] > ucb[0]
 

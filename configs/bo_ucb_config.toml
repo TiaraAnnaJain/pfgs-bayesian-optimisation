@@ -2,7 +2,7 @@ method = "BO"
 acquisition_function = "UCB"
 
 [sweep]
-alphas = [1.0, 1.5, 1.96, 2.0, 2.5]
+betas = [1.0, 1.5, 1.96, 2.0, 2.5]
 test_set_types = ["Design Space Only", "Entire Domain"]
 
 [pso_parameters]

@@ -15,11 +15,11 @@ def test_config_loading():
     experiment_pfgs, nsga = load_config(CONFIG_DIR / "pfgs_config.toml")
 
     assert experiment_ucb.acquisition_function == "UCB"
-    assert experiment_ucb.alphas is not None
+    assert experiment_ucb.betas is not None
     assert pso_ucb.particles == 200
 
     assert experiment_ei.acquisition_function == "EI"
-    assert experiment_ei.alphas is None
+    assert experiment_ei.betas is None
     assert pso_ei.particles == 200
 
     assert experiment_pfgs.method == "PFGS"

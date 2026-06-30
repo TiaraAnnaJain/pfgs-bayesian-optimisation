@@ -37,7 +37,7 @@ def main():
     config = load_config("bo_ucb_config.toml")
 
     resolved = resolve_config(config, {
-        "alphas": 5,
+        "betas": 5,
         "test_set_types": "Entire Domain"
     })
 
@@ -103,7 +103,7 @@ def main():
             model.train(train_data)
 
             objective = PSOObjective(
-                model=model, acq_fun=compute_ucb, alpha=resolved["alphas"]
+                model=model, acq_fun=compute_ucb, beta=resolved["betas"]
             )
             optimiser = PSOptimiser(
                 objective=objective,

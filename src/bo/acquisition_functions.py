@@ -8,19 +8,19 @@ from torch.distributions import Normal
 from src.data.data_models import Dataset
 
 
-def compute_ucb(predictions: Dataset, alpha: float) -> NDArray[np.float64]:
+def compute_ucb(predictions: Dataset, beta: float) -> NDArray[np.float64]:
     """
     Computes the UCB function for a given mean and variance.
 
     Parameters:
         predictions (Dataset): mean and standard deviation predictions from GP output.
-        alpha (float): alpha parameter
+        beta (float): beta parameter
 
     Returns:
         ucb (NDArray[np.float64]): UCB function values
     """
 
-    ucb = predictions.y_data + (predictions.y_errors * alpha)
+    ucb = predictions.y_data + (predictions.y_errors * beta)
     return ucb
 
 

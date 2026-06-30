@@ -99,8 +99,8 @@ class MLflowTracker:
         train_data_max: float,
         gp_fig: Optional[plt.Figure] = None,
         pareto_fig: Optional[plt.Figure] = None,
-        alpha_min: Optional[float] = None,
-        alpha_max: Optional[float] = None,
+        beta_min: Optional[float] = None,
+        beta_max: Optional[float] = None,
         adjusted_thresholds: Optional[NDArray[np.float64]] = None,
     ):
         """
@@ -112,8 +112,8 @@ class MLflowTracker:
             train_data_max (float): maximum training data value.
             gp_fig (Optional[plt.Figure]): GP contour plot at current iteration.
             pareto_fig (Optional[plt.Figure]): Pareto front plot at current iteration.
-            alpha_min (Optional[float]): lower bound of the alpha range.
-            alpha_max (Optional[float]): upper bound of the alpha range.
+            beta_min (Optional[float]): lower bound of the beta range.
+            beta_max (Optional[float]): upper bound of the beta range.
             adjusted_thresholds (Optional[NDArray[np.float64]]): adjusted discard
                 thresholds on pareto front.
         """
@@ -123,20 +123,20 @@ class MLflowTracker:
         if gp_fig is not None:
             self._log_fig(gp_fig, f"gp_contour/iter_{step:03d}.png")
 
-        if alpha_min is not None and alpha_max is not None:
-            if np.isfinite(alpha_min) and np.isfinite(alpha_max):
+        if beta_min is not None and beta_max is not None:
+            if np.isfinite(beta_min) and np.isfinite(beta_max):
                 mlflow.log_metrics(
                     {
-                        "alpha_min": alpha_min,
-                        "alpha_max": alpha_max,
+                        "beta_min": beta_min,
+                        "beta_max": beta_max,
                     },
                     step=step,
                 )
             else:
                 mlflow.log_metrics(
                     {
-                        "alpha_min": 0,
-                        "alpha_max": 0,
+                        "beta_min": 0,
+                        "beta_max": 0,
                     },
                     step=step,
                 )
@@ -159,7 +159,7 @@ class MLflowTracker:
         self,
         final_gp_fig: plt.Figure,
         rrmse_fig: plt.Figure,
-        alpha_fig: Optional[plt.Figure] = None,
+        beta_fig: Optional[plt.Figure] = None,
         train_data_max_fig: Optional[plt.Figure] = None,
     ):
         """
@@ -168,13 +168,13 @@ class MLflowTracker:
         Parameters:
             final_gp_fig (plt.Figure): Final GP contour plot.
             rrmse_fig (plt.Figure): Final RRMSE figure.
-            alpha_fig (Optional[plt.Figure]): Final alpha figure with feasible ranges.
+            beta_fig (Optional[plt.Figure]): Final beta figure with feasible ranges.
         """
         self._log_fig(final_gp_fig, "final/gp_contour_final.png")
         self._log_fig(rrmse_fig, "final/rrmse_plot.png")
 
-        if alpha_fig is not None:
-            self._log_fig(alpha_fig, "final/alpha_plot.png")
+        if beta_fig is not None:
+            self._log_fig(beta_fig, "final/beta_plot.png")
 
         if train_data_max_fig is not None:
             self._log_fig(train_data_max_fig, "final/train_data_max_final.png")

@@ -13,7 +13,7 @@ from src.data.data_processing import Dataset, generate_data
 from src.data.simulation import himmelblau, branin, ackley
 from src.gp_model.analysis import compute_rrmse
 from src.gp_model.model import GPModel
-from src.pareto_front.alpha_calculator import calculate_alpha
+from src.pareto_front.beta_calculator import calculate_beta
 from src.pareto_front.gp_problem import GPProblem
 from src.pareto_front.optimal_point import ParetoPointSelector
 from src.pareto_front.optimizer import NSGAOptimiser
@@ -96,8 +96,8 @@ def main():
         )
 
         rrmse_plot = []
-        alpha_upper = []
-        alpha_lower = []
+        beta_upper = []
+        beta_lower = []
         train_data_max = []
 
         num_iter = 95
@@ -153,7 +153,7 @@ def main():
                 )
             )
 
-            alpha_min, alpha_max = calculate_alpha(
+            beta_min, beta_max = calculate_beta(
                 pareto_front=scaled_pareto_front, closest_point=closest_point
             )
 
@@ -192,12 +192,12 @@ def main():
             rrmse = compute_rrmse(predictions.y_data.reshape(-1, 1), test_data.y_data)
 
             print(
-                f"Iteration {i + 1}: alpha upper bound = {alpha_max}, alpha lower bound = {alpha_min}, RRMSE = {rrmse}, x_new: {x_new.x_data}"
+                f"Iteration {i + 1}: beta upper bound = {beta_max}, beta lower bound = {beta_min}, RRMSE = {rrmse}, x_new: {x_new.x_data}"
             )
 
             rrmse_plot.append(rrmse)
-            alpha_upper.append(alpha_max)
-            alpha_lower.append(alpha_min)
+            beta_upper.append(beta_max)
+            beta_lower.append(beta_min)
             train_data_max.append(train_data.y_data.max())
 
             pareto_front_plot = plot_pareto_front(
@@ -220,27 +220,27 @@ def main():
                 step=i+1,
                 rrmse=rrmse,
                 train_data_max=train_data.y_data.max(),
-                alpha_min=alpha_min,
-                alpha_max=alpha_max,
+                beta_min=beta_min,
+                beta_max=beta_max,
                 pareto_fig=pareto_front_plot,
                 gp_fig=gp_plot_iter,
             )
 
-        feasible_alpha_max_nonzero = [alpha for alpha in alpha_upper if alpha != 0]
-        feasible_alpha_min = max(alpha_lower)
-        feasible_alpha_max = min(feasible_alpha_max_nonzero)
-        feasible_alpha = [feasible_alpha_min, feasible_alpha_max]
-        if feasible_alpha_max >= feasible_alpha_min:
-            print(f"feasible range of alpha values: {feasible_alpha}")
+        feasible_beta_max_nonzero = [beta for beta in beta_upper if beta != 0]
+        feasible_beta_min = max(beta_lower)
+        feasible_beta_max = min(feasible_beta_max_nonzero)
+        feasible_beta = [feasible_beta_min, feasible_beta_max]
+        if feasible_beta_max >= feasible_beta_min:
+            print(f"feasible range of beta values: {feasible_beta}")
         else:
-            print("There is no feasible range of alpha values")
+            print("There is no feasible range of beta values")
 
-        x = range(len(alpha_upper))
+        x = range(len(beta_upper))
 
-        alpha_fig, ax = plt.subplots()
-        for x_i, alpha_upper_i, alpha_lower_i in zip(x, alpha_upper, alpha_lower):
-            ax.plot([x_i, x_i], [alpha_lower_i, alpha_upper_i], color="blue")
-        ax.set(title="Feasible alpha ranges", xlabel="iterations", ylabel="alpha")
+        beta_fig, ax = plt.subplots()
+        for x_i, beta_upper_i, beta_lower_i in zip(x, beta_upper, beta_lower):
+            ax.plot([x_i, x_i], [beta_lower_i, beta_upper_i], color="blue")
+        ax.set(title="Feasible beta ranges", xlabel="iterations", ylabel="beta")
 
         rrmse_fig, ax = plt.subplots()
         plt.plot(x, rrmse_plot)
@@ -261,7 +261,7 @@ def main():
         tracker.log_final_results(
             final_gp_fig=gp_final_fig,
             rrmse_fig=rrmse_fig,
-            alpha_fig=alpha_fig,
+            beta_fig=beta_fig,
             train_data_max_fig=train_data_max_fig,
         )
 

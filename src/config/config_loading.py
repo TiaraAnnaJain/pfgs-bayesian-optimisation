@@ -55,7 +55,7 @@ def load_config(
         experiment = ExperimentConfigBO(
             method=cfg["method"],
             acquisition_function=cfg["acquisition_function"],
-            alphas=sweep_raw.get("alphas"),
+            betas=sweep_raw.get("betas"),
             test_set_types=sweep_raw["test_set_types"],
         )
 

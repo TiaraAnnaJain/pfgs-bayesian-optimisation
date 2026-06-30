@@ -39,7 +39,7 @@ class ExperimentConfigPFGS:
 class ExperimentConfigBO:
     method: str
     acquisition_function: str
-    alphas: Optional[List[float]]
+    betas: Optional[List[float]]
     test_set_types: List[str]
 
     def __post_init__(self):
@@ -51,12 +51,12 @@ class ExperimentConfigBO:
             )
 
         if self.acquisition_function == "UCB":
-            if not self.alphas:
-                raise ValueError("No range of alpha values provided")
+            if not self.betas:
+                raise ValueError("No range of beta values provided")
 
         if self.acquisition_function == "EI":
-            if self.alphas is not None:
-                raise ValueError("Alpha values must not be provided for EI experiment")
+            if self.betas is not None:
+                raise ValueError("beta values must not be provided for EI experiment")
 
         allowed_types = {"Design Space Only", "Entire Domain"}
 
