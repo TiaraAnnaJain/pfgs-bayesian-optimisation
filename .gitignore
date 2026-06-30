@@ -32,3 +32,7 @@ scripts/start_mlflow.sh
 
 .report.log
 report.log
+
+# configs
+configs/
+.configs/
