@@ -36,3 +36,5 @@ report.log
 # configs
 configs/
 .configs/
+
+*.egg-info/
