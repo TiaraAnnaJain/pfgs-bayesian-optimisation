@@ -1,20 +1,21 @@
 """BO loop"""
 
+from pathlib import Path
 import warnings
 
 import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 import matplotlib.pyplot as plt
 
-from bayesian_optimisation.acquisition_functions import compute_ucb, compute_ei
+from bayesian_optimisation.acquisition_functions import compute_ucb
 from bayesian_optimisation.pso import PSOObjective, PSOptimiser
 from data.data_models import Dataset
-from data.data_processing import generate_data, generate_design_space_dataset
-from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
+from data.data_processing import generate_data
+from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
 from plotting.gp_plotting import contour_slice_plot
-from tracking.config_loader import load_config, resolve_config
+from config.config_loader import load_config, resolve_config
 from tracking.mlflow_logging import MLflowTracker
 
 warnings.filterwarnings(
@@ -33,24 +34,15 @@ warnings.filterwarnings(
 
 
 def main():
-    config = load_config()
+    config, files = load_config()
 
-    resolved = resolve_config(
-        config,
-        {
-            "beta": 5,
-            "test_set_type": "Entire Domain",
-            "simulation": "himmelblau",
-        },
-    )
+    BASE_DIR = Path(__file__).resolve().parents[1]
+
+    json_path = BASE_DIR / files["investigation_space"]
+    space = InvestigationSpace.from_json(json_path)
+
+    resolved = resolve_config(config)
     simulation = resolved["simulation"]
-
-    variables = [
-        InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
-        InvestigationSpaceVariable(label="x2", lower_bound=-5, upper_bound=5),
-    ]
-
-    space = InvestigationSpace(variables=variables)
 
     lower_bound_normalised = [0, 0]
     upper_bound_normalised = [1.0, 1.0]
@@ -93,7 +85,7 @@ def main():
             x_label=x_labels,
             y_label=y_labels,
             simulation_name=str(simulation),
-            variables=variables,
+            variables=space.variables,
         )
 
         rrmse_plot = []

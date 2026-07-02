@@ -1,5 +1,6 @@
 """PFGS loop"""
 
+from pathlib import Path
 import warnings
 
 import matplotlib.pyplot as plt
@@ -7,7 +8,7 @@ import numpy as np
 from build.lib.botorch.exceptions.warnings import InputDataWarning
 
 from data.data_processing import Dataset, generate_data
-from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
+from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
 from pareto_front.beta_calculator import calculate_beta
@@ -16,7 +17,7 @@ from pareto_front.optimal_point import ParetoPointSelector
 from pareto_front.optimizer import NSGAOptimiser
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
-from tracking.config_loader import load_config, resolve_config
+from config.config_loader import load_config, resolve_config
 from tracking.mlflow_logging import MLflowTracker
 
 warnings.filterwarnings(
@@ -35,23 +36,15 @@ warnings.filterwarnings(
 
 
 def main():
-    config = load_config()
+    config, files = load_config()
 
-    resolved = resolve_config(
-        config,
-        {
-            "test_set_types": "Entire Domain",
-            "simulation": "himmelblau",
-        },
-    )
+    BASE_DIR = Path(__file__).resolve().parents[1]
+
+    json_path = BASE_DIR / files["investigation_space"]
+    space = InvestigationSpace.from_json(json_path)
+
+    resolved = resolve_config(config)
     simulation = resolved["simulation"]
-
-    variables = [
-        InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
-        InvestigationSpaceVariable(label="x2", lower_bound=-5, upper_bound=5),
-    ]
-
-    space = InvestigationSpace(variables=variables)
 
     lower_bound_normalised = [0, 0]
     upper_bound_normalised = [1.0, 1.0]
@@ -100,7 +93,7 @@ def main():
             mean_discard_threshold=mean_discard_threshold,
             std_dev_discard_threshold=std_dev_discard_threshold,
             simulation_name=str(simulation),
-            variables=variables,
+            variables=space.variables,
         )
 
         rrmse_plot = []

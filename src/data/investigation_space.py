@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import json
+from pathlib import Path
 from typing import Dict, List
 
 
@@ -24,6 +26,14 @@ class InvestigationSpace:
 
         if len(set(labels)) != len(labels):
             raise ValueError(f"Duplicate variable labels found.")
+
+    @classmethod
+    def from_json(cls, json_path: Path) -> "InvestigationSpace":
+        data = json.loads(json_path.read_text())
+
+        variables = [InvestigationSpaceVariable(**var) for var in data["variables"]]
+
+        return cls(variables=variables)
 
     @property
     def labels(self) -> List[str]:
