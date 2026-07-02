@@ -1,7 +1,6 @@
 """PFGS loop"""
 
 from pathlib import Path
-import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,20 +18,6 @@ from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
 from config.config_loader import load_config, resolve_config
 from tracking.mlflow_logging import MLflowTracker
-
-warnings.filterwarnings(
-    "ignore", message=r".*To copy construct from a tensor.*", category=UserWarning
-)
-
-warnings.filterwarnings(
-    "ignore",
-    message="Data \\(input features\\) is not contained to the unit cube",
-)
-
-warnings.filterwarnings(
-    "ignore",
-    category=InputDataWarning,
-)
 
 
 def main():
