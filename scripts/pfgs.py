@@ -4,7 +4,6 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from build.lib.botorch.exceptions.warnings import InputDataWarning
 
 from data.data_processing import Dataset, generate_data
 from data.investigation_space import InvestigationSpace

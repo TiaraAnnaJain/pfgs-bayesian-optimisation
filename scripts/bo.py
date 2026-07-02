@@ -1,10 +1,8 @@
 """BO loop"""
 
 from pathlib import Path
-import warnings
 
 import numpy as np
-from build.lib.botorch.exceptions.warnings import InputDataWarning
 import matplotlib.pyplot as plt
 
 from bayesian_optimisation.acquisition_functions import compute_ucb
