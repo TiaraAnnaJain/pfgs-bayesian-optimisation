@@ -5,15 +5,15 @@ from pathlib import Path
 import tomllib
 from typing import Dict, Any
 
+from data.simulation import SIMULATION_REGISTRY
+
 PROJECT_ROOT = Path(__file__).parents[2]
 
 
 def load_config() -> Dict[str, Any]:
     """Loads a TOML configuration file specified via command-line argument."""
     parser = ArgumentParser()
-    parser.add_argument(
-        "--file", type=str, required=True, help="Name of config file."
-    )
+    parser.add_argument("--file", type=str, required=True, help="Name of config file.")
     args = parser.parse_args()
     file_name = args.file
 
@@ -41,5 +41,9 @@ def resolve_config(config: Dict[str, Any], choices: Dict[str, Any]) -> Dict[str,
         if k not in choices:
             raise ValueError(f"No choice provided for sweep key: '{k}'")
         resolved[k] = choices[k]
+
+    if "simulation" in resolved:
+        simulation_name = resolved["simulation"]
+        resolved["simulation"] = SIMULATION_REGISTRY[simulation_name]
 
     return resolved

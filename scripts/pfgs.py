@@ -8,7 +8,6 @@ from build.lib.botorch.exceptions.warnings import InputDataWarning
 
 from data.data_processing import Dataset, generate_data
 from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
-from data.simulation import ackley, branin, himmelblau
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
 from pareto_front.beta_calculator import calculate_beta
@@ -38,7 +37,14 @@ warnings.filterwarnings(
 def main():
     config = load_config()
 
-    resolved = resolve_config(config, {"test_set_types": "Entire Domain"})
+    resolved = resolve_config(
+        config,
+        {
+            "test_set_types": "Entire Domain",
+            "simulation": "himmelblau",
+        },
+    )
+    simulation = resolved["simulation"]
 
     variables = [
         InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
@@ -54,7 +60,7 @@ def main():
     y_labels = ["y"]
 
     train_data = generate_data(
-        simulation=ackley,
+        simulation=simulation,
         n_samples=5,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -65,7 +71,7 @@ def main():
         y_labels=y_labels,
     )
     test_data = generate_data(
-        simulation=ackley,
+        simulation=simulation,
         n_samples=100,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -78,12 +84,14 @@ def main():
 
     utopia_point = np.array([1.0, 1.0])
 
-    mean_discard_threshold = np.array([14])
-    std_dev_discard_threshold = np.array([0.3])
+    mean_discard_threshold = np.array([1200])
+    std_dev_discard_threshold = np.array([200])
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="ackley-pfgs", run_name="test-2") as tracker:
+    with MLflowTracker(
+        experiment_name=f"{str(simulation)}-pfgs", run_name="test-2"
+    ) as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
@@ -91,7 +99,7 @@ def main():
             y_label=y_labels,
             mean_discard_threshold=mean_discard_threshold,
             std_dev_discard_threshold=std_dev_discard_threshold,
-            simulation_name="ackley",
+            simulation_name=str(simulation),
             variables=variables,
         )
 
@@ -171,7 +179,7 @@ def main():
             x_new.set_stats(normalisation_stats)
 
             x_new.de_normalise()
-            y_new = ackley(x_new.x_data).reshape(1, 1)
+            y_new = simulation(x_new.x_data).reshape(1, 1)
 
             train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
             train_data.y_data = np.vstack([train_data.y_data, y_new])
@@ -212,12 +220,12 @@ def main():
                 train_dataset=train_data,
                 x_plot_labels=x_labels,
                 y_plot_label="y",
-                iteration=i+1,
+                iteration=i + 1,
                 x_new=x_new,
             )
 
             tracker.log_iteration(
-                step=i+1,
+                step=i + 1,
                 rrmse=rrmse,
                 train_data_max=train_data.y_data.max(),
                 beta_min=beta_min,
@@ -248,14 +256,18 @@ def main():
 
         train_data_max_fig, ax = plt.subplots()
         plt.plot(x, train_data_max)
-        ax.set(title="Maximum value of train data", xlabel="iterations", ylabel="training data max")
+        ax.set(
+            title="Maximum value of train data",
+            xlabel="iterations",
+            ylabel="training data max",
+        )
 
         gp_final_fig = contour_slice_plot(
             trained_model=model,
             train_dataset=train_data,
             x_plot_labels=x_labels,
             y_plot_label="y",
-            iteration="Final"
+            iteration="Final",
         )
 
         tracker.log_final_results(

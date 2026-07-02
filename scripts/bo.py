@@ -11,7 +11,6 @@ from bayesian_optimisation.pso import PSOObjective, PSOptimiser
 from data.data_models import Dataset
 from data.data_processing import generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
-from data.simulation import ackley, branin, himmelblau
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
 from plotting.gp_plotting import contour_slice_plot
@@ -36,10 +35,15 @@ warnings.filterwarnings(
 def main():
     config = load_config()
 
-    resolved = resolve_config(config, {
-        "betas": 5,
-        "test_set_types": "Entire Domain"
-    })
+    resolved = resolve_config(
+        config,
+        {
+            "beta": 5,
+            "test_set_type": "Entire Domain",
+            "simulation": "himmelblau",
+        },
+    )
+    simulation = resolved["simulation"]
 
     variables = [
         InvestigationSpaceVariable(label="x1", lower_bound=-5, upper_bound=5),
@@ -55,18 +59,18 @@ def main():
     y_labels = ["y"]
 
     train_data = generate_data(
-        simulation=ackley,
+        simulation=simulation,
         n_samples=5,
         n_vars=2,
         lower_bound=space.lower_bound_list,
         upper_bound=space.upper_bound_list,
-        seed=42,
+        seed=22,
         dataset_type="train",
         x_labels=x_labels,
         y_labels=y_labels,
     )
     test_data = generate_data(
-        simulation=ackley,
+        simulation=simulation,
         n_samples=100,
         n_vars=2,
         lower_bound=space.lower_bound_list,
@@ -79,13 +83,16 @@ def main():
 
     model = GPModel()
 
-    with MLflowTracker(experiment_name="ackley-bayesian_optimisation-ucb", run_name="test-3") as tracker:
+    with MLflowTracker(
+        experiment_name=f"{str(simulation)}-bayesian_optimisation-ucb",
+        run_name="test-3",
+    ) as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
             x_label=x_labels,
             y_label=y_labels,
-            simulation_name="ackley",
+            simulation_name=str(simulation),
             variables=variables,
         )
 
@@ -103,7 +110,7 @@ def main():
             model.train(train_data)
 
             objective = PSOObjective(
-                model=model, acq_fun=compute_ucb, beta=resolved["betas"]
+                model=model, acq_fun=compute_ucb, beta=resolved["beta"]
             )
             optimiser = PSOptimiser(
                 objective=objective,
@@ -125,7 +132,7 @@ def main():
             x_new.set_stats(normalisation_stats)
 
             x_new.de_normalise()
-            y_new = ackley(x_new.x_data).reshape(1, 1)
+            y_new = simulation(x_new.x_data).reshape(1, 1)
 
             train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
             train_data.y_data = np.vstack([train_data.y_data, y_new])
@@ -174,14 +181,18 @@ def main():
 
         train_data_max_fig, ax = plt.subplots()
         plt.plot(x, train_data_max)
-        ax.set(title="Maximum value of train data", xlabel="iterations", ylabel="training data max")
+        ax.set(
+            title="Maximum value of train data",
+            xlabel="iterations",
+            ylabel="training data max",
+        )
 
         gp_final_fig = contour_slice_plot(
             trained_model=model,
             train_dataset=train_data,
             x_plot_labels=x_labels,
             y_plot_label="y",
-            iteration="Final"
+            iteration="Final",
         )
 
         tracker.log_final_results(
