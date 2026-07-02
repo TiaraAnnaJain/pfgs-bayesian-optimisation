@@ -42,7 +42,10 @@ class ParetoPointSelector:
         mean_discard_threshold: NDArray[np.float64],
         std_dev_discard_threshold: NDArray[np.float64],
     ) -> Tuple[
-        NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], bool,
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        bool,
     ]:
         """
         Discards points on Pareto front with mean and standard deviation values lower than the

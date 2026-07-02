@@ -15,7 +15,7 @@ def contour_slice_plot(
     y_plot_label: str,
     iteration: Union[int, str],
     fixed_x_values: Optional[Dict[str, float]] = None,
-    x_new: Dataset = None
+    x_new: Dataset = None,
 ) -> plt.Figure:
     """
     Generate a contour plot of the trained model for any two inputs specified.
@@ -114,6 +114,8 @@ def contour_slice_plot(
     plt.xlabel(x_plot_labels[0])
     plt.ylabel(x_plot_labels[1])
     plt.colorbar(cs)
-    plt.title(f"GP Predictive Mean post iterations with training points at iteration {iteration}")
+    plt.title(
+        f"GP Predictive Mean post iterations with training points at iteration {iteration}"
+    )
 
     return gp_plot
