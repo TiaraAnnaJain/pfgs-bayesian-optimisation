@@ -34,7 +34,7 @@ warnings.filterwarnings(
 
 
 def main():
-    config = load_config("bo_ucb_config.toml")
+    config = load_config()
 
     resolved = resolve_config(config, {
         "betas": 5,

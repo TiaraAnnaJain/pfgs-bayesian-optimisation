@@ -36,7 +36,7 @@ warnings.filterwarnings(
 
 
 def main():
-    config = load_config("pfgs_config.toml")
+    config = load_config()
 
     resolved = resolve_config(config, {"test_set_types": "Entire Domain"})
 

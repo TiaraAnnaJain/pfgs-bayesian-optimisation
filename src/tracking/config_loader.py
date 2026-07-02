@@ -1,5 +1,6 @@
 """Loads config from toml files."""
 
+from argparse import ArgumentParser
 from pathlib import Path
 import tomllib
 from typing import Dict, Any
@@ -7,7 +8,15 @@ from typing import Dict, Any
 PROJECT_ROOT = Path(__file__).parents[2]
 
 
-def load_config(file_name: str) -> Dict[str, Any]:
+def load_config() -> Dict[str, Any]:
+    """Loads a TOML configuration file specified via command-line argument."""
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--file", type=str, required=True, help="Name of config file."
+    )
+    args = parser.parse_args()
+    file_name = args.file
+
     toml_path = PROJECT_ROOT / "configs" / file_name
     with open(toml_path, "rb") as f:
         return tomllib.load(f)
