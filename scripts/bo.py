@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bayesian_optimisation.acquisition_functions import compute_ucb
+from bayesian_optimisation.acquisition_functions import compute_ucb, compute_ei
 from bayesian_optimisation.pso import PSOObjective, PSOptimiser
 from data.data_models import Dataset
 from data.data_processing import generate_data
@@ -60,21 +60,21 @@ def main():
     model = GPModel()
 
     with MLflowTracker(
-        experiment_name=f"{str(simulation)}-bayesian_optimisation-ucb",
-        run_name="test-3",
+        experiment_name=f"{simulation.__name__}-optimisation",
+        run_name=f"{resolved['test_name']}",
     ) as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
             x_label=x_labels,
             y_label=y_labels,
-            simulation_name=str(simulation),
             variables=space.variables,
+            simulation=simulation.__name__,
         )
 
         rrmse_plot = []
         train_data_max = []
-        num_iter = 95
+        num_iter = resolved["num_iter"]
 
         for i in range(num_iter):
             train_data.add_normalisation_params(
@@ -85,9 +85,10 @@ def main():
 
             model.train(train_data)
 
-            objective = PSOObjective(
-                model=model, acq_fun=compute_ucb, beta=resolved["beta"]
-            )
+            if resolved["acquisition_function"] == "UCB":
+                objective = PSOObjective(model=model, acq_fun=compute_ucb, beta=resolved["beta"])
+            elif resolved["acquisition_function"] == "EI":
+                objective = PSOObjective(model=model, acq_fun=compute_ei, train_data=train_data)
             optimiser = PSOptimiser(
                 objective=objective,
                 lower_bound=lower_bound_normalised,
