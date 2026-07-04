@@ -24,10 +24,12 @@ def test_pso_objective_returns_negative_acquisition_values():
         device=None,
     )
 
-    x = np.array([
-        [1.0, 2.0],
-        [3.0, 4.0],
-    ])
+    x = np.array(
+        [
+            [1.0, 2.0],
+            [3.0, 4.0],
+        ]
+    )
 
     result = objective(x)
 
@@ -45,10 +47,12 @@ def test_pso_objective_passes_acq_kwargs():
         beta=2.0,
     )
 
-    x = np.array([
-        [1.0, 2.0],
-        [3.0, 4.0],
-    ])
+    x = np.array(
+        [
+            [1.0, 2.0],
+            [3.0, 4.0],
+        ]
+    )
 
     result = objective(x)
 
@@ -68,7 +72,7 @@ def test_pso_optimiser_runs_and_returns_cost_and_best_position(mock_global_best_
         n_particles=10,
         options={"c1": 0.5, "c2": 0.3, "w": 0.9},
         lower_bound=[0.0, 0.0],
-        upper_bound=[1.0, 1.0]
+        upper_bound=[1.0, 1.0],
     )
 
     cost, best_pos = optimiser.run()

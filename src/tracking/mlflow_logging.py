@@ -64,7 +64,7 @@ class MLflowTracker:
         x_label: List[str],
         y_label: List[str],
         variables: List[InvestigationSpaceVariable],
-        simulation: str
+        simulation: str,
     ):
         """
         Logs experiment setup as parameters.

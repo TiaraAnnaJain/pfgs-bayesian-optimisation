@@ -71,7 +71,7 @@ def test_generate_data():
                 [-3.779310, -3.283186],
                 [3.584428, -1.848126],
             ]
-        )
+        ),
     )
     assert design_space.x_data.shape == (100, 2)
     assert design_space.y_data.shape == (100, 1)

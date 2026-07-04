@@ -80,7 +80,8 @@ def main():
     model = GPModel()
 
     with MLflowTracker(
-        experiment_name=f"{simulation.__name__}-optimisation", run_name=f"{resolved['test_name']}"
+        experiment_name=f"{simulation.__name__}-optimisation",
+        run_name=f"{resolved['test_name']}",
     ) as tracker:
         tracker.log_resolved_config(resolved)
 

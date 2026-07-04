@@ -99,9 +99,13 @@ def main():
             model.train(train_data)
 
             if resolved["acquisition_function"] == "UCB":
-                objective = PSOObjective(model=model, acq_fun=compute_ucb, beta=resolved["beta"])
+                objective = PSOObjective(
+                    model=model, acq_fun=compute_ucb, beta=resolved["beta"]
+                )
             elif resolved["acquisition_function"] == "EI":
-                objective = PSOObjective(model=model, acq_fun=compute_ei, train_data=train_data)
+                objective = PSOObjective(
+                    model=model, acq_fun=compute_ei, train_data=train_data
+                )
 
             optimiser = PSOptimiser(
                 objective=objective,
