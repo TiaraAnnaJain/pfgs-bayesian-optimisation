@@ -1,6 +1,7 @@
 """Contains MLFlow tracking class to log parameters, metrics and artifacts into MLflow."""
 
 import os
+from copy import deepcopy
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -32,7 +33,10 @@ class MLflowTracker:
         Parameters:
             resolved_config (Dict[str, Any]): fully resolved config.
         """
-        params = self._flatten(resolved_config)
+        config_to_log = deepcopy(resolved_config)
+        config_to_log.pop("simulation", None)
+
+        params = self._flatten(config_to_log)
         mlflow.log_params(params)
 
     @staticmethod
@@ -51,10 +55,8 @@ class MLflowTracker:
         self,
         x_label: List[str],
         y_label: List[str],
-        simulation_name: str,
         variables: List[InvestigationSpaceVariable],
-        mean_discard_threshold: Optional[NDArray[np.float64]] = None,
-        std_dev_discard_threshold: Optional[NDArray[np.float64]] = None,
+        simulation: str
     ):
         """
         Logs experiment setup as parameters.
@@ -62,12 +64,8 @@ class MLflowTracker:
         Parameters:
             x_label (List[str]): input labels.
             y_label (List[str]): output labels.
-            simulation_name (str): simulation being run.
             variables (List[InvestigationSpaceVariable]): variables to be logged.
-            mean_discard_threshold (Optional[NDArray[np.float64]]): mean discard
-                threshold on pareto front.
-            std_dev_discard_threshold (Optional[NDArray[np.float64]]): std_dev
-                discard threshold on pareto front.
+            simulation (str): Name of the simulation being run.
         """
         bounds = {
             f"{v.label}_bounds": [v.lower_bound, v.upper_bound] for v in variables
@@ -77,20 +75,10 @@ class MLflowTracker:
             {
                 "x_labels": x_label,
                 "y_labels": y_label,
-                "simulation_name": simulation_name,
+                "simulation": simulation,
                 **bounds,
             }
         )
-
-        if mean_discard_threshold is not None and std_dev_discard_threshold is not None:
-            mlflow.log_params(
-                {
-                    "discard_thresholds": [
-                        mean_discard_threshold.item(),
-                        std_dev_discard_threshold.item(),
-                    ],
-                }
-            )
 
     def log_iteration(
         self,
