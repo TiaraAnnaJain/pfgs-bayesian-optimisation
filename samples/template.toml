@@ -11,7 +11,7 @@ beta = 1.96
 simulation = "himmelblau" # options: himmelblau, branin, ackley
 
 test_set_type = "Entire Space" # options: Design Space, Entire Space
-train_sample = 5
+train_samples = 5
 train_seed = 42
 test_seed = 11
 test_samples = 100
