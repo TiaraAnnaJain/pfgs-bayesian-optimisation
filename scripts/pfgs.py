@@ -61,23 +61,21 @@ def main():
 
     utopia_point = np.array([1.0, 1.0])
 
-    mean_discard_threshold = np.array([1200])
-    std_dev_discard_threshold = np.array([200])
+    mean_discard_threshold = np.array(resolved["mean_discard_threshold"])
+    std_dev_discard_threshold = np.array(resolved["std_dev_discard_threshold"])
 
     model = GPModel()
 
     with MLflowTracker(
-        experiment_name=f"{str(simulation)}-pfgs", run_name="test-2"
+        experiment_name=f"{simulation.__name__}-optimisation", run_name=f"{resolved['test_name']}"
     ) as tracker:
         tracker.log_resolved_config(resolved)
 
         tracker.log_experiment_setup(
             x_label=x_labels,
             y_label=y_labels,
-            mean_discard_threshold=mean_discard_threshold,
-            std_dev_discard_threshold=std_dev_discard_threshold,
-            simulation_name=str(simulation),
             variables=space.variables,
+            simulation=simulation.__name__,
         )
 
         rrmse_plot = []
@@ -85,7 +83,7 @@ def main():
         beta_lower = []
         train_data_max = []
 
-        num_iter = 95
+        num_iter = resolved["num_iter"]
 
         for i in range(num_iter):
             train_data.add_normalisation_params(
