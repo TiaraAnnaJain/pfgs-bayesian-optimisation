@@ -40,3 +40,4 @@ configs/
 *.egg-info/
 
 scripts/beta.json
+beta.json
