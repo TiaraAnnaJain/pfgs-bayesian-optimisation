@@ -15,7 +15,7 @@ from pareto_front.optimal_point import ParetoPointSelector
 from pareto_front.optimizer import NSGAOptimiser
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
-from config.config_loader import load_config, resolve_config
+from config.config_loader import load_config, resolve_config, validate_config
 from tracking.mlflow_logging import MLflowTracker
 
 
@@ -63,7 +63,7 @@ def main():
     elif resolved["test_set_type"] == "Design Space":
         test_data = generate_design_space_dataset(
             simulation=simulation,
-            n_samples_per_region=resolved["test_samples_per_region"],
+            n_samples=resolved["test_samples"],
             delta=resolved["delta"],
             seed=resolved["test_seed"],
             dataset_type="test",

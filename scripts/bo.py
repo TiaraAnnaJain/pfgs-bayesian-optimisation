@@ -61,7 +61,7 @@ def main():
     elif resolved["test_set_type"] == "Design Space":
         test_data = generate_design_space_dataset(
             simulation=simulation,
-            n_samples_per_region=resolved["test_samples_per_region"],
+            n_samples=resolved["test_samples"],
             delta=resolved["delta"],
             seed=resolved["test_seed"],
             dataset_type="test",
