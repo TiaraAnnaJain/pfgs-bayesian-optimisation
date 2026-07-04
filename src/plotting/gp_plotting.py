@@ -114,8 +114,6 @@ def contour_slice_plot(
     plt.xlabel(x_plot_labels[0])
     plt.ylabel(x_plot_labels[1])
     plt.colorbar(cs)
-    plt.title(
-        f"GP Predictive Mean post iterations with training points at iteration {iteration}"
-    )
+    plt.title(f"GP predictive mean with training points at iteration {iteration}")
 
     return gp_plot

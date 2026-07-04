@@ -98,6 +98,7 @@ class MLflowTracker:
         beta_min: Optional[float] = None,
         beta_max: Optional[float] = None,
         adjusted_thresholds: Optional[NDArray[np.float64]] = None,
+        curr_beta: Optional[float] = None,
     ):
         """
         Logs metrics per iteration.
@@ -112,6 +113,7 @@ class MLflowTracker:
             beta_max (Optional[float]): upper bound of the beta range.
             adjusted_thresholds (Optional[NDArray[np.float64]]): adjusted discard
                 thresholds on pareto front.
+            curr_beta (Optional[float]): current beta value.
         """
         mlflow.log_metrics({"rrmse": round(rrmse, 4)}, step=step)
         mlflow.log_metrics({"train_data_max": round(train_data_max, 4)}, step=step)
@@ -148,6 +150,9 @@ class MLflowTracker:
                 step=step,
             )
 
+        if curr_beta is not None:
+            mlflow.log_metrics({"beta": curr_beta}, step=step)
+
         if pareto_fig is not None:
             self._log_fig(pareto_fig, f"pareto_fronts/iter_{step:03d}.png")
 
@@ -165,6 +170,7 @@ class MLflowTracker:
             final_gp_fig (plt.Figure): Final GP contour plot.
             rrmse_fig (plt.Figure): Final RRMSE figure.
             beta_fig (Optional[plt.Figure]): Final beta figure with feasible ranges.
+            train_data_max_fig (Optional[plt.Figure]): max value of train y at each iteration.
         """
         self._log_fig(final_gp_fig, "final/gp_contour_final.png")
         self._log_fig(rrmse_fig, "final/rrmse_plot.png")
