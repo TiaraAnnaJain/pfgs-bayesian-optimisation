@@ -34,7 +34,15 @@ class MLflowTracker:
             resolved_config (Dict[str, Any]): fully resolved config.
         """
         config_to_log = deepcopy(resolved_config)
-        config_to_log.pop("simulation", None)
+        for key in [
+            "simulation",
+            "train_samples",
+            "test_samples",
+            "test_samples_per_region",
+            "delta",
+            "maxima",
+        ]:
+            config_to_log.pop(key, None)
 
         params = self._flatten(config_to_log)
         mlflow.log_params(params)
