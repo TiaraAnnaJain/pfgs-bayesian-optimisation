@@ -1,0 +1,48 @@
+# This is a template for a toml file containing what's necessary to run an experiment
+test_name = ""
+method = "PFGS" # options: BO, PFGS
+num_iter = 95
+
+# only if method = "BO"
+acquisition_function = "UCB" # options: UCB, EI
+# only if acquisition function = UCB
+beta = 1.96
+
+simulation = "himmelblau" # options: himmelblau, branin, ackley
+
+test_set_type = "Entire Space" # options: Design Space, Entire Space
+train_sample = 5
+train_seed = 42
+test_seed = 11
+
+# if test set type = Entire Space
+test_samples = 100
+
+# if test set type = Design Space
+test_samples_per_region = 25
+delta = 1.5
+maxima = [
+    [3.0, 2.0],
+    [-2.805118, 3.131312],
+    [-3.779310, -3.283186],
+    [3.584428, -1.848126]
+]
+
+mean_discard_threshold = 1200
+std_dev_discard_threshold = 200
+
+# if method = PFGS
+[nsga_parameters]
+population_size = 100
+number_of_generations = 10
+
+# if method = BO
+[pso_parameters]
+c1 = 2.0
+c2 = 2.0
+w = 0.9
+particles = 200
+dimensions = 2
+
+[files]
+investigation_space = "configs/spaces/himmelblau_space.json" # must match simulation
