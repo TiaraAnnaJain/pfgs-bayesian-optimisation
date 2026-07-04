@@ -14,12 +14,9 @@ test_set_type = "Entire Space" # options: Design Space, Entire Space
 train_sample = 5
 train_seed = 42
 test_seed = 11
-
-# if test set type = Entire Space
 test_samples = 100
 
 # if test set type = Design Space
-test_samples_per_region = 25
 delta = 1.5
 maxima = [
     [3.0, 2.0],
