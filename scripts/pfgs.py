@@ -5,7 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from data.data_processing import Dataset, generate_data
+from data.data_processing import Dataset, generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
@@ -38,26 +38,39 @@ def main():
 
     train_data = generate_data(
         simulation=simulation,
-        n_samples=5,
-        n_vars=2,
+        n_samples=resolved["train_samples"],
+        n_vars=len(x_labels),
         lower_bound=space.lower_bound_list,
         upper_bound=space.upper_bound_list,
-        seed=42,
+        seed=resolved["train_seed"],
         dataset_type="train",
         x_labels=x_labels,
         y_labels=y_labels,
     )
-    test_data = generate_data(
-        simulation=simulation,
-        n_samples=100,
-        n_vars=2,
-        lower_bound=space.lower_bound_list,
-        upper_bound=space.upper_bound_list,
-        seed=11,
-        dataset_type="test",
-        x_labels=x_labels,
-        y_labels=y_labels,
-    )
+
+    if resolved["test_set_type"] == "Entire Space":
+        test_data = generate_data(
+            simulation=simulation,
+            n_samples=resolved["test_samples"],
+            n_vars=len(x_labels),
+            lower_bound=space.lower_bound_list,
+            upper_bound=space.upper_bound_list,
+            seed=resolved["test_seed"],
+            dataset_type="test",
+            x_labels=x_labels,
+            y_labels=y_labels,
+        )
+    elif resolved["test_set_type"] == "Design Space":
+        test_data = generate_design_space_dataset(
+            simulation=simulation,
+            n_samples_per_region=resolved["test_samples_per_region"],
+            delta=resolved["delta"],
+            seed=resolved["test_seed"],
+            dataset_type="test",
+            x_labels=x_labels,
+            y_labels=y_labels,
+            maxima=np.array(resolved["maxima"]),
+        )
 
     utopia_point = np.array([1.0, 1.0])
 
