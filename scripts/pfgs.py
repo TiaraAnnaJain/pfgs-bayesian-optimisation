@@ -21,6 +21,7 @@ from tracking.mlflow_logging import MLflowTracker
 
 def main():
     config, files = load_config()
+    validate_config(config)
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 

@@ -13,12 +13,13 @@ from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
 from plotting.gp_plotting import contour_slice_plot
-from config.config_loader import load_config, resolve_config
+from config.config_loader import load_config, resolve_config, validate_config
 from tracking.mlflow_logging import MLflowTracker
 
 
 def main():
     config, files = load_config()
+    validate_config(config)
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
