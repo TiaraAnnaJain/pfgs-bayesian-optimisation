@@ -33,7 +33,7 @@ def main():
     upper_bound_normalised = [1.0, 1.0]
 
     x_labels = space.labels
-    y_labels = ["y"]
+    y_labels = space.outputs
 
     train_data = generate_data(
         simulation=simulation,

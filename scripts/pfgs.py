@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from config.config_loader import load_config, resolve_config, validate_config
-from data.data_processing import Dataset, generate_data, generate_design_space_dataset
+from data.data_models import Dataset
+from data.data_processing import generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
@@ -35,7 +36,7 @@ def main():
     upper_bound_normalised = [1.0, 1.0]
 
     x_labels = space.labels
-    y_labels = ["y"]
+    y_labels = space.outputs
 
     train_data = generate_data(
         simulation=simulation,

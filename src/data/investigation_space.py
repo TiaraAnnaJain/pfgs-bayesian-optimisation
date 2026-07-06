@@ -20,6 +20,7 @@ class InvestigationSpaceVariable:
 @dataclass(frozen=True)
 class InvestigationSpace:
     variables: List[InvestigationSpaceVariable]
+    outputs: List[str]
 
     def __post_init__(self):
         labels = [variable.label for variable in self.variables]
@@ -27,13 +28,16 @@ class InvestigationSpace:
         if len(set(labels)) != len(labels):
             raise ValueError(f"Duplicate variable labels found.")
 
+        if len(set(self.outputs)) != len(self.outputs):
+            raise ValueError(f"Duplicate output labels found.")
+
     @classmethod
     def from_json(cls, json_path: Path) -> "InvestigationSpace":
         data = json.loads(json_path.read_text())
 
         variables = [InvestigationSpaceVariable(**var) for var in data["variables"]]
 
-        return cls(variables=variables)
+        return cls(variables=variables, outputs=data["outputs"])
 
     @property
     def labels(self) -> List[str]:
