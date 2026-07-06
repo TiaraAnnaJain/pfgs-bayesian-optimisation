@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 
 from bayesian_optimisation.acquisition_functions import compute_ucb, compute_ei
 from bayesian_optimisation.pso import PSOObjective, PSOptimiser
+from config.config_loader import load_config, resolve_config, validate_config
 from data.data_models import Dataset
 from data.data_processing import generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
 from plotting.gp_plotting import contour_slice_plot
-from config.config_loader import load_config, resolve_config, validate_config
 from tracking.mlflow_logging import MLflowTracker
 
 

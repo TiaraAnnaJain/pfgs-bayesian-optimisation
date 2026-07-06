@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+from config.config_loader import load_config, resolve_config, validate_config
 from data.data_processing import Dataset, generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
@@ -15,7 +16,6 @@ from pareto_front.optimal_point import ParetoPointSelector
 from pareto_front.optimizer import NSGAOptimiser
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
-from config.config_loader import load_config, resolve_config, validate_config
 from tracking.mlflow_logging import MLflowTracker
 
 
