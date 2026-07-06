@@ -65,6 +65,7 @@ class MLflowTracker:
         y_label: List[str],
         variables: List[InvestigationSpaceVariable],
         simulation: str,
+        beta_schedule: Optional[str] = None,
     ):
         """
         Logs experiment setup as parameters.
@@ -74,6 +75,7 @@ class MLflowTracker:
             y_label (List[str]): output labels.
             variables (List[InvestigationSpaceVariable]): variables to be logged.
             simulation (str): Name of the simulation being run.
+            beta_schedule (str): Name of the beta schedule.
         """
         bounds = {
             f"{v.label}_bounds": [v.lower_bound, v.upper_bound] for v in variables
@@ -85,6 +87,7 @@ class MLflowTracker:
                 "y_labels": y_label,
                 "simulation": simulation,
                 **bounds,
+                "beta_schedule": beta_schedule,
             }
         )
 

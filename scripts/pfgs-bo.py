@@ -75,8 +75,8 @@ def main():
                 x_label=x_labels,
                 y_label=y_labels,
                 variables=space.variables,
+                simulation=simulation.__name__,
                 beta_schedule=name,
-                simulation_name=str(simulation),
             )
 
             rrmse_plot = []
