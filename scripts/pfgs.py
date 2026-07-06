@@ -5,11 +5,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from data.data_models import Dataset
-from data.data_processing import generate_data, generate_design_space_dataset
 from config.config_loader import load_config, resolve_config, validate_config
 from config.json_loader import to_json
-from data.data_processing import Dataset, generate_data
+from data.data_models import Dataset
+from data.data_processing import generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace
 from gp_model.analysis import compute_rrmse
 from gp_model.model import GPModel
@@ -237,6 +236,7 @@ def main():
         else:
             print("There is no feasible range of beta values")
 
+        to_json(beta_min=beta_lower, beta_max=beta_upper)
         x = range(len(beta_upper))
 
         beta_fig, ax = plt.subplots()
