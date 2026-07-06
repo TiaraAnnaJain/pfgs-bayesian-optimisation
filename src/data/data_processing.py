@@ -85,6 +85,7 @@ def generate_data(
 def generate_design_space_dataset(
     simulation: Callable,
     n_samples: int,
+    n_vars: int,
     delta: float,
     seed: int,
     dataset_type: str,
@@ -98,6 +99,7 @@ def generate_design_space_dataset(
     Parameters:
         simulation (Callable): Simulation function.
         n_samples (int): Number of samples to generate.
+        n_vars (int): Number of dimensions.
         delta (float): indicates how large the region should be.
         seed (int): Random seed for reproducibility.
         dataset_type (str): Dataset type.
@@ -118,7 +120,7 @@ def generate_design_space_dataset(
         dataset = generate_data(
             simulation=simulation,
             n_samples=n_samples_per_region,
-            n_vars=2,
+            n_vars=n_vars,
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             seed=seed,

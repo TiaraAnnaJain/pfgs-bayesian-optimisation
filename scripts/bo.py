@@ -63,6 +63,7 @@ def main():
         test_data = generate_design_space_dataset(
             simulation=simulation,
             n_samples=resolved["test_samples"],
+            n_vars=len(x_labels),
             delta=resolved["delta"],
             seed=resolved["test_seed"],
             dataset_type="test",
