@@ -59,6 +59,7 @@ def test_generate_data():
     design_space = generate_design_space_dataset(
         simulation=himmelblau,
         n_samples=100,
+        n_vars=2,
         delta=1.5,
         seed=10,
         dataset_type="test",

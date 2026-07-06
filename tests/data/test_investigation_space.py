@@ -18,10 +18,12 @@ def test_investigation_space_properties():
                 lower_bound=1,
                 upper_bound=10,
             ),
-        ]
+        ],
+        outputs=["yield"]
     )
 
     assert investigation_space.labels == ["temperature", "pressure"]
+    assert investigation_space.outputs == ["yield"]
 
     assert investigation_space.lower_bounds == {
         "temperature": 20,
@@ -50,5 +52,6 @@ def test_investigation_space_validation():
             variables=[
                 InvestigationSpaceVariable("temperature", 20, 100),
                 InvestigationSpaceVariable("temperature", 30, 90),
-            ]
+            ],
+            outputs=["yield"]
         )
