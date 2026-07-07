@@ -28,6 +28,7 @@ def main():
 
     resolved = resolve_config(config)
     simulation = resolved["simulation"]
+    optimizer_parameters = resolved["optimizer_parameters"]
 
     lower_bound_normalised = [0, 0]
     upper_bound_normalised = [1.0, 1.0]
@@ -108,6 +109,9 @@ def main():
                     acq_fn=qUpperConfidenceBound,
                     lower_bounds=lower_bound_normalised,
                     upper_bounds=upper_bound_normalised,
+                    num_restarts=optimizer_parameters["num_restarts"],
+                    raw_samples=optimizer_parameters["raw_samples"],
+                    q=optimizer_parameters["q"],
                     beta=resolved["beta"],
                 )
             elif resolved["acquisition_function"] == "EI":
@@ -115,6 +119,9 @@ def main():
                     acq_fn=qExpectedImprovement,
                     lower_bounds=lower_bound_normalised,
                     upper_bounds=upper_bound_normalised,
+                    num_restarts=optimizer_parameters["num_restarts"],
+                    raw_samples=optimizer_parameters["raw_samples"],
+                    q=optimizer_parameters["q"],
                 )
 
             x_new_point, _ = optimizer.optimize(model, train_data)

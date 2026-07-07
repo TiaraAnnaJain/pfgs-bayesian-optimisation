@@ -32,6 +32,7 @@ def main():
 
     resolved = resolve_config(config)
     simulation = resolved["simulation"]
+    nsga_parameters = resolved["nsga_parameters"]
 
     lower_bound_normalised = [0, 0]
     upper_bound_normalised = [1.0, 1.0]
@@ -118,7 +119,11 @@ def main():
                 upper_bound=upper_bound_normalised,
             )
 
-            optimizer = NSGAOptimiser(problem=problem, pop_size=100, n_gen=10)
+            optimizer = NSGAOptimiser(
+                problem=problem,
+                pop_size=nsga_parameters["population_size"],
+                n_gen=nsga_parameters["number_of_generations"],
+            )
             (
                 pareto_front_points,
                 input_values,
