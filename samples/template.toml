@@ -34,12 +34,10 @@ population_size = 100
 number_of_generations = 10
 
 # if method = BO
-[pso_parameters]
-c1 = 2.0
-c2 = 2.0
-w = 0.9
-particles = 200
-dimensions = 2
+[optimizer_parameters]
+num_restarts = 10
+raw_samples = 512
+q = 1
 
 [files]
 investigation_space = "configs/spaces/himmelblau_space.json" # must match simulation
