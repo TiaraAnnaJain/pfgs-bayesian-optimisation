@@ -32,9 +32,9 @@ class BoTorchOptimizer:
         acq_fn: Type[AcquisitionFunction],
         lower_bounds: List[float],
         upper_bounds: List[float],
-        num_restarts: int = 10,
-        raw_samples: int = 512,
-        q: int = 1,
+        num_restarts: int,
+        raw_samples: int,
+        q: int,
         **acq_kwargs,
     ):
         self.bounds = torch.tensor([lower_bounds, upper_bounds])
