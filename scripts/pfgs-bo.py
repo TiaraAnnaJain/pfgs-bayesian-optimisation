@@ -2,17 +2,17 @@
 
 from pathlib import Path
 
+from botorch.acquisition import qUpperConfidenceBound
 import numpy as np
 import matplotlib.pyplot as plt
 
+from bayesian_optimisation.acq_fn_optimizer import BoTorchOptimizer
 from config.config_loader import load_config, resolve_config
 from data.investigation_space import InvestigationSpace
-from data.data_processing import generate_data
+from data.data_processing import generate_data, generate_design_space_dataset
 from data.data_models import Dataset
 from gp_model.model import GPModel
 from gp_model.analysis import compute_rrmse
-from bayesian_optimisation.acquisition_functions import compute_ucb
-from bayesian_optimisation.pso import PSOObjective, PSOptimiser
 from plotting.gp_plotting import contour_slice_plot
 from tracking.mlflow_logging import MLflowTracker
 from config.json_loader import from_json
@@ -29,40 +29,55 @@ def main():
 
     resolved = resolve_config(config)
     simulation = resolved["simulation"]
+    optimizer_parameters = resolved["optimizer_parameters"]
 
     lower_bound_normalised = [0, 0]
     upper_bound_normalised = [1.0, 1.0]
 
     x_labels = space.labels
-    y_labels = ["y"]
+    y_labels = space.outputs
 
-    betas = from_json("scripts/beta.json")
+    betas = from_json("beta.json")
     beta_schedule = beta_ranges(betas)
 
     for name, beta_values in beta_schedule.items():
 
         train_data = generate_data(
             simulation=simulation,
-            n_samples=5,
-            n_vars=2,
+            n_samples=resolved["train_samples"],
+            n_vars=len(x_labels),
             lower_bound=space.lower_bound_list,
             upper_bound=space.upper_bound_list,
-            seed=42,
+            seed=resolved["train_seed"],
             dataset_type="train",
             x_labels=x_labels,
             y_labels=y_labels,
         )
-        test_data = generate_data(
-            simulation=simulation,
-            n_samples=100,
-            n_vars=2,
-            lower_bound=space.lower_bound_list,
-            upper_bound=space.upper_bound_list,
-            seed=11,
-            dataset_type="test",
-            x_labels=x_labels,
-            y_labels=y_labels,
-        )
+
+        if resolved["test_set_type"] == "Entire Space":
+            test_data = generate_data(
+                simulation=simulation,
+                n_samples=resolved["test_samples"],
+                n_vars=len(x_labels),
+                lower_bound=space.lower_bound_list,
+                upper_bound=space.upper_bound_list,
+                seed=resolved["test_seed"],
+                dataset_type="test",
+                x_labels=x_labels,
+                y_labels=y_labels,
+            )
+        elif resolved["test_set_type"] == "Design Space":
+            test_data = generate_design_space_dataset(
+                simulation=simulation,
+                n_samples=resolved["test_samples"],
+                n_vars=len(x_labels),
+                delta=resolved["delta"],
+                seed=resolved["test_seed"],
+                dataset_type="test",
+                x_labels=x_labels,
+                y_labels=y_labels,
+                maxima=np.array(resolved["maxima"]),
+            )
 
         model = GPModel()
 
@@ -100,21 +115,23 @@ def main():
 
                 model.train(train_data)
 
-                objective = PSOObjective(model=model, acq_fun=compute_ucb, beta=beta)
-                optimiser = PSOptimiser(
-                    objective=objective,
-                    lower_bound=lower_bound_normalised,
-                    upper_bound=upper_bound_normalised,
+                optimizer = BoTorchOptimizer(
+                    acq_fn=qUpperConfidenceBound,
+                    lower_bounds=lower_bound_normalised,
+                    upper_bounds=upper_bound_normalised,
+                    num_restarts=optimizer_parameters["num_restarts"],
+                    raw_samples=optimizer_parameters["raw_samples"],
+                    q=optimizer_parameters["q"],
+                    beta=beta
                 )
-
-                cost, x_new_point = optimiser.run()
+                x_new_point, _ = optimizer.optimize(model, train_data)
 
                 train_data.de_normalise()
 
                 x_new = Dataset(
                     dataset_type="recipe",
                     x_labels=x_labels,
-                    x_data=x_new_point.reshape(1, -1),
+                    x_data=x_new_point.reshape(1, -1).numpy(),
                     normalised=True,
                 )
 
