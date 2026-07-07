@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bayesian_optimisation.acquisition_functions import compute_ucb, compute_ei
-from bayesian_optimisation.pso import PSOObjective, PSOptimiser
+from bayesian_optimisation.acq_fn_optimizer import BoTorchOptimizer
+from botorch.acquisition import qUpperConfidenceBound, qExpectedImprovement
 from config.config_loader import load_config, resolve_config, validate_config
 from data.data_models import Dataset
 from data.data_processing import generate_data, generate_design_space_dataset
@@ -104,41 +104,27 @@ def main():
             model.train(train_data)
 
             if resolved["acquisition_function"] == "UCB":
-                objective = PSOObjective(
-                    model=model,
-                    acq_fun=compute_ucb,
-                    mean_discard_threshold=mean_discard_threshold,
-                    std_dev_discard_threshold=std_dev_discard_threshold,
-                    normalisation_stats=normalisation_stats,
+                optimizer = BoTorchOptimizer(
+                    acq_fn=qUpperConfidenceBound,
+                    lower_bounds=lower_bound_normalised,
+                    upper_bounds=upper_bound_normalised,
                     beta=resolved["beta"],
                 )
             elif resolved["acquisition_function"] == "EI":
-                objective = PSOObjective(
-                    model=model,
-                    acq_fun=compute_ei,
-                    mean_discard_threshold=mean_discard_threshold,
-                    std_dev_discard_threshold=std_dev_discard_threshold,
-                    normalisation_stats=normalisation_stats,
-                    train_data=train_data,
+                optimizer = BoTorchOptimizer(
+                    acq_fn=qExpectedImprovement,
+                    lower_bounds=lower_bound_normalised,
+                    upper_bounds=upper_bound_normalised,
                 )
 
-            optimiser = PSOptimiser(
-                objective=objective,
-                lower_bound=lower_bound_normalised,
-                upper_bound=upper_bound_normalised,
-            )
-
-            cost, x_new_point, stop_optimisation = optimiser.run()
-
-            if stop_optimisation:
-                break
+            x_new_point, _ = optimizer.optimize(model, train_data)
 
             train_data.de_normalise()
 
             x_new = Dataset(
                 dataset_type="recipe",
                 x_labels=x_labels,
-                x_data=x_new_point.reshape(1, -1),
+                x_data=x_new_point.reshape(1, -1).numpy(),
                 normalised=True,
             )
 
