@@ -7,7 +7,13 @@ from numpy.typing import NDArray
 
 from data.data_models import Dataset
 
-def filter_predictions(preds: Dataset, mean_threshold: NDArray[np.float64], std_threshold: NDArray[np.float64], normalisation_stats: Dict[str, Any]) -> NDArray[np.float64]:
+
+def filter_predictions(
+    preds: Dataset,
+    mean_threshold: NDArray[np.float64],
+    std_threshold: NDArray[np.float64],
+    normalisation_stats: Dict[str, Any],
+) -> NDArray[np.float64]:
     """
     Creates a filter based on thresholds to apply to acquisition function.
 
