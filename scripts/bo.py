@@ -72,6 +72,9 @@ def main():
             maxima=np.array(resolved["maxima"]),
         )
 
+    mean_discard_threshold = np.array(resolved["mean_discard_threshold"])
+    std_dev_discard_threshold = np.array(resolved["std_dev_discard_threshold"])
+
     model = GPModel()
 
     with MLflowTracker(
@@ -102,11 +105,21 @@ def main():
 
             if resolved["acquisition_function"] == "UCB":
                 objective = PSOObjective(
-                    model=model, acq_fun=compute_ucb, beta=resolved["beta"]
+                    model=model,
+                    acq_fun=compute_ucb,
+                    mean_discard_threshold=mean_discard_threshold,
+                    std_dev_discard_threshold=std_dev_discard_threshold,
+                    normalisation_stats=normalisation_stats,
+                    beta=resolved["beta"],
                 )
             elif resolved["acquisition_function"] == "EI":
                 objective = PSOObjective(
-                    model=model, acq_fun=compute_ei, train_data=train_data
+                    model=model,
+                    acq_fun=compute_ei,
+                    mean_discard_threshold=mean_discard_threshold,
+                    std_dev_discard_threshold=std_dev_discard_threshold,
+                    normalisation_stats=normalisation_stats,
+                    train_data=train_data,
                 )
 
             optimiser = PSOptimiser(
@@ -115,7 +128,10 @@ def main():
                 upper_bound=upper_bound_normalised,
             )
 
-            cost, x_new_point = optimiser.run()
+            cost, x_new_point, stop_optimisation = optimiser.run()
+
+            if stop_optimisation:
+                break
 
             train_data.de_normalise()
 

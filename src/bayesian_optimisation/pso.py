@@ -1,12 +1,13 @@
 """Particle swarm optimization objective and optimizer."""
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
 import pyswarms as ps
 
 from data.data_models import Dataset
+from bayesian_optimisation.filtered_acquisition import filter_predictions
 
 
 class PSOObjective:
@@ -17,14 +18,31 @@ class PSOObjective:
         model (Any): GP model.
         acq_fun (Callable): Acquisition function.
         acq_kwargs: Extra keyword arguments passed to the acquisition function.
+        mean_discard_threshold (Optional[NDArray[np.float64]]): mean discard threshold.
+        std_dev_discard_threshold (Optional[NDArray[np.float64]]): standard deviation
+            discard threshold.
+        normalisation_stats (Optional[Dict[str, Any]]): normalisation stats from train data.
     """
 
-    def __init__(self, model: Any, acq_fun: Callable, device="cpu", **acq_kwargs):
+    def __init__(
+        self,
+        model: Any,
+        acq_fun: Callable,
+        device="cpu",
+        mean_discard_threshold: Optional[NDArray[np.float64]] = None,
+        std_dev_discard_threshold: Optional[NDArray[np.float64]] = None,
+        normalisation_stats: Optional[Dict[str, Any]] = None,
+        **acq_kwargs,
+    ):
         self.model = model
         self.x_labels = model.x_labels
         self.acq_fun = acq_fun
         self.device = device
+        self.mean_discard_threshold = mean_discard_threshold
+        self.std_dev_discard_threshold = std_dev_discard_threshold
         self.acq_kwargs = acq_kwargs
+        self.normalisation_stats = normalisation_stats
+        self.stop_optimisation = False
 
     def __call__(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         """
@@ -38,14 +56,36 @@ class PSOObjective:
             acq_values (NDArray[np.float64]): negated acquisition function values.
         """
         candidate_dataset = Dataset(
-            dataset_type="recipe", x_data=x, x_labels=self.x_labels, normalised=True
+            dataset_type="recipe",
+            x_data=x,
+            x_labels=self.x_labels,
+            normalised=True,
         )
         candidate_dataset.check()
 
         predictions = self.model.predict(candidate_dataset)
-        acq_values = self.acq_fun(predictions, **self.acq_kwargs)
+        costs = -np.asarray(
+            self.acq_fun(predictions, **self.acq_kwargs), dtype=np.float64
+        ).reshape(-1)
 
-        return -np.asarray(acq_values, dtype=np.float64).reshape(-1)
+        if (
+            self.mean_discard_threshold is not None
+            and self.std_dev_discard_threshold is not None
+        ):
+            mask = filter_predictions(
+                predictions,
+                self.mean_discard_threshold,
+                self.std_dev_discard_threshold,
+                self.normalisation_stats,
+            )
+
+            if not np.any(mask):
+                self.stop_optimisation = True
+                return np.full_like(costs, np.inf)
+
+            costs[~mask] = np.inf
+
+        return costs
 
 
 class PSOptimiser:
@@ -88,13 +128,25 @@ class PSOptimiser:
             init_pos=init_pos,
         )
 
-    def run(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    def run(
+        self,
+    ) -> Tuple[
+        Union[None, NDArray[np.float64]], Union[None, NDArray[np.float64]], bool
+    ]:
         """
-        Runs the particle swarm optimization.
+        Runs the particle swarm optimization. Stops optimization loop if no point survives thresholds.
 
         Returns:
             cost (NDArray[np.float64]): value of PSO at points.
             positions (NDArray[np.float64]): positions of particles.
+            stop_optimisation (bool): Whether optimization should stop due to no feasible points.
         """
+
+        initial_costs = self.objective(self.optimizer.swarm.position)
+
+        if self.objective.stop_optimisation:
+            return None, None, True
+
         cost, best_pos = self.optimizer.optimize(self.objective, iters=100)
-        return cost, best_pos
+
+        return cost, best_pos, False
