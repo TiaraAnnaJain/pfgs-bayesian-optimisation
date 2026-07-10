@@ -10,7 +10,7 @@ from config.json_loader import to_json
 from data.data_models import Dataset
 from data.data_processing import generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace
-from gp_model.analysis import compute_rrmse
+from gp_model.calculate_model_metrics import calculate_model_metrics
 from gp_model.model import GPModel
 from pareto_front.beta_calculator import calculate_beta
 from pareto_front.gp_problem import GPProblem
@@ -52,30 +52,28 @@ def main():
         y_labels=y_labels,
     )
 
-    if resolved["test_set_type"] == "Entire Space":
-        test_data = generate_data(
-            simulation=simulation,
-            n_samples=resolved["test_samples"],
-            n_vars=len(x_labels),
-            lower_bound=space.lower_bound_list,
-            upper_bound=space.upper_bound_list,
-            seed=resolved["test_seed"],
-            dataset_type="test",
-            x_labels=x_labels,
-            y_labels=y_labels,
-        )
-    elif resolved["test_set_type"] == "Design Space":
-        test_data = generate_design_space_dataset(
-            simulation=simulation,
-            n_samples=resolved["test_samples"],
-            n_vars=len(x_labels),
-            delta=resolved["delta"],
-            seed=resolved["test_seed"],
-            dataset_type="test",
-            x_labels=x_labels,
-            y_labels=y_labels,
-            maxima=np.array(resolved["maxima"]),
-        )
+    entire_space = generate_data(
+        simulation=simulation,
+        n_samples=resolved["test_samples"],
+        n_vars=len(x_labels),
+        lower_bound=space.lower_bound_list,
+        upper_bound=space.upper_bound_list,
+        seed=resolved["test_seed"],
+        dataset_type="test",
+        x_labels=x_labels,
+        y_labels=y_labels,
+    )
+    design_space = generate_design_space_dataset(
+        simulation=simulation,
+        n_samples=resolved["test_samples"],
+        n_vars=len(x_labels),
+        delta=resolved["delta"],
+        seed=resolved["test_seed"],
+        dataset_type="test",
+        x_labels=x_labels,
+        y_labels=y_labels,
+        maxima=np.array(resolved["maxima"]),
+    )
 
     utopia_point = np.array([1.0, 1.0])
 
@@ -97,7 +95,8 @@ def main():
             simulation=simulation.__name__,
         )
 
-        rrmse_plot = []
+        entire_space_rrmse_plot = []
+        design_space_rrmse_plot = []
         beta_upper = []
         beta_lower = []
         train_data_max = []
@@ -182,26 +181,18 @@ def main():
             train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
             train_data.y_data = np.vstack([train_data.y_data, y_new])
 
-            recipe = test_data.copy()
-            recipe.dataset_type = "recipe"
-            recipe.y_data = None
-            recipe.y_labels = None
-
-            recipe.set_stats(normalisation_stats)
-            recipe.normalise()
-
-            predictions = model.predict(recipe)
-
-            predictions.set_stats(normalisation_stats)
-            predictions.de_normalise()
-
-            rrmse = compute_rrmse(predictions.y_data.reshape(-1, 1), test_data.y_data)
+            datasets = {"Entire Space": entire_space, "Design Space": design_space}
+            metrics = calculate_model_metrics(model, datasets, normalisation_stats)
+            design_space_rrmse = metrics["Design Space RRMSE"]
+            entire_space_rrmse = metrics["Entire Space RRMSE"]
 
             print(
-                f"Iteration {i + 1}: beta upper bound = {beta_max}, beta lower bound = {beta_min}, RRMSE = {rrmse}, x_new: {x_new.x_data}"
+                f"Iteration {i + 1}: beta upper bound = {beta_max}, beta lower bound = {beta_min}, "
+                f"Entire space RRMSE = {entire_space_rrmse}, Design Space RRMSE: {design_space_rrmse}"
             )
 
-            rrmse_plot.append(rrmse)
+            entire_space_rrmse_plot.append(entire_space_rrmse)
+            design_space_rrmse_plot.append(design_space_rrmse)
             beta_upper.append(beta_max)
             beta_lower.append(beta_min)
             train_data_max.append(train_data.y_data.max())
@@ -224,7 +215,8 @@ def main():
 
             tracker.log_iteration(
                 step=i + 1,
-                rrmse=rrmse,
+                entire_space_rrmse=entire_space_rrmse,
+                design_space_rrmse=design_space_rrmse,
                 train_data_max=train_data.y_data.max(),
                 beta_min=beta_min,
                 beta_max=beta_max,
@@ -250,7 +242,9 @@ def main():
         ax.set(title="Feasible beta ranges", xlabel="iterations", ylabel="beta")
 
         rrmse_fig, ax = plt.subplots()
-        plt.plot(x, rrmse_plot)
+        ax.plot(x, entire_space_rrmse_plot, label="RRMSE (Entire space)")
+        ax.plot(x, design_space_rrmse_plot, label="RRMSE (Design space)")
+        ax.legend()
         ax.set(title="RRMSE over iterations", xlabel="iterations", ylabel="RRMSE")
 
         train_data_max_fig, ax = plt.subplots()
