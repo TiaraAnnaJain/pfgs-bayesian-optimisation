@@ -94,7 +94,8 @@ class MLflowTracker:
     def log_iteration(
         self,
         step: int,
-        rrmse: float,
+        entire_space_rrmse: float,
+        design_space_rrmse: float,
         train_data_max: float,
         gp_fig: Optional[plt.Figure] = None,
         pareto_fig: Optional[plt.Figure] = None,
@@ -108,7 +109,8 @@ class MLflowTracker:
 
         Parameters:
             step (int): current iteration.
-            rrmse (float): RRMSE value at current iteration.
+            entire_space_rrmse (float): RRMSE value at current iteration using entire space testset.
+            design_space_rrmse (float): RRMSE value at current iteration using design space testset.
             train_data_max (float): maximum training data value.
             gp_fig (Optional[plt.Figure]): GP contour plot at current iteration.
             pareto_fig (Optional[plt.Figure]): Pareto front plot at current iteration.
@@ -118,7 +120,12 @@ class MLflowTracker:
                 thresholds on pareto front.
             curr_beta (Optional[float]): current beta value.
         """
-        mlflow.log_metrics({"rrmse": round(rrmse, 4)}, step=step)
+        mlflow.log_metrics(
+            {"entire_space_rrmse": round(entire_space_rrmse, 4)}, step=step
+        )
+        mlflow.log_metrics(
+            {"design_space_rrmse": round(design_space_rrmse, 4)}, step=step
+        )
         mlflow.log_metrics({"train_data_max": round(train_data_max, 4)}, step=step)
 
         if gp_fig is not None:
