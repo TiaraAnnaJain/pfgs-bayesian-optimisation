@@ -12,7 +12,7 @@ from data.investigation_space import InvestigationSpace
 from data.data_processing import generate_data, generate_design_space_dataset
 from data.data_models import Dataset
 from gp_model.model import GPModel
-from gp_model.analysis import compute_rrmse
+from gp_model.calculate_model_metrics import calculate_model_metrics
 from plotting.gp_plotting import contour_slice_plot
 from tracking.mlflow_logging import MLflowTracker
 from config.json_loader import from_json
@@ -54,35 +54,33 @@ def main():
             y_labels=y_labels,
         )
 
-        if resolved["test_set_type"] == "Entire Space":
-            test_data = generate_data(
-                simulation=simulation,
-                n_samples=resolved["test_samples"],
-                n_vars=len(x_labels),
-                lower_bound=space.lower_bound_list,
-                upper_bound=space.upper_bound_list,
-                seed=resolved["test_seed"],
-                dataset_type="test",
-                x_labels=x_labels,
-                y_labels=y_labels,
-            )
-        elif resolved["test_set_type"] == "Design Space":
-            test_data = generate_design_space_dataset(
-                simulation=simulation,
-                n_samples=resolved["test_samples"],
-                n_vars=len(x_labels),
-                delta=resolved["delta"],
-                seed=resolved["test_seed"],
-                dataset_type="test",
-                x_labels=x_labels,
-                y_labels=y_labels,
-                maxima=np.array(resolved["maxima"]),
-            )
+        entire_space = generate_data(
+            simulation=simulation,
+            n_samples=resolved["test_samples"],
+            n_vars=len(x_labels),
+            lower_bound=space.lower_bound_list,
+            upper_bound=space.upper_bound_list,
+            seed=resolved["test_seed"],
+            dataset_type="test",
+            x_labels=x_labels,
+            y_labels=y_labels,
+        )
+        design_space = generate_design_space_dataset(
+            simulation=simulation,
+            n_samples=resolved["test_samples"],
+            n_vars=len(x_labels),
+            delta=resolved["delta"],
+            seed=resolved["test_seed"],
+            dataset_type="test",
+            x_labels=x_labels,
+            y_labels=y_labels,
+            maxima=np.array(resolved["maxima"]),
+        )
 
         model = GPModel()
 
         with MLflowTracker(
-            experiment_name=f"bo-pfgs-{simulation.__name__}", run_name=f"{name}-2"
+            experiment_name=f"{simulation.__name__}-optimisation", run_name=f"{name}-{resolved['test_name']}"
         ) as tracker:
             tracker.log_resolved_config(resolved)
 
@@ -94,7 +92,8 @@ def main():
                 beta_schedule=name,
             )
 
-            rrmse_plot = []
+            entire_space_rrmse_plot = []
+            design_space_rrmse_plot = []
             train_data_max = []
 
             default_beta = 1.96
@@ -143,26 +142,19 @@ def main():
                 train_data.x_data = np.vstack([train_data.x_data, x_new.x_data])
                 train_data.y_data = np.vstack([train_data.y_data, y_new])
 
-                recipe = test_data.copy()
-                recipe.dataset_type = "recipe"
-                recipe.y_data = None
-                recipe.y_labels = None
+                datasets = {"Entire Space": entire_space, "Design Space": design_space}
+                metrics = calculate_model_metrics(model, datasets, normalisation_stats)
+                design_space_rrmse = metrics["Design Space RRMSE"]
+                entire_space_rrmse = metrics["Entire Space RRMSE"]
 
-                recipe.set_stats(normalisation_stats)
-                recipe.normalise()
 
-                predictions = model.predict(recipe)
+                print(
+                f"Iteration {i + 1}: Entire space RRMSE = {entire_space_rrmse}, "
+                f"Design Space RRMSE: {design_space_rrmse}"
+            )
 
-                predictions.set_stats(normalisation_stats)
-                predictions.de_normalise()
-
-                rrmse = compute_rrmse(
-                    predictions.y_data.reshape(-1, 1), test_data.y_data
-                )
-
-                print(f"Iteration {i + 1}: RRMSE = {rrmse}, beta: {beta}")
-
-                rrmse_plot.append(rrmse)
+                entire_space_rrmse_plot.append(entire_space_rrmse)
+                design_space_rrmse_plot.append(design_space_rrmse)
                 train_data_max.append(train_data.y_data.max())
 
                 gp_plot_iter = contour_slice_plot(
@@ -176,16 +168,19 @@ def main():
 
                 tracker.log_iteration(
                     step=i,
-                    rrmse=rrmse,
+                    entire_space_rrmse=entire_space_rrmse,
+                    design_space_rrmse=design_space_rrmse,
                     train_data_max=train_data.y_data.max(),
                     gp_fig=gp_plot_iter,
                     curr_beta=beta,
                 )
 
-            x = range(len(rrmse_plot))
+            x = range(len(entire_space_rrmse_plot))
 
             rrmse_fig, ax = plt.subplots()
-            plt.plot(x, rrmse_plot)
+            ax.plot(x, entire_space_rrmse_plot, label="RRMSE (Entire space)")
+            ax.plot(x, design_space_rrmse_plot, label="RRMSE (Design space)")
+            ax.legend()
             ax.set(title="RRMSE over iterations", xlabel="iterations", ylabel="RRMSE")
 
             train_data_max_fig, ax = plt.subplots()
