@@ -6,7 +6,9 @@ from data.data_models import Dataset
 from gp_model.analysis import compute_rrmse
 
 
-def calculate_model_metrics(model: Any, datasets: Dict[str, Dataset], normalisation_stats: Dict[str, Dict]) -> Dict[str, float]:
+def calculate_model_metrics(
+    model: Any, datasets: Dict[str, Dataset], normalisation_stats: Dict[str, Dict]
+) -> Dict[str, float]:
     metrics = {}
 
     for name, dataset in datasets.items():
