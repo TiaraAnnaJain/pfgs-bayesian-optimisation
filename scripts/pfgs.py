@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from config.config_loader import load_config, resolve_config, validate_config
-from config.json_loader import to_json
 from data.data_models import Dataset
 from data.data_processing import generate_data, generate_design_space_dataset
 from data.investigation_space import InvestigationSpace
@@ -18,6 +17,8 @@ from pareto_front.optimal_point import ParetoPointSelector
 from pareto_front.optimizer import NSGAOptimiser
 from plotting.gp_plotting import contour_slice_plot
 from plotting.pareto_front_plot import plot_pareto_front
+from tracking.csv_loader import to_csv
+from tracking.json_loader import to_json
 from tracking.mlflow_logging import MLflowTracker
 
 
@@ -269,6 +270,17 @@ def main():
             beta_fig=beta_fig,
             train_data_max_fig=train_data_max_fig,
         )
+
+        results = {
+            "iteration": range(len(entire_space_rrmse_plot)),
+            "entire_space_rrmse": entire_space_rrmse_plot,
+            "design_space_rrmse": design_space_rrmse_plot,
+            "train_data_max": train_data_max,
+            "beta_upper": beta_upper,
+            "beta_lower": beta_lower,
+        }
+
+        to_csv(results=results, folder="results/pfgs", seed=resolved["train_seed"])
 
         tracker.finish()
 

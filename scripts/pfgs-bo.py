@@ -14,8 +14,9 @@ from data.data_models import Dataset
 from gp_model.model import GPModel
 from gp_model.calculate_model_metrics import calculate_model_metrics
 from plotting.gp_plotting import contour_slice_plot
+from tracking.csv_loader import to_csv
 from tracking.mlflow_logging import MLflowTracker
-from config.json_loader import from_json
+from tracking.json_loader import from_json
 from bayesian_optimisation.beta_pfgs import beta_ranges
 
 
@@ -80,7 +81,8 @@ def main():
         model = GPModel()
 
         with MLflowTracker(
-            experiment_name=f"{simulation.__name__}-optimisation", run_name=f"{name}-{resolved['test_name']}"
+            experiment_name=f"{simulation.__name__}-optimisation",
+            run_name=f"{name}-{resolved['test_name']}",
         ) as tracker:
             tracker.log_resolved_config(resolved)
 
@@ -95,6 +97,7 @@ def main():
             entire_space_rrmse_plot = []
             design_space_rrmse_plot = []
             train_data_max = []
+            beta_csv = []
 
             default_beta = 1.96
             current_beta = default_beta
@@ -121,7 +124,7 @@ def main():
                     num_restarts=optimizer_parameters["num_restarts"],
                     raw_samples=optimizer_parameters["raw_samples"],
                     q=optimizer_parameters["q"],
-                    beta=beta
+                    beta=beta,
                 )
                 x_new_point, _ = optimizer.optimize(model, train_data)
 
@@ -147,15 +150,15 @@ def main():
                 design_space_rrmse = metrics["Design Space RRMSE"]
                 entire_space_rrmse = metrics["Entire Space RRMSE"]
 
-
                 print(
-                f"Iteration {i + 1}: Entire space RRMSE = {entire_space_rrmse}, "
-                f"Design Space RRMSE: {design_space_rrmse}"
-            )
+                    f"Iteration {i + 1}: Entire space RRMSE = {entire_space_rrmse}, "
+                    f"Design Space RRMSE: {design_space_rrmse}"
+                )
 
                 entire_space_rrmse_plot.append(entire_space_rrmse)
                 design_space_rrmse_plot.append(design_space_rrmse)
                 train_data_max.append(train_data.y_data.max())
+                beta_csv.append(beta)
 
                 gp_plot_iter = contour_slice_plot(
                     trained_model=model,
@@ -208,6 +211,20 @@ def main():
                 rrmse_fig=rrmse_fig,
                 beta_fig=beta_fig,
                 train_data_max_fig=train_data_max_fig,
+            )
+
+            results = {
+                "iteration": range(len(entire_space_rrmse_plot)),
+                "entire_space_rrmse": entire_space_rrmse_plot,
+                "design_space_rrmse": design_space_rrmse_plot,
+                "train_data_max": train_data_max,
+                "beta_value": beta_csv,
+            }
+
+            to_csv(
+                results=results,
+                folder=f"results/pfgs-bo/{name}",
+                seed=resolved["train_seed"],
             )
 
             tracker.finish()

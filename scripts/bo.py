@@ -14,6 +14,7 @@ from data.investigation_space import InvestigationSpace
 from gp_model.calculate_model_metrics import calculate_model_metrics
 from gp_model.model import GPModel
 from plotting.gp_plotting import contour_slice_plot
+from tracking.csv_loader import to_csv
 from tracking.mlflow_logging import MLflowTracker
 
 
@@ -201,6 +202,19 @@ def main():
             final_gp_fig=gp_final_fig,
             rrmse_fig=rrmse_fig,
             train_data_max_fig=train_data_max_fig,
+        )
+
+        results = {
+            "iteration": range(len(entire_space_rrmse_plot)),
+            "entire_space_rrmse": entire_space_rrmse_plot,
+            "design_space_rrmse": design_space_rrmse_plot,
+            "train_data_max": train_data_max,
+        }
+
+        to_csv(
+            results=results,
+            folder=f"results/bo/{resolved["acquisition_function"]}",
+            seed=resolved["train_seed"],
         )
 
         tracker.finish()
