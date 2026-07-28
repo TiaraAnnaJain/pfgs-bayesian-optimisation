@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from bayesian_optimisation.acquisition_functions import compute_ucb, compute_ei
+from pso.acquisition_functions import compute_ucb, compute_ei
 from data.data_models import Dataset
 
 

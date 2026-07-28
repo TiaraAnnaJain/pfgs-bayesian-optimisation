@@ -17,7 +17,7 @@ from plotting.gp_plotting import contour_slice_plot
 from tracking.csv_loader import to_csv
 from tracking.mlflow_logging import MLflowTracker
 from tracking.json_loader import from_json
-from bayesian_optimisation.beta_pfgs import beta_ranges
+from pfgs_guided_bo.beta_pfgs import beta_ranges
 
 
 def main():

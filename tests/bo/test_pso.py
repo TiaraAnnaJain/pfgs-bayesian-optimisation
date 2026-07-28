@@ -3,7 +3,7 @@
 import numpy as np
 from unittest.mock import MagicMock, patch
 
-from bayesian_optimisation.pso import PSOObjective, PSOptimiser
+from pso.pso import PSOObjective, PSOptimiser
 
 
 class DummyModel:
