@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 import pyswarms as ps
 
 from data.data_models import Dataset
-from bayesian_optimisation.filtered_acquisition import filter_predictions
+from pso.filtered_acquisition import filter_predictions
 
 
 class PSOObjective:
