@@ -110,7 +110,7 @@ def main():
                     mean_discard_threshold=mean_discard_threshold,
                     std_dev_discard_threshold=std_dev_discard_threshold,
                     normalisation_stats=normalisation_stats,
-                    beta=resolved["beta"]
+                    beta=resolved["beta"],
                 )
             elif resolved["acquisition_function"] == "EI":
                 objective = PSOObjective(
@@ -119,7 +119,7 @@ def main():
                     mean_discard_threshold=mean_discard_threshold,
                     std_dev_discard_threshold=std_dev_discard_threshold,
                     normalisation_stats=normalisation_stats,
-                    train_data=train_data
+                    train_data=train_data,
                 )
 
             optimiser = PSOptimiser(
@@ -226,6 +226,6 @@ def main():
 
         tracker.finish()
 
+
 if __name__ == "__main__":
     main()
-
