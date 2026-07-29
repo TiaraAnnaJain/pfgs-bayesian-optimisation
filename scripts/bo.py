@@ -72,9 +72,6 @@ def main():
         maxima=np.array(resolved["maxima"]),
     )
 
-    mean_discard_threshold = np.array(resolved["mean_discard_threshold"])
-    std_dev_discard_threshold = np.array(resolved["std_dev_discard_threshold"])
-
     model = GPModel()
 
     with MLflowTracker(
