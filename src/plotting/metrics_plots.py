@@ -30,7 +30,6 @@ def plot_single_metric(
     y_label: str,
     fig_name: str,
     root: Path,
-    title: str,
 ) -> None:
     """
     Plots single curve with mean and standard deviation band.
@@ -41,17 +40,15 @@ def plot_single_metric(
         y_label (str): y label to plot.
         fig_name (str): figure name.
         root (Path): path to root.
-        title (str): title of plot.
     """
     mean = np.nanmean(y_data, axis=0)
     std = np.nanstd(y_data, axis=0)
 
-    plt.plot(x_data, mean, label=f"{title}")
+    plt.plot(x_data, mean, label=f"{fig_name}")
     plt.fill_between(x_data, mean - std, mean + std, alpha=0.3, label="±1 std")
 
-    plt.xlabel("iteration")
+    plt.xlabel("Iteration")
     plt.ylabel(y_label)
-    plt.title(title)
     plt.legend()
 
     save_fig(name=fig_name, folder="figures", root=root)
@@ -59,7 +56,7 @@ def plot_single_metric(
 
 
 def plot_multiple_metrics(
-    x_data: NDArray, curves: Dict, y_label: str, fig_name: str, root: Path, title: str
+    x_data: NDArray, curves: Dict, y_label: str, fig_name: str, root: Path
 ) -> None:
     """
     Plots multiple curves with mean and standard deviation band.
@@ -70,7 +67,6 @@ def plot_multiple_metrics(
         y_label (str): y label to plot.
         fig_name (str): figure name.
         root (Path): path to root.
-        title (str): title of plot.
     """
     for label, y_data in curves.items():
         max_length = max(len(run) for run in y_data)
@@ -96,7 +92,6 @@ def plot_multiple_metrics(
 
     plt.xlabel("Iteration")
     plt.ylabel(y_label)
-    plt.title(title)
     plt.legend()
 
     save_fig(name=fig_name, folder="figures", root=root)
