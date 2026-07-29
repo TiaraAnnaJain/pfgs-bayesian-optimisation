@@ -85,6 +85,7 @@ def main():
             y_label=y_labels,
             variables=space.variables,
             simulation=simulation.__name__,
+            train_seed=resolved["train_seed"],
         )
 
         entire_space_rrmse_plot = []

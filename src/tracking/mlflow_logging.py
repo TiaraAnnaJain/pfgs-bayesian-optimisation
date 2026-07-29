@@ -41,6 +41,7 @@ class MLflowTracker:
             "test_samples_per_region",
             "delta",
             "maxima",
+            "train_seed",
         ]:
             config_to_log.pop(key, None)
 
@@ -66,6 +67,7 @@ class MLflowTracker:
         variables: List[InvestigationSpaceVariable],
         simulation: str,
         beta_schedule: Optional[str] = None,
+        train_seed: Optional[int] = None,
     ):
         """
         Logs experiment setup as parameters.
@@ -76,6 +78,7 @@ class MLflowTracker:
             variables (List[InvestigationSpaceVariable]): variables to be logged.
             simulation (str): Name of the simulation being run.
             beta_schedule (str): Name of the beta schedule.
+            train_seed (int): seed for training runs.
         """
         bounds = {
             f"{v.label}_bounds": [v.lower_bound, v.upper_bound] for v in variables
@@ -88,6 +91,7 @@ class MLflowTracker:
                 "simulation": simulation,
                 **bounds,
                 "beta_schedule": beta_schedule,
+                "train_seed": train_seed,
             }
         )
 

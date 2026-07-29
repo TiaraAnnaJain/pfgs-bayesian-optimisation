@@ -92,6 +92,7 @@ def main():
                 variables=space.variables,
                 simulation=simulation.__name__,
                 beta_schedule=name,
+                train_seed=resolved["train_seed"],
             )
 
             entire_space_rrmse_plot = []
