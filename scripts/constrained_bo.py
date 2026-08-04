@@ -96,6 +96,8 @@ def main():
         num_iter = resolved["num_iter"]
 
         for i in range(num_iter):
+            train_data_max.append(train_data.y_data.max())
+
             train_data.add_normalisation_params(
                 lower_bound=space.lower_bounds, upper_bound=space.upper_bounds
             )
@@ -132,6 +134,7 @@ def main():
             cost, x_new_point, stop_optimisation = optimiser.run()
 
             if stop_optimisation:
+                train_data_max.pop()
                 break
 
             train_data.de_normalise()
@@ -163,7 +166,6 @@ def main():
 
             entire_space_rrmse_plot.append(entire_space_rrmse)
             design_space_rrmse_plot.append(design_space_rrmse)
-            train_data_max.append(train_data.y_data.max())
 
             gp_plot_iter = contour_slice_plot(
                 trained_model=model,

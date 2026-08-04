@@ -106,6 +106,8 @@ def main():
         num_iter = resolved["num_iter"]
 
         for i in range(num_iter):
+            train_data_max.append(train_data.y_data.max())
+
             train_data.add_normalisation_params(
                 lower_bound=space.lower_bounds, upper_bound=space.upper_bounds
             )
@@ -152,6 +154,7 @@ def main():
             )
 
             if stop_optimisation:
+                train_data_max.pop()
                 break
 
             closest_point, optimal_idx, optimal_point, scaled_pareto_front = (
@@ -197,7 +200,6 @@ def main():
             design_space_rrmse_plot.append(design_space_rrmse)
             beta_upper.append(beta_max)
             beta_lower.append(beta_min)
-            train_data_max.append(train_data.y_data.max())
 
             pareto_front_plot = plot_pareto_front(
                 pareto_front=pareto_front,
