@@ -195,8 +195,8 @@ class Dataset:
                 ) / self.y_standardiser_std[label]
 
                 if self.y_errors is not None:
-                    self.y_errors[:, i] = self.y_errors[:, i] / (
-                        self.y_standardiser_std[label] ** 2
+                    self.y_errors[:, i] = (
+                        self.y_errors[:, i] / self.y_standardiser_std[label]
                     )
 
         self.normalised = True

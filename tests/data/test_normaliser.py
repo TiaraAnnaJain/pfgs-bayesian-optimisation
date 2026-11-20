@@ -327,3 +327,25 @@ def test_copy():
     train_data.y_data = np.array([[10.0], [10.0]])
 
     assert not np.allclose(train_copy.y_data, train_data.y_data)
+
+
+def test_uncertainty_round_trip_uses_standard_deviation():
+    """Normalising then de-normalising predictions returns the original std devs."""
+    predictions = Dataset(
+        dataset_type="predictions",
+        x_data=np.array([[0.0, 0.0], [1.0, 1.0]]),
+        x_labels=["x1", "x2"],
+        y_labels=["y"],
+        y_data=np.array([[10.0], [30.0]]),
+        y_errors=np.array([[2.0], [4.0]]),
+        x_normaliser_min={"x1": 0.0, "x2": 0.0},
+        x_normaliser_max={"x1": 1.0, "x2": 1.0},
+        y_standardiser_mean={"y": 20.0},
+        y_standardiser_std={"y": 10.0},
+    )
+
+    predictions.normalise()
+    np.testing.assert_allclose(predictions.y_errors, [[0.2], [0.4]])
+
+    predictions.de_normalise()
+    np.testing.assert_allclose(predictions.y_errors, [[2.0], [4.0]])
