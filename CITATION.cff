@@ -1,0 +1,48 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, and cite the PFGS framework it builds on."
+title: "Incorporating Pareto Front Guided Sampling Principles into Bayesian Optimisation"
+type: software
+authors:
+  - family-names: Jain
+    given-names: Tiara Anna
+license: MIT
+repository-code: "https://github.com/TiaraAnnaJain/pfgs-bayesian-optimisation"
+keywords:
+  - Bayesian optimisation
+  - Gaussian processes
+  - Pareto front guided sampling
+  - constrained optimisation
+references:
+  - type: conference-paper
+    title: "Pareto Front Guided Sampling for Efficient Bioprocess Experimentation"
+    authors:
+      - family-names: Stricker
+        given-names: S.
+      - family-names: dos Santos
+        given-names: L. F.
+      - family-names: Wirnsperger
+        given-names: C.
+      - family-names: Butté
+        given-names: A.
+      - family-names: del Rio Chanona
+        given-names: A.
+      - family-names: Mercangöz
+        given-names: M.
+      - family-names: Guillén-Gosálbez
+        given-names: G.
+    collection-title: "Systems and Control Transactions (ESCAPE 36)"
+    conference:
+      name: "European Symposium on Computer Aided Process Engineering (ESCAPE 36)"
+      city: Sheffield
+      country: GB
+    year: 2026
+    start: 692
+    end: 701
+    doi: 10.69997/sct.137011
+  - type: software
+    title: "Pareto Front Guided Sampling (PFGS)"
+    authors:
+      - family-names: Stricker
+        given-names: S.
+    repository-code: "https://github.com/samstricker/pfgs-optimization"
+    license: MIT
