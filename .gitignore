@@ -9,10 +9,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# quality.sh
-scripts/quality.sh
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
-# Virtual evironments
+# Virtual environments
 .venv/
 venv/
 env/
