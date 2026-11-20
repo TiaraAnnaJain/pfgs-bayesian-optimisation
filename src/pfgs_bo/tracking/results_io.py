@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 import json
 
 import numpy as np
@@ -66,19 +66,38 @@ def from_csv(folder: str, x_column: str, y_column: str) -> Tuple[NDArray, NDArra
     return x, y_all
 
 
-def to_json(beta_min: List[float], beta_max: List[float]) -> None:
-    """Takes beta ranges and writes them into json file."""
+def to_json(
+    beta_min: List[float], beta_max: List[float], json_file: Union[str, Path]
+) -> None:
+    """
+    Writes the beta interval found at each PFGS iteration to a JSON file.
+
+    Parameters:
+        beta_min (List[float]): lower bound of the beta interval per iteration.
+        beta_max (List[float]): upper bound of the beta interval per iteration.
+        json_file (Union[str, Path]): file to write; parent folders are created.
+    """
     beta_range = {
         "beta_min": beta_min,
         "beta_max": beta_max,
     }
 
-    with open("beta.json", "w") as file:
+    json_file = Path(json_file)
+    json_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(json_file, "w") as file:
         json.dump(beta_range, file)
 
 
-def from_json(json_file: str) -> Dict[str, List[float]]:
-    """Takes json file with beta ranges and returns beta values."""
+def from_json(json_file: Union[str, Path]) -> Dict[str, List[float]]:
+    """
+    Reads beta intervals written by ``to_json``.
+
+    Parameters:
+        json_file (Union[str, Path]): file to read.
+
+    Returns:
+        beta_range (Dict[str, List[float]]): "beta_min" and "beta_max" lists.
+    """
     with open(json_file, "r") as file:
         beta_range = json.load(file)
 

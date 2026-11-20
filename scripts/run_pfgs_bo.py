@@ -4,6 +4,7 @@ import numpy as np
 from botorch.acquisition import qUpperConfidenceBound
 
 from pfgs_bo.bo.botorch_optimiser import BoTorchOptimizer
+from pfgs_bo.config import PROJECT_ROOT
 from pfgs_bo.experiment import (
     RunHistory,
     add_observation,
@@ -26,11 +27,16 @@ DEFAULT_BETA = 1.96
 
 
 def main():
-    config, space = load_experiment(validate=False)
+    config, space = load_experiment("BO-PFGS")
     lower_bound, upper_bound = unit_bounds(space)
     optimizer_parameters = config["optimizer_parameters"]
 
-    beta_schedules = beta_ranges(from_json("beta.json"))
+    if "beta_file" not in config["files"]:
+        raise ValueError(
+            "Set [files] beta_file in the config to the beta intervals saved by "
+            'run_pfgs.py, e.g. beta_file = "results/pfgs/beta_seed_55.json".'
+        )
+    beta_schedules = beta_ranges(from_json(PROJECT_ROOT / config["files"]["beta_file"]))
 
     for name, beta_values in beta_schedules.items():
         train_data, test_sets = build_datasets(config, space)
@@ -79,6 +85,7 @@ def main():
                     train_data,
                     new_point,
                     metrics,
+                    best_observed,
                     curr_beta=beta,
                 )
 

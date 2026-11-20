@@ -1,6 +1,7 @@
 """Shared building blocks for the experiment scripts."""
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
@@ -26,25 +27,47 @@ from pfgs_bo.tracking.results_io import to_csv
 TestSets = Dict[str, Dataset]
 
 
-def load_experiment(validate: bool = True) -> Tuple[Dict[str, Any], InvestigationSpace]:
+def load_experiment(method: str) -> Tuple[Dict[str, Any], InvestigationSpace]:
     """
-    Loads the config file given on the command line and its investigation space.
+    Loads and validates the config file given on the command line, and its
+    investigation space.
 
     Parameters:
-        validate (bool): whether to validate the config before resolving it.
+        method (str): method the calling script runs; the config's ``method`` must
+            match, so a config can't be run with the wrong script.
 
     Returns:
         config (Dict[str, Any]): resolved config, with the simulation name replaced by
-            the simulation function.
+            the simulation function and the config's [files] table under "files".
         space (InvestigationSpace): investigation space referenced by the config.
     """
     config, files = load_config()
-    if validate:
-        validate_config(config)
+    validate_config(config)
+    if config["method"] != method:
+        raise ValueError(
+            f"This script runs method {method!r}, but the config has method "
+            f"{config['method']!r}."
+        )
 
     space = InvestigationSpace.from_json(PROJECT_ROOT / files["investigation_space"])
 
-    return resolve_config(config), space
+    resolved = resolve_config(config)
+    resolved["files"] = files
+
+    return resolved, space
+
+
+def beta_file_path(seed: int) -> Path:
+    """
+    Returns where PFGS saves the beta intervals for a given training seed.
+
+    Parameters:
+        seed (int): training seed of the PFGS run.
+
+    Returns:
+        path (Path): ``results/pfgs/beta_seed_<seed>.json`` in the project root.
+    """
+    return PROJECT_ROOT / "results" / "pfgs" / f"beta_seed_{seed}.json"
 
 
 def unit_bounds(space: InvestigationSpace) -> Tuple[List[float], List[float]]:
@@ -309,6 +332,7 @@ def log_iteration(
     train_data: Dataset,
     new_point: Dataset,
     metrics: Dict[str, float],
+    best_observed: float,
     **extra: Any,
 ) -> None:
     """
@@ -326,8 +350,8 @@ def log_iteration(
     gp_fig = contour_slice_plot(
         trained_model=model,
         train_dataset=train_data,
-        x_plot_labels=train_data.x_labels,
-        y_plot_label="y",
+        x_plot_labels=train_data.x_labels[:2],
+        y_plot_label=train_data.y_labels[0],
         iteration=step,
         x_new=new_point,
     )
@@ -336,7 +360,7 @@ def log_iteration(
         step=step,
         entire_space_rrmse=metrics["entire_space_rrmse"],
         design_space_rrmse=metrics["design_space_rrmse"],
-        train_data_max=train_data.y_data.max(),
+        train_data_max=best_observed,
         gp_fig=gp_fig,
         **extra,
     )
@@ -370,8 +394,8 @@ def finish_run(
     final_gp_fig = contour_slice_plot(
         trained_model=model,
         train_dataset=train_data,
-        x_plot_labels=train_data.x_labels,
-        y_plot_label="y",
+        x_plot_labels=train_data.x_labels[:2],
+        y_plot_label=train_data.y_labels[0],
         iteration="Final",
     )
 

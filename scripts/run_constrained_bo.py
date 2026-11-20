@@ -21,7 +21,7 @@ from pfgs_bo.model import GPModel
 
 
 def main():
-    config, space = load_experiment()
+    config, space = load_experiment("constrained-BO")
     train_data, test_sets = build_datasets(config, space)
     lower_bound, upper_bound = unit_bounds(space)
 
@@ -65,7 +65,9 @@ def main():
             history.record(best_observed, metrics)
 
             print_progress(step, metrics)
-            log_iteration(tracker, step, model, train_data, new_point, metrics)
+            log_iteration(
+                tracker, step, model, train_data, new_point, metrics, best_observed
+            )
 
         finish_run(
             tracker,

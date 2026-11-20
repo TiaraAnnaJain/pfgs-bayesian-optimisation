@@ -1,6 +1,6 @@
 """UCB beta derivation from the Pareto front and beta schedules for PFGS-guided BO."""
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -127,3 +127,32 @@ def beta_ranges(
     )
 
     return beta_schedule
+
+
+def feasible_beta_range(
+    beta_lower: Sequence[float], beta_upper: Sequence[float]
+) -> Optional[Tuple[float, float]]:
+    """
+    Finds the beta range that lies inside the beta interval of every PFGS iteration.
+    Iterations without a valid interval (NaN) are skipped, and an upper bound of 0
+    is treated as "no upper bound".
+
+    Parameters:
+        beta_lower (Sequence[float]): lower bound of the beta interval per iteration.
+        beta_upper (Sequence[float]): upper bound of the beta interval per iteration.
+
+    Returns:
+        feasible_range (Optional[Tuple[float, float]]): (min, max) of the common range,
+            or None if the intervals don't overlap or there are none.
+    """
+    lower = [beta for beta in beta_lower if np.isfinite(beta)]
+    upper = [beta for beta in beta_upper if np.isfinite(beta) and beta != 0]
+
+    if not lower or not upper:
+        return None
+
+    beta_min, beta_max = max(lower), min(upper)
+    if beta_max < beta_min:
+        return None
+
+    return beta_min, beta_max

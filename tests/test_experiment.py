@@ -1,5 +1,8 @@
 """Tests for the shared experiment building blocks."""
 
+from unittest.mock import MagicMock
+
+import matplotlib
 import numpy as np
 import pytest
 
@@ -14,6 +17,7 @@ from pfgs_bo.experiment import (
     build_datasets,
     evaluate_surrogate,
     fit_surrogate,
+    log_iteration,
     unit_bounds,
 )
 from pfgs_bo.model import GPModel
@@ -109,3 +113,26 @@ def test_run_history_columns():
     assert list(columns["iteration"]) == [0, 1]
     assert columns["train_data_max"] == [1.0, 3.0]
     assert columns["beta"] == [2.0, 1.5]
+
+
+def test_log_iteration_logs_best_value_before_new_point(config, space):
+    matplotlib.use("Agg")
+    train_data, _ = build_datasets(config, space)
+    best_observed = train_data.y_data.max()
+    model = GPModel()
+    stats = fit_surrogate(model, train_data, space)
+    # A point at the Himmelblau maximum, so the new best is higher than before.
+    new_point = add_observation(train_data, np.array([0.8, 0.7]), stats, himmelblau)
+    tracker = MagicMock()
+
+    log_iteration(
+        tracker,
+        1,
+        model,
+        train_data,
+        new_point,
+        {"entire_space_rrmse": 0.5, "design_space_rrmse": 0.4},
+        best_observed,
+    )
+
+    assert tracker.log_iteration.call_args.kwargs["train_data_max"] == best_observed

@@ -26,9 +26,10 @@ class ParetoPointSelector:
     ) -> None:
         self.pareto_front = pareto_front
         self.utopia_point = utopia_point
+        self._validate()
 
-    def __post__init(self):
-        """Validations to make sure pareto front is de-normalised."""
+    def _validate(self) -> None:
+        """Checks that the Pareto front is de-normalised and has means and std devs."""
         if self.pareto_front.normalised:
             raise ValueError("Pareto front must not be normalised.")
 

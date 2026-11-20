@@ -52,61 +52,83 @@ def resolve_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return resolved
 
 
+METHODS = ("PFGS", "BO", "BO-PFGS", "constrained-BO")
+ACQUISITION_FUNCTIONS = ("UCB", "EI")
+
+
+def _require(config: Dict[str, Any], key: str, message: str) -> Any:
+    """Returns ``config[key]``, raising a ValueError with ``message`` if it is missing."""
+    if config.get(key) is None:
+        raise ValueError(message)
+    return config[key]
+
+
+def _require_positive_int(config: Dict[str, Any], key: str, description: str) -> None:
+    """Checks that ``config[key]`` is an integer greater than 0."""
+    value = _require(config, key, f"Please provide {description}.")
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise TypeError(
+            f"{description.capitalize()} must be an integer greater than 0."
+        )
+
+
 def validate_config(config: Dict[str, Any]) -> None:
-    """Validations for config file."""
-    if not config["test_name"]:
+    """
+    Checks that a raw config has every setting its method needs.
+
+    Parameters:
+        config (Dict[str, Any]): raw config from ``load_config``.
+
+    Raises:
+        ValueError: if a setting is missing or has an unsupported value.
+        TypeError: if a setting has the wrong type.
+    """
+    if not config.get("test_name"):
         raise ValueError("Please provide a test run name.")
 
-    if config["method"] is None:
-        raise ValueError("Please provide method from the following: BO, PFGS.")
-    if config["method"] not in {"BO", "PFGS"}:
-        raise ValueError(f"Method {config['method']} is not supported.")
+    method = _require(
+        config,
+        "method",
+        f"Please provide method from the following: {', '.join(METHODS)}.",
+    )
+    if method not in METHODS:
+        raise ValueError(f"Method {method} is not supported.")
 
-    if config["num_iter"] is None:
-        raise ValueError("Please provide number of iterations.")
+    if method != "BO-PFGS":
+        _require_positive_int(config, "num_iter", "number of iterations")
 
-    if not isinstance(config["num_iter"], int) or config["num_iter"] <= 0:
-        raise TypeError("Number of iterations must be an integer greater than 0.")
-
-    if config["method"] == "BO":
-        if config["acquisition_function"] is None:
-            raise ValueError(
-                "Please provide acquisition function from the following: UCB, EI."
-            )
-        if config["acquisition_function"] not in ["UCB", "EI"]:
+    if method in ("BO", "constrained-BO"):
+        acquisition_function = _require(
+            config,
+            "acquisition_function",
+            "Please provide acquisition function from the following: UCB, EI.",
+        )
+        if acquisition_function not in ACQUISITION_FUNCTIONS:
             raise ValueError("Acquisition function must be either UCB or EI.")
-        if config["acquisition_function"] == "UCB":
-            if config["beta"] is None:
-                raise ValueError("Please provide beta parameter.")
+        if acquisition_function == "UCB":
+            _require(config, "beta", "Please provide beta parameter.")
 
-    if config["simulation"] is None:
-        raise ValueError(
-            "Please provide simulation from the following: himmelblau, branin, ackley."
-        )
-    if config["simulation"] not in ("himmelblau", "branin", "ackley"):
-        raise ValueError(f"Simulation {config['simulation']} is not supported.")
+    simulation = _require(
+        config,
+        "simulation",
+        "Please provide simulation from the following: "
+        f"{', '.join(SIMULATION_REGISTRY)}.",
+    )
+    if simulation not in SIMULATION_REGISTRY:
+        raise ValueError(f"Simulation {simulation} is not supported.")
 
-    if config["train_samples"] is None:
-        raise ValueError("Please provide number of training samples.")
-    if not isinstance(config["train_samples"], int) or config["train_samples"] <= 0:
-        raise ValueError(
-            "Number of training samples must be an integer greater than 0."
-        )
+    _require_positive_int(config, "train_samples", "number of training samples")
+    _require_positive_int(config, "test_samples", "number of test samples")
 
-    if config["test_samples"] is None:
-        raise ValueError("Please provide number of test samples.")
-    if not isinstance(config["test_samples"], int) or config["test_samples"] <= 0:
-        raise ValueError("Number of test samples must be an integer greater than 0.")
-
-    if config["method"] == "PFGS":
+    if method in ("PFGS", "constrained-BO"):
         if (
-            config["mean_discard_threshold"] is None
-            or config["std_dev_discard_threshold"] is None
+            config.get("mean_discard_threshold") is None
+            or config.get("std_dev_discard_threshold") is None
         ):
             raise ValueError(
                 "Please provide mean and standard deviation discard thresholds."
             )
 
     for seed_name in ("train_seed", "test_seed"):
-        if not isinstance(config[seed_name], int):
+        if not isinstance(config.get(seed_name), int):
             raise TypeError(f"{seed_name} must be an integer.")
