@@ -1,7 +1,8 @@
 """Tests for Particle Swarm Optimisation objective and optimiser."""
 
-import numpy as np
 from unittest.mock import MagicMock, patch
+
+import numpy as np
 
 from pfgs_bo.bo.pso_optimiser import PSOObjective, PSOptimiser
 

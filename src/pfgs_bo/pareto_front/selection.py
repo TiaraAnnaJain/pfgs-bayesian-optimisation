@@ -1,7 +1,5 @@
 """Calculations for optimal point on pareto front."""
 
-from typing import Tuple
-
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.preprocessing import MinMaxScaler
@@ -42,15 +40,15 @@ class ParetoPointSelector:
         self,
         mean_discard_threshold: NDArray[np.float64],
         std_dev_discard_threshold: NDArray[np.float64],
-    ) -> Tuple[
-        NDArray[np.float64],
+    ) -> tuple[
+        NDArray[np.bool_],
         NDArray[np.float64],
         NDArray[np.float64],
         bool,
     ]:
         """
-        Discards points on Pareto front with mean and standard deviation values lower than the
-        threshold input. If no point survives, the optimisation loop breaks.
+        Discards points on the Pareto front whose mean or standard deviation is below
+        the thresholds. If no point survives, the optimisation loop breaks.
 
         Parameters:
             mean_discard_threshold (NDArray[np.float64]): threshold below which mean
@@ -59,7 +57,7 @@ class ParetoPointSelector:
                 standard deviation values will be discarded.
 
         Returns:
-            mask (NDArray[np.float64]): mask of points discarded.
+            mask (NDArray[np.bool_]): True for points that are kept.
             filtered_pareto_front (NDArray[np.float64]): filtered pareto front
                 points.
             stop_optimisation (bool): flag to stop optimisation.
@@ -73,11 +71,12 @@ class ParetoPointSelector:
 
         if discard_thresholds.shape[0] != pareto_front_points.shape[1]:
             raise ValueError(
-                "Number of mean + standard deviation thresholds must match Pareto objectives."
+                "Number of mean + standard deviation thresholds must match the "
+                "number of Pareto objectives."
             )
 
         stop_optimisation = False
-        mask = (pareto_front_points >= discard_thresholds).all(axis=1)
+        mask = np.asarray((pareto_front_points >= discard_thresholds).all(axis=1))
 
         if not mask.any():
             stop_optimisation = True
@@ -112,7 +111,7 @@ class ParetoPointSelector:
     def closest_points(
         self,
         filtered_pareto_front: NDArray[np.float64],
-    ) -> Tuple[
+    ) -> tuple[
         NDArray[np.float64],
         NDArray[np.float64],
         NDArray[np.float64],

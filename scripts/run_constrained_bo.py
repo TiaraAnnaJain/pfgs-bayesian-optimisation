@@ -1,6 +1,13 @@
-"""Constrained Bayesian optimisation with a UCB or EI acquisition function and PSO optimiser."""
+"""
+Constrained Bayesian optimisation with a UCB or EI acquisition function, optimised
+with particle swarm optimisation (PSO).
+"""
+
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from pfgs_bo.bo.acquisition import compute_ei, compute_ucb
 from pfgs_bo.bo.pso_optimiser import PSOObjective, PSOptimiser
@@ -20,7 +27,8 @@ from pfgs_bo.experiment import (
 from pfgs_bo.model import GPModel
 
 
-def main():
+def main() -> None:
+    """Runs constrained BO with the config given on the command line."""
     config, space = load_experiment("constrained-BO")
     train_data, test_sets = build_datasets(config, space)
     lower_bound, upper_bound = unit_bounds(space)
@@ -38,6 +46,8 @@ def main():
             best_observed = train_data.y_data.max()
             normalisation_stats = fit_surrogate(model, train_data, space)
 
+            acq_fun: Callable[..., NDArray[np.float64]]
+            acq_kwargs: dict[str, Any]
             if acquisition_function == "UCB":
                 acq_fun, acq_kwargs = compute_ucb, {"beta": config["beta"]}
             else:

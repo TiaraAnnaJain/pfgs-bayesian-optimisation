@@ -1,11 +1,11 @@
 """Pareto front generation: GP problem wrapper and NSGA-II optimiser."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from pymoo.core.problem import Problem
 from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
 
@@ -19,15 +19,15 @@ class GPProblem(Problem):
 
     Parameters:
         model (Any): GP model that outputs a predicted mean and standard deviation.
-        lower_bound (List[float]): The lower bounds of GP inputs.
-        upper_bound (List[float]): The upper bounds of GP inputs.
+        lower_bound (list[float]): The lower bounds of GP inputs.
+        upper_bound (list[float]): The upper bounds of GP inputs.
     """
 
     def __init__(
         self,
         model: Any,
-        lower_bound: List[float],
-        upper_bound: List[float],
+        lower_bound: list[float],
+        upper_bound: list[float],
     ) -> None:
         xl = np.array(lower_bound, dtype=np.float64)
         xu = np.array(upper_bound, dtype=np.float64)
@@ -70,12 +70,21 @@ class GPProblem(Problem):
 
 
 class NSGAOptimiser:
+    """
+    NSGA-II optimiser that generates the Pareto front of a GP problem.
+
+    Parameters:
+        problem (Any): pymoo problem, e.g. ``GPProblem``.
+        pop_size (int): population size. Defaults to 500.
+        n_gen (int): number of generations. Defaults to 10.
+    """
+
     def __init__(self, problem: Any, pop_size: int = 500, n_gen: int = 10) -> None:
         self.problem = problem
         self.algorithm = NSGA2(pop_size)
         self.termination = get_termination("n_gen", n_gen)
 
-    def run(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    def run(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """
         Run the multi-objective optimiser and compute the Pareto front.
 

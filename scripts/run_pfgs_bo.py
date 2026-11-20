@@ -26,7 +26,8 @@ from pfgs_bo.tracking.results_io import from_json
 DEFAULT_BETA = 1.96
 
 
-def main():
+def main() -> None:
+    """Runs PFGS-guided BO for every beta schedule with the given config."""
     config, space = load_experiment("BO-PFGS")
     lower_bound, upper_bound = unit_bounds(space)
     optimizer_parameters = config["optimizer_parameters"]

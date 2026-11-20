@@ -1,7 +1,7 @@
 """Figures summarising a run (per-run histories) and comparing runs across seeds."""
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,11 +17,11 @@ def save_fig(name: str, folder: str, root: Path) -> None:
         folder (str): path to folder where to save figures.
         root (Path): path to root.
     """
-    folder = Path(root / folder)
-    folder.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(root) / folder
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    plt.savefig(folder / f"{name}.png", dpi=300, bbox_inches="tight")
-    plt.savefig(folder / f"{name}.pdf", dpi=300, bbox_inches="tight")
+    plt.savefig(out_dir / f"{name}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(out_dir / f"{name}.pdf", dpi=300, bbox_inches="tight")
 
 
 def plot_single_metric(
@@ -56,7 +56,7 @@ def plot_single_metric(
 
 
 def plot_multiple_metrics(
-    x_data: NDArray, curves: Dict, y_label: str, fig_name: str, root: Path
+    x_data: NDArray, curves: dict, y_label: str, fig_name: str, root: Path
 ) -> None:
     """
     Plots multiple curves with mean and standard deviation band.
@@ -157,19 +157,21 @@ def plot_beta_ranges(
         fig (plt.Figure): beta interval figure.
     """
     fig, ax = plt.subplots()
-    for x_i, (lower, upper) in enumerate(zip(beta_lower, beta_upper)):
+    for x_i, (lower, upper) in enumerate(zip(beta_lower, beta_upper, strict=True)):
         ax.plot([x_i, x_i], [lower, upper], color="blue")
     ax.set(title="Feasible beta ranges", xlabel="iterations", ylabel="beta")
 
     return fig
 
 
-def plot_beta_schedule(beta_values: Sequence[float]) -> plt.Figure:
+def plot_beta_schedule(
+    beta_values: Sequence[float] | NDArray[np.float64],
+) -> plt.Figure:
     """
     Plots the beta value used at each iteration of PFGS-guided BO.
 
     Parameters:
-        beta_values (Sequence[float]): beta value per iteration.
+        beta_values (Sequence[float] | NDArray[np.float64]): beta value per iteration.
 
     Returns:
         fig (plt.Figure): beta schedule figure.

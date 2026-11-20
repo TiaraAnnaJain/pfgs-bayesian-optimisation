@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pfgs_bo.bo.acquisition import compute_ucb, compute_ei
+from pfgs_bo.bo.acquisition import compute_ei, compute_ucb
 from pfgs_bo.data.data_models import Dataset
 
 

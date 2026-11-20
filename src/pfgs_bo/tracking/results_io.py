@@ -1,33 +1,30 @@
 """Saving and loading experiment results (CSV) and beta ranges (JSON)."""
 
-import os
-from pathlib import Path
-from typing import Dict, List, Tuple, Union
 import json
+from pathlib import Path
 
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
+from numpy.typing import NDArray
 
 
-def to_csv(results: Dict, folder: str, seed: int) -> None:
+def to_csv(results: dict, folder: str | Path, seed: int) -> None:
     """
     Takes results from optimisation scripts and writes them into csv file.
 
     Parameters:
          results (Dict): results dictionary
-         folder (str): folder path
+         folder (str | Path): folder path
          seed (int): LHS seed
     """
-    folder = Path(folder)
-    folder.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(folder)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.DataFrame(results)
-    filepath = os.path.join(folder, f"seed_{seed}.csv")
-    df.to_csv(filepath, index=False)
+    df.to_csv(out_dir / f"seed_{seed}.csv", index=False)
 
 
-def from_csv(folder: str, x_column: str, y_column: str) -> Tuple[NDArray, NDArray]:
+def from_csv(folder: str, x_column: str, y_column: str) -> tuple[NDArray, NDArray]:
     """
     Loads results from csv file to plot. Pads empty runs with NaN's.
 
@@ -41,7 +38,6 @@ def from_csv(folder: str, x_column: str, y_column: str) -> Tuple[NDArray, NDArra
         y_all (NDArray[np.float64]): y-axis array.
     """
     files = Path(folder).glob("seed_*.csv")
-    print(Path(folder).absolute())
 
     runs = []
     x_runs = []
@@ -67,15 +63,15 @@ def from_csv(folder: str, x_column: str, y_column: str) -> Tuple[NDArray, NDArra
 
 
 def to_json(
-    beta_min: List[float], beta_max: List[float], json_file: Union[str, Path]
+    beta_min: list[float], beta_max: list[float], json_file: str | Path
 ) -> None:
     """
     Writes the beta interval found at each PFGS iteration to a JSON file.
 
     Parameters:
-        beta_min (List[float]): lower bound of the beta interval per iteration.
-        beta_max (List[float]): upper bound of the beta interval per iteration.
-        json_file (Union[str, Path]): file to write; parent folders are created.
+        beta_min (list[float]): lower bound of the beta interval per iteration.
+        beta_max (list[float]): upper bound of the beta interval per iteration.
+        json_file (str | Path): file to write; parent folders are created.
     """
     beta_range = {
         "beta_min": beta_min,
@@ -88,17 +84,17 @@ def to_json(
         json.dump(beta_range, file)
 
 
-def from_json(json_file: Union[str, Path]) -> Dict[str, List[float]]:
+def from_json(json_file: str | Path) -> dict[str, list[float]]:
     """
     Reads beta intervals written by ``to_json``.
 
     Parameters:
-        json_file (Union[str, Path]): file to read.
+        json_file (str | Path): file to read.
 
     Returns:
-        beta_range (Dict[str, List[float]]): "beta_min" and "beta_max" lists.
+        beta_range (dict[str, list[float]]): "beta_min" and "beta_max" lists.
     """
-    with open(json_file, "r") as file:
+    with open(json_file) as file:
         beta_range = json.load(file)
 
     return beta_range

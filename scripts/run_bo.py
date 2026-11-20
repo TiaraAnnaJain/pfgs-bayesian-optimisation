@@ -1,6 +1,15 @@
-"""Standard Bayesian optimisation with a UCB or EI acquisition function and BoTorch's gradient-based optimiser."""
+"""
+Standard Bayesian optimisation with a UCB or EI acquisition function, optimised
+with BoTorch's gradient-based optimiser.
+"""
 
-from botorch.acquisition import qExpectedImprovement, qUpperConfidenceBound
+from typing import Any
+
+from botorch.acquisition import (
+    AcquisitionFunction,
+    qExpectedImprovement,
+    qUpperConfidenceBound,
+)
 
 from pfgs_bo.bo.botorch_optimiser import BoTorchOptimizer
 from pfgs_bo.experiment import (
@@ -19,12 +28,15 @@ from pfgs_bo.experiment import (
 from pfgs_bo.model import GPModel
 
 
-def main():
+def main() -> None:
+    """Runs standard BO with the config given on the command line."""
     config, space = load_experiment("BO")
     train_data, test_sets = build_datasets(config, space)
     lower_bound, upper_bound = unit_bounds(space)
 
     acquisition_function = config["acquisition_function"]
+    acq_fn: type[AcquisitionFunction]
+    acq_kwargs: dict[str, Any]
     if acquisition_function == "UCB":
         acq_fn, acq_kwargs = qUpperConfidenceBound, {"beta": config["beta"]}
     else:

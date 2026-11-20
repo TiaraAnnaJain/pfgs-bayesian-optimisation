@@ -1,16 +1,16 @@
 """Loads config from toml files."""
 
+import tomllib
 from argparse import ArgumentParser
 from pathlib import Path
-import tomllib
-from typing import Dict, Any
+from typing import Any
 
 from pfgs_bo.data.simulation import SIMULATION_REGISTRY
 
 PROJECT_ROOT = Path(__file__).parents[2]
 
 
-def load_config() -> tuple[Dict[str, Any], Dict[str, Any]]:
+def load_config() -> tuple[dict[str, Any], dict[str, Any]]:
     """
     Loads a TOML configuration file specified via command-line argument.
 
@@ -33,15 +33,15 @@ def load_config() -> tuple[Dict[str, Any], Dict[str, Any]]:
     return config, files
 
 
-def resolve_config(config: Dict[str, Any]) -> Dict[str, Any]:
+def resolve_config(config: dict[str, Any]) -> dict[str, Any]:
     """
     Returns a flat, fully resolved config.
 
     Parameters:
-         config (Dict[str, Any]): raw dict from tomllib.
+         config (dict[str, Any]): raw dict from tomllib.
 
     Returns:
-        resolved (Dict[str, Any]): fully resolved config.
+        resolved (dict[str, Any]): fully resolved config.
     """
     resolved = dict(config)
 
@@ -56,14 +56,14 @@ METHODS = ("PFGS", "BO", "BO-PFGS", "constrained-BO")
 ACQUISITION_FUNCTIONS = ("UCB", "EI")
 
 
-def _require(config: Dict[str, Any], key: str, message: str) -> Any:
-    """Returns ``config[key]``, raising a ValueError with ``message`` if it is missing."""
+def _require(config: dict[str, Any], key: str, message: str) -> Any:
+    """Returns ``config[key]``, or raises a ValueError with ``message`` if missing."""
     if config.get(key) is None:
         raise ValueError(message)
     return config[key]
 
 
-def _require_positive_int(config: Dict[str, Any], key: str, description: str) -> None:
+def _require_positive_int(config: dict[str, Any], key: str, description: str) -> None:
     """Checks that ``config[key]`` is an integer greater than 0."""
     value = _require(config, key, f"Please provide {description}.")
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
@@ -72,12 +72,12 @@ def _require_positive_int(config: Dict[str, Any], key: str, description: str) ->
         )
 
 
-def validate_config(config: Dict[str, Any]) -> None:
+def validate_config(config: dict[str, Any]) -> None:
     """
     Checks that a raw config has every setting its method needs.
 
     Parameters:
-        config (Dict[str, Any]): raw config from ``load_config``.
+        config (dict[str, Any]): raw config from ``load_config``.
 
     Raises:
         ValueError: if a setting is missing or has an unsupported value.
@@ -120,14 +120,13 @@ def validate_config(config: Dict[str, Any]) -> None:
     _require_positive_int(config, "train_samples", "number of training samples")
     _require_positive_int(config, "test_samples", "number of test samples")
 
-    if method in ("PFGS", "constrained-BO"):
-        if (
-            config.get("mean_discard_threshold") is None
-            or config.get("std_dev_discard_threshold") is None
-        ):
-            raise ValueError(
-                "Please provide mean and standard deviation discard thresholds."
-            )
+    if method in ("PFGS", "constrained-BO") and (
+        config.get("mean_discard_threshold") is None
+        or config.get("std_dev_discard_threshold") is None
+    ):
+        raise ValueError(
+            "Please provide mean and standard deviation discard thresholds."
+        )
 
     for seed_name in ("train_seed", "test_seed"):
         if not isinstance(config.get(seed_name), int):

@@ -1,9 +1,9 @@
 """Data models for all GP datasets including recipes, experiments and predictions."""
 
+import logging as log
 from copy import deepcopy
 from dataclasses import dataclass, field
-import logging as log
-from typing import Dict, List, Optional, Self, Union
+from typing import Self
 
 import numpy as np
 from numpy.typing import NDArray
@@ -16,40 +16,40 @@ class Dataset:
 
     Parameters:
         dataset_type (str): type of dataset.
-        x_labels (List[str]): labels for the dataset input.
-        y_labels (List[str]): labels for the dataset output.
-        x_data (Optional[NDArray[np.float64]]): input data.
-        y_data (Optional[NDArray[np.float64]]): output data.
-        y_errors (Optional[NDArray[np.float64]]): y error values from GP predictions.
+        x_labels (list[str]): labels for the dataset input.
+        y_labels (list[str]): labels for the dataset output.
+        x_data (NDArray[np.float64] | None): input data.
+        y_data (NDArray[np.float64] | None): output data.
+        y_errors (NDArray[np.float64] | None): y error values from GP predictions.
         normalised (bool): normalisation flag to prevent double transformations.
-        x_normaliser_min (Dict[str, float]): minimum value of x taken from bounds.
-        x_normaliser_max (Dict[str, float]): maximum value of x taken from bounds.
-        y_standardiser_mean (Dict[str, float]): mean value of y computed on
+        x_normaliser_min (dict[str, float]): minimum value of x taken from bounds.
+        x_normaliser_max (dict[str, float]): maximum value of x taken from bounds.
+        y_standardiser_mean (dict[str, float]): mean value of y computed on
             training dataset outputs.
-        y_standardiser_std (Dict[str, float]): standard deviation value of y computed
+        y_standardiser_std (dict[str, float]): standard deviation value of y computed
             on training dataset outputs.
     """
 
     dataset_type: str  # train, test, predictions, recipe, pareto_front
 
-    x_labels: Union[List[str], None] = None
-    y_labels: Union[List[str], None] = None
+    x_labels: list[str] | None = None
+    y_labels: list[str] | None = None
 
-    x_data: Optional[NDArray[np.float64]] = None
-    y_data: Optional[NDArray[np.float64]] = None
-    y_errors: Optional[NDArray[np.float64]] = None
+    x_data: NDArray[np.float64] | None = None
+    y_data: NDArray[np.float64] | None = None
+    y_errors: NDArray[np.float64] | None = None
 
     normalised: bool = False
 
-    x_normaliser_min: Dict[str, float] = field(default_factory=dict)
-    x_normaliser_max: Dict[str, float] = field(default_factory=dict)
-    y_standardiser_mean: Dict[str, float] = field(default_factory=dict)
-    y_standardiser_std: Dict[str, float] = field(default_factory=dict)
+    x_normaliser_min: dict[str, float] = field(default_factory=dict)
+    x_normaliser_max: dict[str, float] = field(default_factory=dict)
+    y_standardiser_mean: dict[str, float] = field(default_factory=dict)
+    y_standardiser_std: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
         self.check()
 
-    def __neg__(self) -> Self:
+    def __neg__(self) -> "Dataset":
         if self.dataset_type in ("train", "test"):
             raise ValueError("Cannot negate a train or test dataset.")
 
@@ -88,9 +88,8 @@ class Dataset:
             if self.y_labels is None:
                 raise ValueError("y_labels must be provided.")
 
-        if self.dataset_type == "recipe":
-            if self.y_data is not None:
-                raise ValueError("Recipe outputs should not be provided.")
+        if self.dataset_type == "recipe" and self.y_data is not None:
+            raise ValueError("Recipe outputs should not be provided.")
 
         if self.dataset_type in ("predictions", "pareto_front"):
             if self.y_data is None or self.y_errors is None:
@@ -102,7 +101,8 @@ class Dataset:
             isinstance(label, str) for label in self.x_labels
         ):
             raise ValueError(
-                f"Labels {self.x_labels} is not supported. Labels must be a list of strings."
+                f"Labels {self.x_labels} is not supported. Labels must be a list of "
+                "strings."
             )
 
         if len(self.x_labels) != self.x_data.shape[1]:
@@ -113,16 +113,16 @@ class Dataset:
             )
 
     def add_normalisation_params(
-        self, lower_bound: Dict[str, float], upper_bound: Dict[str, float]
+        self, lower_bound: dict[str, float], upper_bound: dict[str, float]
     ) -> None:
         """
         Takes the lower and upper bounds of the investigation space and sets them as
         the normalisation parameters for x.
 
         Parameters:
-            lower_bound (Dict[str, float]): Lower bounds of the investigation space, will be
+            lower_bound (dict[str, float]): Lower bounds of the investigation space,
                 set as x_normaliser_min.
-            upper_bound (Dict[str, float]): Upper bounds of the investigation space, will be
+            upper_bound (dict[str, float]): Upper bounds of the investigation space,
                 set as x_normaliser_max.
 
         """
@@ -146,10 +146,10 @@ class Dataset:
 
     def normalise(self):
         """
-        Normalises (inputs) and standardises (outputs) the dataset. Fits and transforms the
-        first dataset by computing the minimum and maximum of the inputs and mean and standard
-        deviation of the outputs of the dataset. Transforms any later datasets by reusing the
-        computed statistics.
+        Normalises (inputs) and standardises (outputs) the dataset. Fits and transforms
+        the first dataset by computing the minimum and maximum of the inputs and the
+        mean and standard deviation of the outputs. Transforms any later datasets by
+        reusing the computed statistics.
         """
         if self.normalised:
             return
@@ -236,12 +236,13 @@ class Dataset:
 
         self.normalised = False
 
-    def get_stats(self) -> Dict[str, Dict]:
+    def get_stats(self) -> dict[str, dict]:
         """
-        Returns already computed statistics to be used for transformations/de-normalisation.
+        Returns already computed statistics to be used for transformations and
+        de-normalisation.
 
         Returns:
-            stats (Dict[str, NDArray[np.float64]]): computed statistics.
+            stats (dict[str, NDArray[np.float64]]): computed statistics.
         """
         stats = {
             "x_min": self.x_normaliser_min,
@@ -252,12 +253,12 @@ class Dataset:
 
         return stats
 
-    def set_stats(self, stats: Dict[str, Dict]):
+    def set_stats(self, stats: dict[str, dict]):
         """
         Sets pre-computed statistics to be used for transformations/de-normalisation.
 
         Parameters:
-            stats (Dict[str, NDArray[np.float64]]): computed statistics.
+            stats (dict[str, NDArray[np.float64]]): computed statistics.
         """
         self.x_normaliser_min = stats["x_min"]
         self.x_normaliser_max = stats["x_max"]

@@ -1,6 +1,6 @@
 """Surrogate accuracy metrics (RMSE, RRMSE) and evaluation on test sets."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -45,23 +45,23 @@ def compute_rrmse(
     rmse = compute_rmse(predictions_mean, y_true)
     rrmse = rmse / std_dev
 
-    return rrmse
+    return float(rrmse)
 
 
 def calculate_model_metrics(
-    model: Any, datasets: Dict[str, Dataset], normalisation_stats: Dict[str, Dict]
-) -> Dict[str, float]:
+    model: Any, datasets: dict[str, Dataset], normalisation_stats: dict[str, dict]
+) -> dict[str, float]:
     """
     Computes the RRMSE of the model on each test set.
 
     Parameters:
         model (Any): fitted GP model.
-        datasets (Dict[str, Dataset]): de-normalised test sets, keyed by name.
-        normalisation_stats (Dict[str, Dict]): statistics used to normalise the
+        datasets (dict[str, Dataset]): de-normalised test sets, keyed by name.
+        normalisation_stats (dict[str, Dict]): statistics used to normalise the
             training data.
 
     Returns:
-        metrics (Dict[str, float]): "<name> RRMSE" for each test set.
+        metrics (dict[str, float]): "<name> RRMSE" for each test set.
     """
     metrics = {}
 

@@ -1,10 +1,10 @@
-"""Contains MLFlow tracking class to log parameters, metrics and artifacts into MLflow."""
+"""MLflow tracker that logs parameters, metrics and figures for each run."""
 
 import os
-from copy import deepcopy
 import tempfile
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import matplotlib.pyplot as plt
 import mlflow
@@ -26,12 +26,12 @@ class MLflowTracker:
         self._artifact_dir = tempfile.mkdtemp()
         print(mlflow.get_tracking_uri())
 
-    def log_resolved_config(self, resolved_config: Dict[str, Any]):
+    def log_resolved_config(self, resolved_config: dict[str, Any]):
         """
         Log only parameters used in the run from config file.
 
         Parameters:
-            resolved_config (Dict[str, Any]): fully resolved config.
+            resolved_config (dict[str, Any]): fully resolved config.
         """
         config_to_log = deepcopy(resolved_config)
         for key in [
@@ -62,20 +62,20 @@ class MLflowTracker:
 
     def log_experiment_setup(
         self,
-        x_label: List[str],
-        y_label: List[str],
-        variables: List[InvestigationSpaceVariable],
+        x_label: list[str],
+        y_label: list[str],
+        variables: list[InvestigationSpaceVariable],
         simulation: str,
-        beta_schedule: Optional[str] = None,
-        train_seed: Optional[int] = None,
+        beta_schedule: str | None = None,
+        train_seed: int | None = None,
     ):
         """
         Logs experiment setup as parameters.
 
         Parameters:
-            x_label (List[str]): input labels.
-            y_label (List[str]): output labels.
-            variables (List[InvestigationSpaceVariable]): variables to be logged.
+            x_label (list[str]): input labels.
+            y_label (list[str]): output labels.
+            variables (list[InvestigationSpaceVariable]): variables to be logged.
             simulation (str): Name of the simulation being run.
             beta_schedule (str): Name of the beta schedule.
             train_seed (int): seed for training runs.
@@ -101,28 +101,28 @@ class MLflowTracker:
         entire_space_rrmse: float,
         design_space_rrmse: float,
         train_data_max: float,
-        gp_fig: Optional[plt.Figure] = None,
-        pareto_fig: Optional[plt.Figure] = None,
-        beta_min: Optional[float] = None,
-        beta_max: Optional[float] = None,
-        adjusted_thresholds: Optional[NDArray[np.float64]] = None,
-        curr_beta: Optional[float] = None,
+        gp_fig: plt.Figure | None = None,
+        pareto_fig: plt.Figure | None = None,
+        beta_min: float | None = None,
+        beta_max: float | None = None,
+        adjusted_thresholds: NDArray[np.float64] | None = None,
+        curr_beta: float | None = None,
     ):
         """
         Logs metrics per iteration.
 
         Parameters:
             step (int): current iteration.
-            entire_space_rrmse (float): RRMSE value at current iteration using entire space testset.
-            design_space_rrmse (float): RRMSE value at current iteration using design space testset.
+            entire_space_rrmse (float): RRMSE on the entire-space test set.
+            design_space_rrmse (float): RRMSE on the design-space test set.
             train_data_max (float): maximum training data value.
-            gp_fig (Optional[plt.Figure]): GP contour plot at current iteration.
-            pareto_fig (Optional[plt.Figure]): Pareto front plot at current iteration.
-            beta_min (Optional[float]): lower bound of the beta range.
-            beta_max (Optional[float]): upper bound of the beta range.
-            adjusted_thresholds (Optional[NDArray[np.float64]]): adjusted discard
+            gp_fig (plt.Figure | None): GP contour plot at current iteration.
+            pareto_fig (plt.Figure | None): Pareto front plot at current iteration.
+            beta_min (float | None): lower bound of the beta range.
+            beta_max (float | None): upper bound of the beta range.
+            adjusted_thresholds (NDArray[np.float64] | None): adjusted discard
                 thresholds on pareto front.
-            curr_beta (Optional[float]): current beta value.
+            curr_beta (float | None): current beta value.
         """
         mlflow.log_metrics(
             {"entire_space_rrmse": round(entire_space_rrmse, 4)}, step=step
@@ -174,8 +174,8 @@ class MLflowTracker:
         self,
         final_gp_fig: plt.Figure,
         rrmse_fig: plt.Figure,
-        beta_fig: Optional[plt.Figure] = None,
-        train_data_max_fig: Optional[plt.Figure] = None,
+        beta_fig: plt.Figure | None = None,
+        train_data_max_fig: plt.Figure | None = None,
     ):
         """
         Logs final results and figures.
@@ -183,8 +183,9 @@ class MLflowTracker:
         Parameters:
             final_gp_fig (plt.Figure): Final GP contour plot.
             rrmse_fig (plt.Figure): Final RRMSE figure.
-            beta_fig (Optional[plt.Figure]): Final beta figure with feasible ranges.
-            train_data_max_fig (Optional[plt.Figure]): max value of train y at each iteration.
+            beta_fig (plt.Figure | None): Final beta figure with feasible ranges.
+            train_data_max_fig (plt.Figure | None): best observed value per
+                iteration.
         """
         self._log_fig(final_gp_fig, "final/gp_contour_final.png")
         self._log_fig(rrmse_fig, "final/rrmse_plot.png")
@@ -211,7 +212,8 @@ class MLflowTracker:
         folder = str(Path(artifact_path).parent)
         mlflow.log_artifact(full_path, artifact_path=folder)
 
-    def finish(self, failed=False):
+    def finish(self, failed: bool = False) -> None:
+        """Ends the MLflow run, marking it FAILED or FINISHED."""
         mlflow.end_run(status="FAILED" if failed else "FINISHED")
 
     def __enter__(self):

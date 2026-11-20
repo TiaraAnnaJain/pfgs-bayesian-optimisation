@@ -25,7 +25,8 @@ from pfgs_bo.plotting.results import plot_beta_ranges
 from pfgs_bo.tracking.results_io import to_json
 
 
-def main():
+def main() -> None:
+    """Runs PFGS with the config given on the command line."""
     config, space = load_experiment("PFGS")
     train_data, test_sets = build_datasets(config, space)
     lower_bound, upper_bound = unit_bounds(space)
