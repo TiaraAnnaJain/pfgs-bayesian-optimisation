@@ -1835,7 +1835,7 @@ wheels = [
 [[package]]
 name = "pfgs-bo"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "botorch" },
     { name = "click" },

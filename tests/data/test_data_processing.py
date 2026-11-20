@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from data.data_processing import generate_data, generate_design_space_dataset
-from data.simulation import himmelblau
+from pfgs_bo.data.data_processing import generate_data, generate_design_space_dataset
+from pfgs_bo.data.simulation import himmelblau
 
 
 def test_himmelblau():

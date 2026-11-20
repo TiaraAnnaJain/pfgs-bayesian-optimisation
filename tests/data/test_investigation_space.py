@@ -2,7 +2,7 @@
 
 import pytest
 
-from data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
+from pfgs_bo.data.investigation_space import InvestigationSpace, InvestigationSpaceVariable
 
 
 def test_investigation_space_properties():
