@@ -1,7 +1,7 @@
-"""Contains functions used to plot final results and metrics"""
+"""Figures summarising a run (per-run histories) and comparing runs across seeds."""
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -96,3 +96,86 @@ def plot_multiple_metrics(
 
     save_fig(name=fig_name, folder="figures", root=root)
     plt.show()
+
+
+def plot_rrmse_history(
+    entire_space_rrmse: Sequence[float], design_space_rrmse: Sequence[float]
+) -> plt.Figure:
+    """
+    Plots the entire-space and design-space RRMSE of a single run over iterations.
+
+    Parameters:
+        entire_space_rrmse (Sequence[float]): RRMSE on the entire-space test set.
+        design_space_rrmse (Sequence[float]): RRMSE on the design-space test set.
+
+    Returns:
+        fig (plt.Figure): RRMSE figure.
+    """
+    x = range(len(entire_space_rrmse))
+
+    fig, ax = plt.subplots()
+    ax.plot(x, entire_space_rrmse, label="RRMSE (Entire space)")
+    ax.plot(x, design_space_rrmse, label="RRMSE (Design space)")
+    ax.legend()
+    ax.set(title="RRMSE over iterations", xlabel="iterations", ylabel="RRMSE")
+
+    return fig
+
+
+def plot_train_max_history(train_data_max: Sequence[float]) -> plt.Figure:
+    """
+    Plots the maximum observed objective value of a single run over iterations.
+
+    Parameters:
+        train_data_max (Sequence[float]): maximum training output at each iteration.
+
+    Returns:
+        fig (plt.Figure): training data maximum figure.
+    """
+    fig, ax = plt.subplots()
+    ax.plot(range(len(train_data_max)), train_data_max)
+    ax.set(
+        title="Maximum value of train data",
+        xlabel="iterations",
+        ylabel="training data max",
+    )
+
+    return fig
+
+
+def plot_beta_ranges(
+    beta_lower: Sequence[float], beta_upper: Sequence[float]
+) -> plt.Figure:
+    """
+    Plots the feasible beta interval found by PFGS at each iteration.
+
+    Parameters:
+        beta_lower (Sequence[float]): lower bound of the beta interval per iteration.
+        beta_upper (Sequence[float]): upper bound of the beta interval per iteration.
+
+    Returns:
+        fig (plt.Figure): beta interval figure.
+    """
+    fig, ax = plt.subplots()
+    for x_i, (lower, upper) in enumerate(zip(beta_lower, beta_upper)):
+        ax.plot([x_i, x_i], [lower, upper], color="blue")
+    ax.set(title="Feasible beta ranges", xlabel="iterations", ylabel="beta")
+
+    return fig
+
+
+def plot_beta_schedule(beta_values: Sequence[float]) -> plt.Figure:
+    """
+    Plots the beta value used at each iteration of PFGS-guided BO.
+
+    Parameters:
+        beta_values (Sequence[float]): beta value per iteration.
+
+    Returns:
+        fig (plt.Figure): beta schedule figure.
+    """
+    fig, ax = plt.subplots()
+    ax.plot(range(len(beta_values)), beta_values)
+    ax.set(title="Value of beta", xlabel="iterations", ylabel="beta")
+
+    return fig
