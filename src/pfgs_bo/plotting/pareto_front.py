@@ -19,7 +19,7 @@ def plot_pareto_front(
     Parameters:
         pareto_front (Dataset): unscaled, de-normalised pareto front.
         discard_thresholds (NDArray[np.float64]): unscaled threshold below which mean
-            and variance are discarded.
+            and standard deviation are discarded.
         optimal_point (NDArray[np.float64]): unscaled optimal point calculated.
         iteration (int): current iteration, passed into plot title.
 
@@ -44,7 +44,7 @@ def plot_pareto_front(
         float(discard_thresholds[1]),
         linestyle="--",
         color="red",
-        label="Variance discard threshold",
+        label="Standard deviation discard threshold",
     )
     plt.scatter(
         optimal_point[:, 0],
@@ -55,7 +55,7 @@ def plot_pareto_front(
     )
     plt.title(f"Pareto front at iteration {iteration}")
     plt.xlabel("Mean")
-    plt.ylabel("Variance")
+    plt.ylabel("Standard deviation")
     plt.legend()
 
     return pareto_plot

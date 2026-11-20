@@ -14,11 +14,11 @@ from pfgs_bo.data.data_models import Dataset
 
 class GPProblem(Problem):
     """
-    Optimisation problem wrapper for a Gaussian Process model. It defines a 2 variable,
-    2 objective problem where the GP model provides predictions.
+    Optimisation problem wrapper for a Gaussian Process model. Its two objectives
+    are the GP's predicted mean and standard deviation, both maximised.
 
     Parameters:
-        model (Any): GP model that outputs a predicted mean and variance.
+        model (Any): GP model that outputs a predicted mean and standard deviation.
         lower_bound (List[float]): The lower bounds of GP inputs.
         upper_bound (List[float]): The upper bounds of GP inputs.
     """
@@ -61,12 +61,12 @@ class GPProblem(Problem):
 
         predictions = self.model.predict(candidate_dataset)
 
-        predictions_mean, predictions_var = (
+        predictions_mean, predictions_std = (
             predictions.y_data,
             predictions.y_errors,
         )
 
-        out["F"] = np.column_stack([-predictions_mean, -predictions_var])
+        out["F"] = np.column_stack([-predictions_mean, -predictions_std])
 
 
 class NSGAOptimiser:

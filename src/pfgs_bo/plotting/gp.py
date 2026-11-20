@@ -109,7 +109,7 @@ def contour_slice_plot(
     plt.scatter(training_sample_1, training_sample_2, c="r")
 
     if x_new is not None:
-        plt.scatter(x_new.x_data[:, 0], x_new.x_data[:, 1], c="w")
+        plt.scatter(x_new.x_data[:, x1_index], x_new.x_data[:, x2_index], c="w")
 
     plt.xlabel(x_plot_labels[0])
     plt.ylabel(x_plot_labels[1])

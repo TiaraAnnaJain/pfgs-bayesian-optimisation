@@ -147,6 +147,8 @@ class PSOptimiser:
         if self.objective.stop_optimisation:
             return None, None, True
 
-        cost, best_pos = self.optimizer.optimize(self.objective, iters=100)
+        cost, best_pos = self.optimizer.optimize(
+            self.objective, iters=100, verbose=False
+        )
 
         return cost, best_pos, False

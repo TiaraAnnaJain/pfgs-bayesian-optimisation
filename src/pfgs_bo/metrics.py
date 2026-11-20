@@ -30,7 +30,9 @@ def compute_rrmse(
     predictions_mean: NDArray[np.float64], y_true: NDArray[np.float64]
 ) -> float:
     """
-    Computes the relative RMSE of the prediction mean values.
+    Computes the relative RMSE of the prediction mean values: the RMSE divided by the
+    (population) standard deviation of the true values. An RRMSE of 1 is as good as
+    always predicting the mean of the test set.
 
     Parameters:
         predictions_mean (NDArray[np.float64]): prediction mean values from GP.
@@ -49,6 +51,18 @@ def compute_rrmse(
 def calculate_model_metrics(
     model: Any, datasets: Dict[str, Dataset], normalisation_stats: Dict[str, Dict]
 ) -> Dict[str, float]:
+    """
+    Computes the RRMSE of the model on each test set.
+
+    Parameters:
+        model (Any): fitted GP model.
+        datasets (Dict[str, Dataset]): de-normalised test sets, keyed by name.
+        normalisation_stats (Dict[str, Dict]): statistics used to normalise the
+            training data.
+
+    Returns:
+        metrics (Dict[str, float]): "<name> RRMSE" for each test set.
+    """
     metrics = {}
 
     for name, dataset in datasets.items():
