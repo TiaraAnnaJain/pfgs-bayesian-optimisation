@@ -10,6 +10,11 @@ from itertools import product
 from pathlib import Path
 from typing import Any
 
+from pfgs_bo.config import load_config, resolve_config
+from pfgs_bo.experiment import beta_file, results_csv
+from pfgs_bo.pareto_front.beta import beta_ranges
+from pfgs_bo.tracking.results_io import from_json
+
 SCRIPTS_DIR = Path(__file__).resolve().parent
 
 TRAIN_SEEDS = [1, 2, 3, 4, 5]
@@ -118,6 +123,27 @@ def report_experiments(problem: str) -> list[Experiment]:
     ]
 
 
+def is_done(command: list[str]) -> bool:
+    """
+    Returns whether a run has already finished, i.e. its results CSV exists.
+
+    Parameters:
+        command (list[str]): command from ``Experiment.command``.
+
+    Returns:
+        done (bool): whether to skip this run.
+    """
+    config = resolve_config(load_config(command[2:]))
+    if config["method"] != "BO-PFGS":
+        return results_csv(config).is_file()
+
+    pfgs_beta_file = beta_file(config)
+    if not pfgs_beta_file.is_file():
+        return False
+    schedules = beta_ranges(from_json(pfgs_beta_file))
+    return all(results_csv(config, schedule=name).is_file() for name in schedules)
+
+
 def main() -> None:
     """Runs (or lists) the report's experiments."""
     parser = ArgumentParser(description="Run the report's experiments.")
@@ -137,6 +163,11 @@ def main() -> None:
     parser.add_argument(
         "--dry-run", action="store_true", help="Print the commands without running."
     )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Skip runs whose results already exist, e.g. to resume after a crash.",
+    )
     args = parser.parse_args()
 
     commands = [
@@ -148,6 +179,9 @@ def main() -> None:
 
     for i, command in enumerate(commands, start=1):
         shown = " ".join(["python", f"scripts/{Path(command[1]).name}", *command[2:]])
+        if args.skip_existing and is_done(command):
+            print(f"[{i}/{len(commands)}] done, skipping: {shown}", flush=True)
+            continue
         print(f"[{i}/{len(commands)}] {shown}", flush=True)
         if not args.dry_run:
             subprocess.run(command, check=True)
