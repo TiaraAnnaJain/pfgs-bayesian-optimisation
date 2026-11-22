@@ -113,12 +113,19 @@ def beta_ranges(
     beta_range: dict[str, list[float]],
 ) -> dict[str, NDArray[np.float64]]:
     """
-    Takes a dictionary of beta ranges and returns a dictionary of beta schedules with
-    the min, max, mid-point, mean and meadian.
+    Builds the six beta schedules for PFGS-guided BO from the PFGS beta intervals.
+
+    Dynamic schedules change every iteration ("min", "max", "mid_point"); fixed
+    schedules use one beta throughout ("mean", "median", "max_overlap"). If several
+    beta ranges tie for maximum overlap, each gets a schedule: "max_overlap",
+    "max_overlap_2", and so on.
+
     Parameters:
-        beta_range (dict): Dictionary of beta ranges from json file.
+        beta_range (dict[str, list[float]]): beta intervals from ``from_json``.
+
     Returns:
-         beta_schedules (dict): Dictionary of beta schedules.
+        beta_schedules (dict[str, NDArray[np.float64]]): beta per iteration for
+            each schedule.
     """
     beta_min = np.array(beta_range["beta_min"])
     beta_max = np.array(beta_range["beta_max"])
@@ -127,7 +134,7 @@ def beta_ranges(
     mean_value = np.nanmean(mid_point)
     median_value = np.nanmedian(mid_point)
 
-    horizontal_betas, best = most_overlapping_beta(beta_min, beta_max)
+    max_overlap_betas, _ = most_overlapping_beta(beta_min, beta_max)
 
     beta_schedule = {
         "min": beta_min,
@@ -137,12 +144,9 @@ def beta_ranges(
         "median": np.full(len(beta_min), median_value),
     }
 
-    beta_schedule.update(
-        {
-            f"horizontal ({beta:.3f})": np.full(len(beta_min), beta)
-            for beta in horizontal_betas
-        }
-    )
+    for i, beta in enumerate(max_overlap_betas, start=1):
+        name = "max_overlap" if i == 1 else f"max_overlap_{i}"
+        beta_schedule[name] = np.full(len(beta_min), beta)
 
     return beta_schedule
 

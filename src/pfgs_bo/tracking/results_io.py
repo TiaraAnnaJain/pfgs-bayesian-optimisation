@@ -1,11 +1,9 @@
-"""Saving and loading experiment results (CSV) and beta ranges (JSON)."""
+"""Saving and loading run results (CSV) and PFGS beta intervals (JSON)."""
 
 import json
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
 
 
 def to_csv(results: dict, csv_file: str | Path) -> None:
@@ -22,42 +20,33 @@ def to_csv(results: dict, csv_file: str | Path) -> None:
     pd.DataFrame(results).to_csv(csv_file, index=False)
 
 
-def from_csv(folder: str, x_column: str, y_column: str) -> tuple[NDArray, NDArray]:
+def load_runs(folders: str | Path | list[str | Path]) -> pd.DataFrame:
     """
-    Loads results from csv file to plot. Pads empty runs with NaN's.
+    Loads every ``train_seed_<n>.csv`` in one or more run folders into one table.
 
     Parameters:
-        folder (str): folder path.
-        x_column (str): x-axis column name.
-        y_column (str): y-axis column name.
+        folders (str | Path | list[str | Path]): run folder(s), e.g. a
+            ``run_dir``. Several folders are pooled, e.g. all "max_overlap"
+            beta schedules.
 
     Returns:
-        x (NDArray[np.float64]): x-axis array.
-        y_all (NDArray[np.float64]): y-axis array.
+        runs (pd.DataFrame): the CSV columns plus "train_seed" and "folder";
+            empty if no CSVs were found.
     """
-    files = sorted(Path(folder).glob("train_seed_*.csv"))
+    if isinstance(folders, (str, Path)):
+        folders = [folders]
 
-    runs = []
-    x_runs = []
+    frames = []
+    for folder in map(Path, folders):
+        for csv_file in sorted(folder.glob("train_seed_*.csv")):
+            frame = pd.read_csv(csv_file)
+            frame["train_seed"] = int(csv_file.stem.removeprefix("train_seed_"))
+            frame["folder"] = str(folder)
+            frames.append(frame)
 
-    for file in files:
-        df = pd.read_csv(file)
-
-        x = df[x_column].to_numpy()
-        y = df[y_column].to_numpy()
-
-        x_runs.append(x)
-        runs.append(y)
-
-    max_len = max(len(run) for run in runs)
-    y_all = np.full((len(runs), max_len), np.nan)
-
-    for i, run in enumerate(runs):
-        y_all[i, : len(run)] = run
-
-    x = np.arange(max_len)
-
-    return x, y_all
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
 
 
 def to_json(

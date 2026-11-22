@@ -1,6 +1,5 @@
 # PFGS-guided BO: UCB with beta schedules from a PFGS run. Run run_pfgs.py with
 # the same problem, training seed and thresholds first, then scripts/run_pfgs_bo.py.
-# The number of iterations is the length of the PFGS run.
 # Any value can be overridden with --set key=value.
 
 test_name = "PFGS-BO"
@@ -10,17 +9,17 @@ method = "BO-PFGS"
 problem = "himmelblau"      # himmelblau | branin | ackley; or --problem
 
 # Data
-train_samples = 5           # initial LHS training points
-test_samples = 100          # points in each test set
-delta = 1.5                 # half-width of the design-space test regions around the maxima
-train_seed = 1              # or --train-seed
-test_seed = 11              # or --test-seed
+train_samples = 5
+test_samples = 100
+delta = 1.5
+train_seed = 1
+test_seed = 11
 
 # Thresholds of the PFGS run whose beta intervals to use.
 mean_discard_threshold = 0
 std_dev_discard_threshold = 0
 
-[optimizer_parameters]      # BoTorch multi-start acquisition optimiser
+[optimizer_parameters]
 num_restarts = 20
 raw_samples = 512
 q = 1
