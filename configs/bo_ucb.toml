@@ -11,13 +11,13 @@ beta = 1.96
 problem = "himmelblau"      # himmelblau | branin | ackley; or --problem
 
 # Data
-train_samples = 5           # initial LHS training points
-test_samples = 100          # points in each test set
-delta = 1.5                 # half-width of the design-space test regions around the maxima
-train_seed = 1              # or --train-seed
-test_seed = 11              # or --test-seed
+train_samples = 5
+test_samples = 100
+delta = 1.5
+train_seed = 1
+test_seed = 11
 
-[optimizer_parameters]      # BoTorch multi-start acquisition optimiser
+[optimizer_parameters]
 num_restarts = 20
 raw_samples = 512
 q = 1
