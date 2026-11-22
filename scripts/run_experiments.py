@@ -6,7 +6,6 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass, field
-from itertools import product
 from pathlib import Path
 from typing import Any
 
@@ -36,15 +35,14 @@ class Experiment:
     config: str
     overrides: dict[str, Any] = field(default_factory=dict)
 
-    def command(self, problem: str, train_seed: int) -> list[str]:
+    def command(self, problem: "Problem", train_seed: int) -> list[str]:
         """Returns the command that runs this experiment for one problem and seed."""
         command = [
             sys.executable,
             str(SCRIPTS_DIR / self.script),
             "--file",
             self.config,
-            "--problem",
-            problem,
+            *problem.args,
             "--train-seed",
             str(train_seed),
             "--test-seed",
@@ -55,37 +53,51 @@ class Experiment:
         return command
 
 
-Thresholds = tuple[float, float]
-
-
 @dataclass(frozen=True)
-class ReportThresholds:
+class Problem:
     """
-    The discard thresholds the report used for one problem.
+    A benchmark problem as run in the experiments.
 
     Parameters:
-        constrained_bo (list[Thresholds]): pairs run with constrained BO (UCB and EI).
-        pfgs (list[Thresholds]): pairs run with PFGS; (0, 0) is unconstrained PFGS.
-        beta_source (Thresholds): PFGS pair whose beta intervals PFGS-guided BO uses.
+        name (str): benchmark name.
+        dimensions (int): number of input dimensions.
     """
 
-    constrained_bo: list[Thresholds]
-    pfgs: list[Thresholds]
-    beta_source: Thresholds
+    name: str
+    dimensions: int = 2
+
+    @property
+    def label(self) -> str:
+        """Name used on the command line and for results, e.g. "ackley_6d"."""
+        return self.name if self.dimensions == 2 else f"{self.name}_{self.dimensions}d"
+
+    @property
+    def args(self) -> list[str]:
+        """Command-line arguments selecting this problem."""
+        return ["--problem", self.name, "--dimensions", str(self.dimensions)]
 
 
-REPORT_THRESHOLDS: dict[str, ReportThresholds] = {
-    "himmelblau": ReportThresholds(
-        constrained_bo=[(1000, 50), (1000, 100), (1200, 50), (1200, 100)],
-        pfgs=[(0, 0), (1000, 100)],
-        beta_source=(1000, 100),
-    ),
-    "branin": ReportThresholds(
-        constrained_bo=[(150, 0.5), (150, 1), (250, 0.5), (250, 1)],
-        pfgs=[(0, 0)],
-        beta_source=(0, 0),
-    ),
+PROBLEMS = {
+    problem.label: problem
+    for problem in [
+        Problem("himmelblau"),
+        Problem("branin"),
+        Problem("ackley"),
+        Problem("ackley", dimensions=6),
+    ]
 }
+
+Thresholds = tuple[float, float]
+UNCONSTRAINED: Thresholds = (0, 0)
+
+CONSTRAINTS: dict[str, list[Thresholds]] = {
+    "himmelblau": [(1000, 50), (1000, 100), (1200, 50), (1200, 100)],
+    "branin": [(150, 0.5), (150, 1), (250, 0.5), (250, 1)],
+    "ackley": [(4.1, 0.15), (4.1, 0.3), (4.4, 0.15), (4.4, 0.3)],
+    "ackley_6d": [(3.85, 0.04), (3.85, 0.08), (3.95, 0.04), (3.95, 0.08)],
+}
+
+BASELINE_CONSTRAINTS: dict[str, Thresholds] = {"himmelblau": (1000, 100)}
 
 
 def thresholds(pair: Thresholds) -> dict[str, float]:
@@ -94,33 +106,91 @@ def thresholds(pair: Thresholds) -> dict[str, float]:
     return {"mean_discard_threshold": mean, "std_dev_discard_threshold": std_dev}
 
 
-def report_experiments(problem: str) -> list[Experiment]:
+def experiment_a() -> list[tuple[Problem, Experiment]]:
     """
-    Returns the report's experiments for one problem, in the order they must run:
-    PFGS before PFGS-guided BO, which reads the beta intervals PFGS saves.
-
-    Parameters:
-        problem (str): a problem in ``REPORT_THRESHOLDS``.
+    Experiment A, PFGS-guided hyperparameter selection for BO: PFGS with the
+    baseline constraints, then PFGS-guided BO with all six beta schedules.
 
     Returns:
-        experiments (list[Experiment]): experiments to run for each seed.
+        runs (list[tuple[Problem, Experiment]]): runs in the order they must run.
     """
-    report = REPORT_THRESHOLDS[problem]
-    pfgs_pairs = list(dict.fromkeys([*report.pfgs, report.beta_source]))
-
     return [
-        *(Experiment("run_pfgs.py", "pfgs.toml", thresholds(t)) for t in pfgs_pairs),
-        Experiment("run_pfgs_bo.py", "pfgs_bo.toml", thresholds(report.beta_source)),
-        Experiment("run_bo.py", "bo_ucb.toml", {"beta": 1.96}),
-        Experiment("run_bo.py", "bo_ei.toml"),
-        *(
-            Experiment("run_constrained_bo.py", config, thresholds(t))
-            for config, t in product(
-                ["constrained_bo_ucb.toml", "constrained_bo_ei.toml"],
-                report.constrained_bo,
-            )
-        ),
+        (
+            PROBLEMS[label],
+            Experiment(script, config, thresholds(baseline)),
+        )
+        for label, baseline in BASELINE_CONSTRAINTS.items()
+        for script, config in [
+            ("run_pfgs.py", "pfgs.toml"),
+            ("run_pfgs_bo.py", "pfgs_bo.toml"),
+        ]
     ]
+
+
+def experiment_b() -> list[tuple[Problem, Experiment]]:
+    """
+    Experiment B, PFGS-inspired constraints for BO: PFGS, BO-EI and BO-UCB,
+    unconstrained and with each pair of discard thresholds, on every problem.
+
+    Returns:
+        runs (list[tuple[Problem, Experiment]]): runs for each problem.
+    """
+    runs = []
+    for label, pairs in CONSTRAINTS.items():
+        problem = PROBLEMS[label]
+        runs += [
+            (problem, Experiment("run_pfgs.py", "pfgs.toml", thresholds(pair)))
+            for pair in [UNCONSTRAINED, *pairs]
+        ]
+        for acquisition in ["ei", "ucb"]:
+            runs.append((problem, Experiment("run_bo.py", f"bo_{acquisition}.toml")))
+            runs += [
+                (
+                    problem,
+                    Experiment(
+                        "run_constrained_bo.py",
+                        f"constrained_bo_{acquisition}.toml",
+                        thresholds(pair),
+                    ),
+                )
+                for pair in pairs
+            ]
+    return runs
+
+
+EXPERIMENTS = {"A": experiment_a, "B": experiment_b}
+
+
+def check_constraints(runs: list[tuple[Problem, Experiment]]) -> None:
+    """
+    Checks that every threshold pair run with PFGS is also run with constrained BO
+    on the same problem; baseline constraints for beta are exempt.
+
+    Parameters:
+        runs (list[tuple[Problem, Experiment]]): runs to check.
+
+    Raises:
+        ValueError: if a PFGS pair has no matching constrained BO run.
+    """
+
+    def pair(experiment: Experiment) -> Thresholds:
+        return (
+            experiment.overrides["mean_discard_threshold"],
+            experiment.overrides["std_dev_discard_threshold"],
+        )
+
+    for problem in {problem for problem, _ in runs}:
+        own = [experiment for p, experiment in runs if p == problem]
+        bo_pairs = {pair(e) for e in own if e.script == "run_constrained_bo.py"} | {
+            UNCONSTRAINED
+        }
+        allowed = bo_pairs | {BASELINE_CONSTRAINTS.get(problem.label, UNCONSTRAINED)}
+        for experiment in own:
+            if experiment.script == "run_pfgs.py" and pair(experiment) not in allowed:
+                raise ValueError(
+                    f"{problem.label}: PFGS thresholds {pair(experiment)} are not "
+                    "run with constrained BO."
+                )
 
 
 def is_done(command: list[str]) -> bool:
@@ -148,8 +218,14 @@ def main() -> None:
     """Runs (or lists) the report's experiments."""
     parser = ArgumentParser(description="Run the report's experiments.")
     parser.add_argument(
+        "--experiment",
+        choices=sorted(EXPERIMENTS),
+        action="append",
+        help="A: PFGS-guided BO; B: constraints. Defaults to both. Can be repeated.",
+    )
+    parser.add_argument(
         "--problem",
-        choices=sorted(REPORT_THRESHOLDS),
+        choices=sorted(PROBLEMS),
         action="append",
         help="Problem(s) to run; defaults to all. Can be repeated.",
     )
@@ -170,14 +246,24 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    commands = [
-        experiment.command(problem, seed)
-        for problem in args.problem or REPORT_THRESHOLDS
-        for experiment in report_experiments(problem)
-        for seed in args.seeds
+    runs = [
+        run
+        for name in args.experiment or sorted(EXPERIMENTS)
+        for run in EXPERIMENTS[name]()
+        if args.problem is None or run[0].label in args.problem
     ]
+    check_constraints(runs)
 
-    for i, command in enumerate(commands, start=1):
+    commands = list(
+        dict.fromkeys(
+            tuple(experiment.command(problem, seed))
+            for problem, experiment in runs
+            for seed in args.seeds
+        )
+    )
+
+    for i, command_tuple in enumerate(commands, start=1):
+        command = list(command_tuple)
         shown = " ".join(["python", f"scripts/{Path(command[1]).name}", *command[2:]])
         if args.skip_existing and is_done(command):
             print(f"[{i}/{len(commands)}] done, skipping: {shown}", flush=True)
