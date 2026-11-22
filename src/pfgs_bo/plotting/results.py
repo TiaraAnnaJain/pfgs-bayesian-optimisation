@@ -134,8 +134,16 @@ def plot_beta_ranges(
         fig (plt.Figure): beta interval figure.
     """
     fig, ax = plt.subplots()
+    finite = [b for b in [*beta_lower, *beta_upper] if np.isfinite(b)]
+    top = 1.1 * max(finite) if finite else 1.0
     for x_i, (lower, upper) in enumerate(zip(beta_lower, beta_upper, strict=True)):
-        ax.plot([x_i, x_i], [lower, upper], color="blue")
+        if np.isnan(lower) or np.isnan(upper):
+            continue
+        if np.isinf(upper):
+            ax.plot([x_i, x_i], [lower, top], color="blue")
+            ax.plot(x_i, top, marker="^", color="blue")
+        else:
+            ax.plot([x_i, x_i], [lower, upper], color="blue")
     ax.set(title="Feasible beta ranges", xlabel="iterations", ylabel="beta")
 
     return fig

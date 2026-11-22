@@ -44,7 +44,7 @@ def main() -> None:
 
     for name, beta_values in beta_schedules.items():
         train_data, test_sets = build_datasets(config, space)
-        model = GPModel()
+        model = GPModel(seed=config["model_seed"])
         history = RunHistory()
         current_beta = DEFAULT_BETA
 

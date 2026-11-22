@@ -54,3 +54,28 @@ def test_gp_optimiser_shapes():
 
     assert unscaled.shape[1] == 2
     assert X.shape[1] == 2
+
+
+class TradeOffModel(DummyModel):
+    """Mean and standard deviation that conflict, so the front has many points."""
+
+    def predict(self, dataset):
+        x = dataset.x_data
+        return Dataset(
+            dataset_type="predictions",
+            x_labels=dataset.x_labels,
+            x_data=x,
+            y_labels=["mean"],
+            y_data=x[:, 0].reshape(-1, 1),
+            y_errors=(1 - x[:, 0] + 0.1 * x[:, 1]).reshape(-1, 1),
+        )
+
+
+def test_nsga_optimiser_is_reproducible_with_a_seed():
+    problem = GPProblem(model=TradeOffModel(), lower_bound=[0, 0], upper_bound=[1, 1])
+
+    def run(seed):
+        return NSGAOptimiser(problem, pop_size=20, n_gen=3, seed=seed).run()[1]
+
+    np.testing.assert_array_equal(run(seed=7), run(seed=7))
+    assert not np.array_equal(run(seed=7), run(seed=8))

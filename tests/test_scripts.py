@@ -92,3 +92,33 @@ def test_problem_can_be_switched_from_the_command_line(tmp_path):
     run_script("run_bo.py", "bo_ei.toml", tmp_path, "problem=branin")
 
     assert (tmp_path / "results/branin/bo/EI/train_seed_1.csv").is_file()
+
+
+def test_ackley_dimensions_can_be_set_from_the_command_line(tmp_path):
+    run_script("run_bo.py", "bo_ei.toml", tmp_path, "problem=ackley", "dimensions=4")
+
+    assert (tmp_path / "results/ackley_4d/bo/EI/train_seed_1.csv").is_file()
+
+
+@pytest.mark.parametrize(
+    ("script", "config", "csv"),
+    [
+        ("run_pfgs.py", "pfgs.toml", "pfgs/mean0_std0/train_seed_1.csv"),
+        (
+            "run_constrained_bo.py",
+            "constrained_bo_ei.toml",
+            "constrained-bo/EI/mean1000_std100/train_seed_1.csv",
+        ),
+    ],
+)
+def test_runs_with_the_same_seeds_give_the_same_results(script, config, csv, tmp_path):
+    first, second = tmp_path / "first", tmp_path / "second"
+    first.mkdir()
+    second.mkdir()
+
+    run_script(script, config, first)
+    run_script(script, config, second)
+
+    assert (first / "results/himmelblau" / csv).read_text() == (
+        second / "results/himmelblau" / csv
+    ).read_text()

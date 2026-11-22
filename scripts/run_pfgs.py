@@ -12,6 +12,7 @@ from pfgs_bo.experiment import (
     fit_surrogate,
     load_experiment,
     log_iteration,
+    optimiser_seeds,
     print_progress,
     results_csv,
     start_run,
@@ -37,8 +38,9 @@ def main() -> None:
     mean_discard_threshold = np.array(config["mean_discard_threshold"])
     std_dev_discard_threshold = np.array(config["std_dev_discard_threshold"])
 
-    model = GPModel()
+    model = GPModel(seed=config["model_seed"])
     history = RunHistory()
+    seeds = optimiser_seeds(config)
 
     with start_run(config, space) as tracker:
         for i in range(config["num_iter"]):
@@ -53,6 +55,7 @@ def main() -> None:
                 problem=problem,
                 pop_size=nsga_parameters["population_size"],
                 n_gen=nsga_parameters["number_of_generations"],
+                seed=next(seeds),
             )
             pareto_front_points, input_values = optimizer.run()
 

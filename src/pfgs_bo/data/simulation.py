@@ -61,13 +61,11 @@ def ackley(x: NDArray[np.float64]) -> NDArray[np.float64]:
     Returns:
         NDArray[np.float64]: computed modified Ackley function.
     """
-    if x.shape[1] != 2:
-        raise ValueError("Input array is not 2-dimensional.")
+    if x.ndim != 2 or x.shape[1] < 1:
+        raise ValueError("Input array must have shape (n_points, n_dimensions).")
 
-    x1, x2 = x[:, 0], x[:, 1]
-
-    term1 = -20 * np.exp(-0.2 * np.sqrt(0.5 * (x1**2 + x2**2)))
-    term2 = -np.exp(0.5 * (np.cos(2 * np.pi * x1) + np.cos(2 * np.pi * x2)))
+    term1 = -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2, axis=1)))
+    term2 = -np.exp(np.mean(np.cos(2 * np.pi * x), axis=1))
 
     return 25 - (term1 + term2 + np.e + 20)
 

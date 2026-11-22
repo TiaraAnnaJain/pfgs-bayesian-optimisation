@@ -7,6 +7,7 @@ method = "BO-PFGS"
 
 # Problem
 problem = "himmelblau"      # himmelblau | branin | ackley; or --problem
+dimensions = 2              # only Ackley supports other values; or --dimensions
 
 # Data
 train_samples = 5
@@ -14,6 +15,8 @@ test_samples = 100
 delta = 1.5
 train_seed = 1
 test_seed = 11
+
+model_seed = 11
 
 # Thresholds of the PFGS run whose beta intervals to use.
 mean_discard_threshold = 0

@@ -17,9 +17,9 @@ def calculate_beta(
          pareto_front (NDArray[np.float64]): pareto front points.
          closest_point (NDArray[np.float64]): optimal point on the pareto front.
 
-     Returns:
-         beta_min (float), beta_max (float): minimum and maximum
-             beta values.
+    Returns:
+        beta_min (float): lower bound; 0 if no point gives one, since beta >= 0.
+        beta_max (float): upper bound; inf if no point gives one.
     """
     optimal_mean = float(closest_point[0, 0])
     optimal_std_dev = float(closest_point[0, 1])
@@ -34,13 +34,11 @@ def calculate_beta(
         elif std_dev > optimal_std_dev:
             beta_upper = (mean - optimal_mean) / (optimal_std_dev - std_dev)
             upper_bounds.append(beta_upper)
-        else:
-            if optimal_mean < mean:
-                return 0, 0
-            continue
+        elif mean > optimal_mean:
+            return np.nan, np.nan
 
-    beta_min = float(max(lower_bounds)) if lower_bounds else 0
-    beta_max = float(min(upper_bounds)) if upper_bounds else 0
+    beta_min = float(max(lower_bounds)) if lower_bounds else 0.0
+    beta_max = float(min(upper_bounds)) if upper_bounds else np.inf
 
     if beta_min > beta_max:
         return np.nan, np.nan
@@ -70,7 +68,7 @@ def most_overlapping_beta(
     events = []
 
     for lower, upper in zip(beta_min, beta_max, strict=True):
-        if np.isfinite(lower) and np.isfinite(upper):
+        if not (np.isnan(lower) or np.isnan(upper)):
             events.append((lower, +1))
             events.append((upper, -1))
 
@@ -104,7 +102,7 @@ def most_overlapping_beta(
     if best <= 0 or not best_ranges:
         return np.array([]), 0
 
-    best_betas = [(a + b) / 2 for a, b in best_ranges]
+    best_betas = [(a + b) / 2 if np.isfinite(b) else a for a, b in best_ranges]
 
     return np.array(best_betas), best
 
@@ -131,8 +129,10 @@ def beta_ranges(
     beta_max = np.array(beta_range["beta_max"])
 
     mid_point = (beta_max + beta_min) / 2
-    mean_value = np.nanmean(mid_point)
-    median_value = np.nanmedian(mid_point)
+    finite_mid_points = mid_point[np.isfinite(mid_point)]
+    has_mid_points = finite_mid_points.size > 0
+    mean_value = np.mean(finite_mid_points) if has_mid_points else np.nan
+    median_value = np.median(finite_mid_points) if has_mid_points else np.nan
 
     max_overlap_betas, _ = most_overlapping_beta(beta_min, beta_max)
 
@@ -167,13 +167,16 @@ def feasible_beta_range(
         feasible_range (tuple[float, float] | None): (min, max) of the common range,
             or None if the intervals don't overlap or there are none.
     """
-    lower = [beta for beta in beta_lower if np.isfinite(beta)]
-    upper = [beta for beta in beta_upper if np.isfinite(beta) and beta != 0]
-
-    if not lower or not upper:
+    valid = [
+        (lower, upper)
+        for lower, upper in zip(beta_lower, beta_upper, strict=True)
+        if not (np.isnan(lower) or np.isnan(upper))
+    ]
+    if not valid:
         return None
 
-    beta_min, beta_max = max(lower), min(upper)
+    beta_min = max(lower for lower, _ in valid)
+    beta_max = min(upper for _, upper in valid)
     if beta_max < beta_min:
         return None
 

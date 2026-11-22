@@ -140,23 +140,14 @@ class MLflowTracker:
         if gp_fig is not None:
             self._log_fig(gp_fig, f"gp_contour/iter_{step:03d}.png")
 
-        if beta_min is not None and beta_max is not None:
-            if np.isfinite(beta_min) and np.isfinite(beta_max):
-                mlflow.log_metrics(
-                    {
-                        "beta_min": beta_min,
-                        "beta_max": beta_max,
-                    },
-                    step=step,
-                )
-            else:
-                mlflow.log_metrics(
-                    {
-                        "beta_min": 0,
-                        "beta_max": 0,
-                    },
-                    step=step,
-                )
+        beta_bounds = {"beta_min": beta_min, "beta_max": beta_max}
+        finite_bounds = {
+            name: value
+            for name, value in beta_bounds.items()
+            if value is not None and np.isfinite(value)
+        }
+        if finite_bounds:
+            mlflow.log_metrics(finite_bounds, step=step)
 
         if adjusted_thresholds is not None:
             mlflow.log_metrics(

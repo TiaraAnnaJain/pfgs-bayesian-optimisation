@@ -77,10 +77,18 @@ class NSGAOptimiser:
         problem (Any): pymoo problem, e.g. ``GPProblem``.
         pop_size (int): population size. Defaults to 500.
         n_gen (int): number of generations. Defaults to 10.
+        seed (int | None): random seed; None draws a fresh one.
     """
 
-    def __init__(self, problem: Any, pop_size: int = 500, n_gen: int = 10) -> None:
+    def __init__(
+        self,
+        problem: Any,
+        pop_size: int = 500,
+        n_gen: int = 10,
+        seed: int | None = None,
+    ) -> None:
         self.problem = problem
+        self.seed = seed
         self.algorithm = NSGA2(pop_size)
         self.termination = get_termination("n_gen", n_gen)
 
@@ -93,7 +101,9 @@ class NSGAOptimiser:
             results.X (NDArray[np.float64]): input values.
 
         """
-        results = minimize(self.problem, self.algorithm, self.termination)
+        results = minimize(
+            self.problem, self.algorithm, self.termination, seed=self.seed
+        )
 
         pareto_front = -results.F
         return (

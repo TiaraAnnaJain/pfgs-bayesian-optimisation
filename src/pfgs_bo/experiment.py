@@ -1,6 +1,6 @@
 """Shared building blocks for the experiment scripts."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -77,20 +77,26 @@ def _acquisition_tag(config: dict[str, Any]) -> str:
     return config["acquisition_function"]
 
 
+def problem_label(config: dict[str, Any]) -> str:
+    """
+    Returns the problem name, with the number of dimensions if it isn't 2, e.g.
+    "himmelblau" or "ackley_5d". Used for results folders and MLflow experiments.
+
+    Parameters:
+        config (dict[str, Any]): config with "problem" and optionally "dimensions".
+
+    Returns:
+        label (str): problem label.
+    """
+    dimensions = config.get("dimensions", 2)
+    if dimensions == 2:
+        return config["problem"]
+    return f"{config['problem']}_{dimensions}d"
+
+
 def run_dir(config: dict[str, Any], schedule: str | None = None) -> Path:
     """
     Returns the results folder for a run, derived from its config.
-
-    Runs that differ in problem, method or method settings get different folders,
-    so sweeps don't overwrite each other::
-
-        results/<problem>/pfgs/mean<m>_std<s>/
-        results/<problem>/bo/<UCB_beta<b> | EI>/
-        results/<problem>/pfgs-bo/beta_from_mean<m>_std<s>/<schedule>/
-        results/<problem>/constrained-bo/<UCB_beta<b> | EI>/mean<m>_std<s>/
-
-    For PFGS-guided BO the thresholds are those of the PFGS run whose beta
-    intervals are used. The results root can be changed with ``results_dir``.
 
     Parameters:
         config (dict[str, Any]): resolved config.
@@ -99,7 +105,7 @@ def run_dir(config: dict[str, Any], schedule: str | None = None) -> Path:
     Returns:
         path (Path): results folder.
     """
-    root = PROJECT_ROOT / config.get("results_dir", "results") / config["problem"]
+    root = PROJECT_ROOT / config.get("results_dir", "results") / problem_label(config)
     method = config["method"]
 
     if method == "PFGS":
@@ -136,9 +142,6 @@ def beta_file(config: dict[str, Any]) -> Path:
     Returns the beta-interval file of the PFGS run matching a config's problem,
     discard thresholds and training seed.
 
-    PFGS writes this file and PFGS-guided BO reads it, so both resolve to the same
-    path.
-
     Parameters:
         config (dict[str, Any]): resolved PFGS or PFGS-guided BO config.
 
@@ -147,6 +150,22 @@ def beta_file(config: dict[str, Any]) -> Path:
     """
     pfgs_dir = run_dir({**config, "method": "PFGS"})
     return pfgs_dir / f"beta_train_seed_{config['train_seed']}.json"
+
+
+def optimiser_seeds(config: dict[str, Any]) -> Iterator[int]:
+    """
+    Yields a seed for the optimiser at each iteration (NSGA-II for PFGS, PSO for
+    constrained BO), all derived from the config's ``optimiser_seed``.
+
+    Parameters:
+        config (dict[str, Any]): resolved config.
+
+    Yields:
+        seed (int): seed for one iteration's optimiser.
+    """
+    rng = np.random.default_rng(config["optimiser_seed"])
+    while True:
+        yield int(rng.integers(2**31))
 
 
 def unit_bounds(space: InvestigationSpace) -> tuple[list[float], list[float]]:
@@ -239,7 +258,7 @@ def start_run(
     Returns:
         tracker (MLflowTracker): tracker for the started run.
     """
-    problem = config["problem"]
+    problem = problem_label(config)
     tracker = MLflowTracker(
         experiment_name=f"{problem}-optimisation",
         run_name=run_name or config["test_name"],

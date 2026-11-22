@@ -1,12 +1,5 @@
 """
 Loads experiment configs from TOML files, with command-line overrides.
-
-A config is resolved in this order, later sources winning:
-
-1. the TOML file given with ``--file`` (a path, or a name inside ``configs/``),
-2. ``--problem``, ``--train-seed`` and ``--test-seed``,
-3. any number of ``--set key=value`` overrides (values are parsed as TOML, so
-   ``--set beta=2.5`` gives a float and ``--set acquisition_function=EI`` a string).
 """
 
 import tomllib
@@ -40,8 +33,6 @@ def _config_path(file: str) -> Path:
 def apply_overrides(config: dict[str, Any], overrides: Sequence[str]) -> None:
     """
     Applies ``key=value`` overrides to a config in place.
-
-    Dotted keys set nested values, e.g. ``nsga_parameters.population_size=50``.
 
     Parameters:
         config (dict[str, Any]): config to update.
@@ -78,8 +69,15 @@ def load_config(argv: Sequence[str] | None = None) -> dict[str, Any]:
         "--file", required=True, help="Config file: a path or a name in configs/."
     )
     parser.add_argument("--problem", choices=sorted(BENCHMARKS), help="Problem.")
+    parser.add_argument(
+        "--dimensions", type=int, help="Input dimensions (Ackley only; default 2)."
+    )
     parser.add_argument("--train-seed", type=int, help="LHS seed for training data.")
     parser.add_argument("--test-seed", type=int, help="LHS seed for the test sets.")
+    parser.add_argument("--model-seed", type=int, help="Seed for the GP and BoTorch.")
+    parser.add_argument(
+        "--optimiser-seed", type=int, help="Seed for NSGA-II (PFGS) and PSO."
+    )
     parser.add_argument(
         "--set",
         dest="overrides",
@@ -95,8 +93,11 @@ def load_config(argv: Sequence[str] | None = None) -> dict[str, Any]:
 
     for key, value in (
         ("problem", args.problem),
+        ("dimensions", args.dimensions),
         ("train_seed", args.train_seed),
         ("test_seed", args.test_seed),
+        ("model_seed", args.model_seed),
+        ("optimiser_seed", args.optimiser_seed),
     ):
         if value is not None:
             config[key] = value
@@ -118,7 +119,7 @@ def resolve_config(config: dict[str, Any]) -> dict[str, Any]:
             "simulation" (its objective function) added.
     """
     resolved = dict(config)
-    benchmark = get_benchmark(config["problem"])
+    benchmark = get_benchmark(config["problem"], config.get("dimensions", 2))
     resolved["benchmark"] = benchmark
     resolved["simulation"] = benchmark.function
 
@@ -186,7 +187,10 @@ def validate_config(config: dict[str, Any]) -> None:
         "problem",
         f"Please provide problem from the following: {', '.join(BENCHMARKS)}.",
     )
-    get_benchmark(problem)
+    dimensions = config.get("dimensions", 2)
+    if not isinstance(dimensions, int) or isinstance(dimensions, bool):
+        raise TypeError("dimensions must be an integer.")
+    get_benchmark(problem, dimensions)
 
     _require_positive_int(config, "train_samples", "number of training samples")
     _require_positive_int(config, "test_samples", "number of test samples")
@@ -199,6 +203,9 @@ def validate_config(config: dict[str, Any]) -> None:
             "Please provide mean and standard deviation discard thresholds."
         )
 
-    for seed_name in ("train_seed", "test_seed"):
+    seed_names = ["train_seed", "test_seed", "model_seed"]
+    if method in ("PFGS", "constrained-BO"):
+        seed_names.append("optimiser_seed")
+    for seed_name in seed_names:
         if not isinstance(config.get(seed_name), int):
             raise TypeError(f"{seed_name} must be an integer.")

@@ -53,7 +53,7 @@ def main() -> None:
         **acq_kwargs,
     )
 
-    model = GPModel()
+    model = GPModel(seed=config["model_seed"])
     history = RunHistory()
 
     with start_run(config, space) as tracker:
