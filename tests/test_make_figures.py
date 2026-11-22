@@ -35,6 +35,8 @@ def results(tmp_path):
     write_runs(root / "bo/EI", seeds=[1, 2])
     write_runs(root / "constrained-bo/EI/mean1000_std50", seeds=[1, 2], n_iter=3)
     write_runs(root / "pfgs/mean1000_std50", seeds=[1, 2], n_iter=2)
+    for schedule in ["min", "max", "max_overlap"]:
+        write_runs(root / f"pfgs-bo/beta_from_mean1000_std50/{schedule}", seeds=[1, 2])
     return tmp_path / "results"
 
 
@@ -71,6 +73,9 @@ def test_summary_has_one_row_per_run_setting(results, make_figures):
         "bo/EI",
         "constrained-bo/EI/mean1000_std50",
         "pfgs/mean1000_std50",
+        "pfgs-bo/beta_from_mean1000_std50/min",
+        "pfgs-bo/beta_from_mean1000_std50/max",
+        "pfgs-bo/beta_from_mean1000_std50/max_overlap",
     }
     row = summary.set_index("run").loc["constrained-bo/EI/mean1000_std50"]
     assert row["n_seeds"] == 2
@@ -85,8 +90,9 @@ def test_figures_are_written_for_available_comparisons(results, make_figures):
     assert "bo_design_space_rrmse.png" in names
     assert "constrained_bo_ei_train_data_max.png" in names
     assert "constrained_bo_vs_pfgs_mean1000_std50_design_space_rrmse.png" in names
-    # No PFGS-guided BO runs, so those figures are skipped.
-    assert not any(name.startswith("pfgs_bo") for name in names)
+    # One beta source, so the PFGS-guided BO figures have no thresholds suffix.
+    assert "pfgs_bo_schedules_design_space_rrmse.png" in names
+    assert "pfgs_bo_vs_baselines_train_data_max.png" in names
 
 
 def test_main_writes_summary_csv(results, make_figures, monkeypatch):
@@ -95,5 +101,11 @@ def test_main_writes_summary_csv(results, make_figures, monkeypatch):
     make_figures["main"]()
 
     summary = pd.read_csv(results / "himmelblau" / "summary.csv")
-    assert len(summary) == 4
+    assert len(summary) == 7
     assert (results / "himmelblau" / "figures").is_dir()
+
+
+def test_beta_source_figures_include_the_pfgs_run_that_made_beta(results, make_figures):
+    specs = make_figures["figure_specs"](results / "himmelblau")
+
+    assert "PFGS (µ=1000, σ=50)" in specs["pfgs_bo_vs_baselines"]

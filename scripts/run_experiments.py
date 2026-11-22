@@ -1,14 +1,5 @@
 """
 Runs every experiment from the report, once per training seed.
-
-Each experiment is one of the method scripts with an example config and the
-report's settings for that problem. PFGS runs before PFGS-guided BO, which reads
-the beta intervals PFGS saves. Results go to ``results/<problem>/...`` and MLflow.
-
-Usage:
-    uv run python scripts/run_experiments.py --dry-run     # list the runs
-    uv run python scripts/run_experiments.py               # run everything
-    uv run python scripts/run_experiments.py --problem branin --seeds 1 2
 """
 
 import subprocess
@@ -59,45 +50,72 @@ class Experiment:
         return command
 
 
-def thresholds(mean: float, std_dev: float) -> dict[str, float]:
+Thresholds = tuple[float, float]
+
+
+@dataclass(frozen=True)
+class ReportThresholds:
+    """
+    The discard thresholds the report used for one problem.
+
+    Parameters:
+        constrained_bo (list[Thresholds]): pairs run with constrained BO (UCB and EI).
+        pfgs (list[Thresholds]): pairs run with PFGS; (0, 0) is unconstrained PFGS.
+        beta_source (Thresholds): PFGS pair whose beta intervals PFGS-guided BO uses.
+    """
+
+    constrained_bo: list[Thresholds]
+    pfgs: list[Thresholds]
+    beta_source: Thresholds
+
+
+REPORT_THRESHOLDS: dict[str, ReportThresholds] = {
+    "himmelblau": ReportThresholds(
+        constrained_bo=[(1000, 50), (1000, 100), (1200, 50), (1200, 100)],
+        pfgs=[(0, 0), (1000, 100)],
+        beta_source=(1000, 100),
+    ),
+    "branin": ReportThresholds(
+        constrained_bo=[(150, 0.5), (150, 1), (250, 0.5), (250, 1)],
+        pfgs=[(0, 0)],
+        beta_source=(0, 0),
+    ),
+}
+
+
+def thresholds(pair: Thresholds) -> dict[str, float]:
     """Discard-threshold overrides for PFGS, PFGS-guided BO or constrained BO."""
+    mean, std_dev = pair
     return {"mean_discard_threshold": mean, "std_dev_discard_threshold": std_dev}
 
 
-def constrained_bo_grid(means: list[float], std_devs: list[float]) -> list[Experiment]:
-    """Constrained BO with UCB and EI for every pair of discard thresholds."""
+def report_experiments(problem: str) -> list[Experiment]:
+    """
+    Returns the report's experiments for one problem, in the order they must run:
+    PFGS before PFGS-guided BO, which reads the beta intervals PFGS saves.
+
+    Parameters:
+        problem (str): a problem in ``REPORT_THRESHOLDS``.
+
+    Returns:
+        experiments (list[Experiment]): experiments to run for each seed.
+    """
+    report = REPORT_THRESHOLDS[problem]
+    pfgs_pairs = list(dict.fromkeys([*report.pfgs, report.beta_source]))
+
     return [
-        Experiment("run_constrained_bo.py", config, thresholds(mean, std_dev))
-        for config, mean, std_dev in product(
-            ["constrained_bo_ucb.toml", "constrained_bo_ei.toml"], means, std_devs
-        )
+        *(Experiment("run_pfgs.py", "pfgs.toml", thresholds(t)) for t in pfgs_pairs),
+        Experiment("run_pfgs_bo.py", "pfgs_bo.toml", thresholds(report.beta_source)),
+        Experiment("run_bo.py", "bo_ucb.toml", {"beta": 1.96}),
+        Experiment("run_bo.py", "bo_ei.toml"),
+        *(
+            Experiment("run_constrained_bo.py", config, thresholds(t))
+            for config, t in product(
+                ["constrained_bo_ucb.toml", "constrained_bo_ei.toml"],
+                report.constrained_bo,
+            )
+        ),
     ]
-
-
-# The report's experiments, per problem, in the order they must run.
-REPORT_EXPERIMENTS: dict[str, list[Experiment]] = {
-    "himmelblau": [
-        # PFGS without thresholds: the baseline, and the source of the beta intervals.
-        Experiment("run_pfgs.py", "pfgs.toml", thresholds(0, 0)),
-        # Constrained PFGS, compared with constrained BO (report Fig. 11-12).
-        Experiment("run_pfgs.py", "pfgs.toml", thresholds(1000, 100)),
-        # PFGS-guided BO, all six beta schedules (report Fig. 3-6).
-        Experiment("run_pfgs_bo.py", "pfgs_bo.toml", thresholds(0, 0)),
-        # Standard BO baselines.
-        Experiment("run_bo.py", "bo_ucb.toml", {"beta": 1.96}),
-        Experiment("run_bo.py", "bo_ei.toml"),
-        # Constrained BO threshold grid (report Fig. 9-10 and Appendix B.1).
-        *constrained_bo_grid(means=[1000, 1200], std_devs=[50, 100]),
-    ],
-    "branin": [
-        Experiment("run_pfgs.py", "pfgs.toml", thresholds(0, 0)),
-        Experiment("run_pfgs_bo.py", "pfgs_bo.toml", thresholds(0, 0)),
-        Experiment("run_bo.py", "bo_ucb.toml", {"beta": 1.96}),
-        Experiment("run_bo.py", "bo_ei.toml"),
-        # Constrained BO threshold grid (report Appendix B.2-B.3).
-        *constrained_bo_grid(means=[150, 250], std_devs=[0.5, 1]),
-    ],
-}
 
 
 def main() -> None:
@@ -105,7 +123,7 @@ def main() -> None:
     parser = ArgumentParser(description="Run the report's experiments.")
     parser.add_argument(
         "--problem",
-        choices=sorted(REPORT_EXPERIMENTS),
+        choices=sorted(REPORT_THRESHOLDS),
         action="append",
         help="Problem(s) to run; defaults to all. Can be repeated.",
     )
@@ -123,8 +141,8 @@ def main() -> None:
 
     commands = [
         experiment.command(problem, seed)
-        for problem in args.problem or REPORT_EXPERIMENTS
-        for experiment in REPORT_EXPERIMENTS[problem]
+        for problem in args.problem or REPORT_THRESHOLDS
+        for experiment in report_experiments(problem)
         for seed in args.seeds
     ]
 

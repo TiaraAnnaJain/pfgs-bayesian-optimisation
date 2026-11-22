@@ -25,16 +25,15 @@ SUMMARY_METRICS = ["design_space_rrmse", "entire_space_rrmse", "train_data_max"]
 
 BO_UCB = "bo/UCB_beta1.96"
 BO_EI = "bo/EI"
-PFGS = "pfgs/mean0_std0"
-PFGS_BO = "pfgs-bo/beta_from_mean0_std0"
+PFGS_UNCONSTRAINED = "pfgs/mean0_std0"
 
 PFGS_BO_SCHEDULES = {
-    "Minimum (dynamic)": f"{PFGS_BO}/min",
-    "Maximum (dynamic)": f"{PFGS_BO}/max",
-    "Midpoint (dynamic)": f"{PFGS_BO}/mid_point",
-    "Mean (fixed)": f"{PFGS_BO}/mean",
-    "Median (fixed)": f"{PFGS_BO}/median",
-    "Maximum overlap (fixed)": f"{PFGS_BO}/max_overlap",
+    "Minimum (dynamic)": "min",
+    "Maximum (dynamic)": "max",
+    "Midpoint (dynamic)": "mid_point",
+    "Mean (fixed)": "mean",
+    "Median (fixed)": "median",
+    "Maximum overlap (fixed)": "max_overlap",
 }
 
 
@@ -60,21 +59,29 @@ def figure_specs(root: Path) -> dict[str, dict[str, pd.DataFrame]]:
         specs (dict[str, dict[str, pd.DataFrame]]): curves for each figure.
     """
     specs: dict[str, dict[str, pd.DataFrame]] = {
-        "pfgs_bo_schedules": {
-            label: runs_for(root, pattern)
-            for label, pattern in PFGS_BO_SCHEDULES.items()
-        },
-        "pfgs_bo_vs_baselines": {
-            "PFGS-guided BO, maximum overlap": runs_for(root, f"{PFGS_BO}/max_overlap"),
-            "PFGS-guided BO, maximum (dynamic)": runs_for(root, f"{PFGS_BO}/max"),
-            "BO (UCB, β=1.96)": runs_for(root, BO_UCB),
-            "PFGS": runs_for(root, PFGS),
-        },
         "bo": {
             "BO (UCB, β=1.96)": runs_for(root, BO_UCB),
             "BO (EI)": runs_for(root, BO_EI),
         },
     }
+
+    beta_sources = sorted((root / "pfgs-bo").glob("beta_from_*"))
+    for source in beta_sources:
+        tag = source.name.removeprefix("beta_from_")
+        suffix = f"_{tag}" if len(beta_sources) > 1 else ""
+        specs[f"pfgs_bo_schedules{suffix}"] = {
+            label: load_runs(source / folder)
+            for label, folder in PFGS_BO_SCHEDULES.items()
+        }
+        baselines = {
+            "PFGS-guided BO, maximum overlap": load_runs(source / "max_overlap"),
+            "PFGS-guided BO, maximum (dynamic)": load_runs(source / "max"),
+            "BO (UCB, β=1.96)": runs_for(root, BO_UCB),
+            "PFGS (unconstrained)": runs_for(root, PFGS_UNCONSTRAINED),
+        }
+        if f"pfgs/{tag}" != PFGS_UNCONSTRAINED:
+            baselines[f"PFGS ({thresholds_label(tag)})"] = runs_for(root, f"pfgs/{tag}")
+        specs[f"pfgs_bo_vs_baselines{suffix}"] = baselines
 
     for acquisition, baseline in [("UCB_beta1.96", BO_UCB), ("EI", BO_EI)]:
         name = acquisition.split("_")[0]
@@ -84,7 +91,7 @@ def figure_specs(root: Path) -> dict[str, dict[str, pd.DataFrame]]:
         specs[f"constrained_bo_{name.lower()}"] = curves
 
     for pfgs_folder in sorted((root / "pfgs").glob("mean*")):
-        if pfgs_folder.name == "mean0_std0":
+        if pfgs_folder.name == Path(PFGS_UNCONSTRAINED).name:
             continue
         tag = pfgs_folder.name
         specs[f"constrained_bo_vs_pfgs_{tag}"] = {
