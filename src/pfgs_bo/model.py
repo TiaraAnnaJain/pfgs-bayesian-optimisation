@@ -12,14 +12,18 @@ from pfgs_bo.data.data_models import Dataset
 class GPModel:
     """
     Gaussian Process model with LBFGS optimizer.
+
+    Parameters:
+        seed (int): seed for PyTorch's random number generator.
+        Defaults to 11.
     """
 
-    def __init__(self):
-        self.model = None
-        self.mll = None
+    def __init__(self, seed: int = 11):
+        self.model: SingleTaskGP | None = None
+        self.mll: ExactMarginalLogLikelihood | None = None
         self.x_labels: list[str] | None = None
         self.y_labels: list[str] | None = None
-        torch.manual_seed(11)
+        torch.manual_seed(seed)
 
     def train(self, train_dataset: Dataset):
         """

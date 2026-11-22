@@ -118,3 +118,23 @@ def test_pso_optimiser_does_not_write_report_log(tmp_path, monkeypatch):
     PSOptimiser(objective=objective, lower_bound=[0.0, 0.0], upper_bound=[1.0, 1.0])
 
     assert not (tmp_path / "report.log").exists()
+
+
+def test_pso_optimiser_is_reproducible_with_a_seed():
+    # DummyModel predicts x1 + x2; the acquisition peaks where that equals 0.8.
+    objective = PSOObjective(
+        model=DummyModel(), acq_fun=lambda predictions: -((predictions - 0.8) ** 2)
+    )
+
+    def run(seed):
+        optimiser = PSOptimiser(
+            objective=objective,
+            lower_bound=[0.0, 0.0],
+            upper_bound=[1.0, 1.0],
+            n_particles=10,
+            seed=seed,
+        )
+        return optimiser.run()[1]
+
+    np.testing.assert_array_equal(run(seed=3), run(seed=3))
+    assert not np.array_equal(run(seed=3), run(seed=4))

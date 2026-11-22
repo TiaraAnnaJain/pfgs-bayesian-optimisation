@@ -20,6 +20,7 @@ from pfgs_bo.experiment import (
     fit_surrogate,
     load_experiment,
     log_iteration,
+    optimiser_seeds,
     print_progress,
     results_csv,
     start_run,
@@ -38,8 +39,9 @@ def main() -> None:
     mean_discard_threshold = np.array(config["mean_discard_threshold"])
     std_dev_discard_threshold = np.array(config["std_dev_discard_threshold"])
 
-    model = GPModel()
+    model = GPModel(seed=config["model_seed"])
     history = RunHistory()
+    seeds = optimiser_seeds(config)
 
     with start_run(config, space) as tracker:
         for i in range(config["num_iter"]):
@@ -63,7 +65,10 @@ def main() -> None:
                 **acq_kwargs,
             )
             optimiser = PSOptimiser(
-                objective=objective, lower_bound=lower_bound, upper_bound=upper_bound
+                objective=objective,
+                lower_bound=lower_bound,
+                upper_bound=upper_bound,
+                seed=next(seeds),
             )
             _, x_new, stop_optimisation = optimiser.run()
             if stop_optimisation:

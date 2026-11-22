@@ -15,6 +15,8 @@ def base_config(**overrides):
         "test_samples": 10,
         "train_seed": 0,
         "test_seed": 1,
+        "model_seed": 11,
+        "optimiser_seed": 0,
         "mean_discard_threshold": 0,
         "std_dev_discard_threshold": 0,
         "acquisition_function": "UCB",
@@ -101,3 +103,11 @@ def test_load_config_applies_command_line_overrides(tmp_path):
 def test_override_must_be_key_value():
     with pytest.raises(ValueError, match="key=value"):
         apply_overrides({}, ["beta"])
+
+
+def test_pfgs_needs_an_optimiser_seed():
+    config = base_config(method="PFGS")
+    del config["optimiser_seed"]
+
+    with pytest.raises(TypeError, match="optimiser_seed"):
+        validate_config(config)

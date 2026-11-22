@@ -101,6 +101,7 @@ class PSOptimiser:
         n_particles (int | None): Number of particles, defaults to 200.
         options (dict[str, float] | None): hyperparameter values. Defaults to
             {"c1": 2.0, "c2": 2.0, "w": 0.9}
+        seed (int | None): random seed.
     """
 
     def __init__(
@@ -110,6 +111,7 @@ class PSOptimiser:
         upper_bound: list[float],
         n_particles: int | None = None,
         options: dict[str, float] | None = None,
+        seed: int | None = None,
     ):
         xl = np.array(lower_bound, dtype=np.float64)
         xu = np.array(upper_bound, dtype=np.float64)
@@ -121,6 +123,8 @@ class PSOptimiser:
             options = {"c1": 2.0, "c2": 2.0, "w": 0.9}
 
         self.objective = objective
+        if seed is not None:
+            np.random.seed(seed)
         init_pos = np.random.uniform(0, 1, size=(n_particles, len(xl)))
         self.optimizer = ps.single.GlobalBestPSO(
             n_particles=n_particles,

@@ -20,6 +20,8 @@ from pfgs_bo.experiment import (
     evaluate_surrogate,
     fit_surrogate,
     log_iteration,
+    optimiser_seeds,
+    problem_label,
     results_csv,
     run_dir,
     unit_bounds,
@@ -204,3 +206,19 @@ def test_pfgs_guided_bo_results_need_a_schedule(tmp_path):
 
     with pytest.raises(ValueError, match="schedule"):
         run_dir(config)
+
+
+def test_problem_label_includes_non_default_dimensions():
+    assert problem_label({"problem": "himmelblau"}) == "himmelblau"
+    assert problem_label({"problem": "ackley", "dimensions": 2}) == "ackley"
+    assert problem_label({"problem": "ackley", "dimensions": 5}) == "ackley_5d"
+
+
+def test_optimiser_seeds_are_reproducible_and_vary_per_iteration():
+    first = optimiser_seeds({"optimiser_seed": 0})
+    second = optimiser_seeds({"optimiser_seed": 0})
+
+    seeds = [next(first) for _ in range(5)]
+
+    assert seeds == [next(second) for _ in range(5)]
+    assert len(set(seeds)) == 5

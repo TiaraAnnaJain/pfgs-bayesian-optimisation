@@ -1,10 +1,5 @@
 """
 Registry of the benchmark problems: objective function, search space and optima.
-
-A config only names its problem (``problem = "himmelblau"``); everything that is a
-fact about the problem itself lives here, so switching problem from the command line
-(``--problem branin``) needs no other change. Settings that are experiment choices,
-such as the discard thresholds, stay in the config.
 """
 
 from collections.abc import Callable
@@ -52,6 +47,17 @@ def _space(bounds: dict[str, tuple[float, float]]) -> InvestigationSpace:
     )
 
 
+def _ackley(dimensions: int) -> Benchmark:
+    """Ackley in the given number of dimensions, with its maximum at the origin."""
+    bounds = (-32.768, 32.768)
+    return Benchmark(
+        name="ackley",
+        function=ackley,
+        space=_space({f"x{i}": bounds for i in range(1, dimensions + 1)}),
+        maxima=[[0.0] * dimensions],
+    )
+
+
 BENCHMARKS: dict[str, Benchmark] = {
     "himmelblau": Benchmark(
         name="himmelblau",
@@ -70,30 +76,36 @@ BENCHMARKS: dict[str, Benchmark] = {
         space=_space({"x1": (-5.0, 10.0), "x2": (0.0, 15.0)}),
         maxima=[[-3.142, 12.275], [3.142, 2.275], [9.425, 2.475]],
     ),
-    "ackley": Benchmark(
-        name="ackley",
-        function=ackley,
-        space=_space({"x1": (-32.768, 32.768), "x2": (-32.768, 32.768)}),
-        maxima=[[0.0, 0.0]],
-    ),
+    "ackley": _ackley(2),
 }
 
+VARIABLE_DIMENSIONS = {"ackley"}
 
-def get_benchmark(name: str) -> Benchmark:
+
+def get_benchmark(name: str, dimensions: int = 2) -> Benchmark:
     """
-    Returns the benchmark with the given name.
+    Returns the benchmark with the given name and number of input dimensions.
 
     Parameters:
         name (str): problem name.
+        dimensions (int): number of input dimensions; only problems in
+            ``VARIABLE_DIMENSIONS`` support values other than 2.
 
     Returns:
         benchmark (Benchmark): the benchmark.
 
     Raises:
-        ValueError: if there is no benchmark with that name.
+        ValueError: if there is no benchmark with that name, or it doesn't support
+            the number of dimensions.
     """
     if name not in BENCHMARKS:
         raise ValueError(
             f"Problem {name!r} is not supported. Choose from: {', '.join(BENCHMARKS)}."
         )
-    return BENCHMARKS[name]
+    if dimensions == 2:
+        return BENCHMARKS[name]
+    if name not in VARIABLE_DIMENSIONS:
+        raise ValueError(f"Problem {name!r} is only defined in 2 dimensions.")
+    if dimensions < 1:
+        raise ValueError("Number of dimensions must be at least 1.")
+    return _ackley(dimensions)
