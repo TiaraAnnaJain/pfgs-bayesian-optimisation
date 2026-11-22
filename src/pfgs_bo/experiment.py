@@ -1,6 +1,6 @@
 """Shared building blocks for the experiment scripts."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -28,21 +28,24 @@ from pfgs_bo.tracking.results_io import to_csv
 TestSets = dict[str, Dataset]
 
 
-def load_experiment(method: str) -> tuple[dict[str, Any], InvestigationSpace]:
+def load_experiment(
+    method: str, argv: Sequence[str] | None = None
+) -> tuple[dict[str, Any], InvestigationSpace]:
     """
-    Loads and validates the config file given on the command line, and its
-    investigation space.
+    Loads and validates the config given on the command line, and the search space
+    of its problem.
 
     Parameters:
         method (str): method the calling script runs; the config's ``method`` must
             match, so a config can't be run with the wrong script.
+        argv (Sequence[str] | None): command-line arguments; defaults to
+            ``sys.argv[1:]``.
 
     Returns:
-        config (dict[str, Any]): resolved config, with the simulation name replaced by
-            the simulation function and the config's [files] table under "files".
-        space (InvestigationSpace): investigation space referenced by the config.
+        config (dict[str, Any]): resolved config (see ``resolve_config``).
+        space (InvestigationSpace): search space of the config's problem.
     """
-    config, files = load_config()
+    config = load_config(argv)
     validate_config(config)
     if config["method"] != method:
         raise ValueError(
@@ -50,25 +53,100 @@ def load_experiment(method: str) -> tuple[dict[str, Any], InvestigationSpace]:
             f"{config['method']!r}."
         )
 
-    space = InvestigationSpace.from_json(PROJECT_ROOT / files["investigation_space"])
-
     resolved = resolve_config(config)
-    resolved["files"] = files
 
-    return resolved, space
+    return resolved, resolved["benchmark"].space
 
 
-def beta_file_path(seed: int) -> Path:
+def _number(value: float) -> str:
+    """Formats a number for a folder name: 1000.0 -> "1000", 0.5 -> "0.5"."""
+    return f"{value:g}"
+
+
+def _thresholds_tag(config: dict[str, Any]) -> str:
+    """Folder name for a pair of discard thresholds, e.g. "mean1000_std50"."""
+    mean = _number(config["mean_discard_threshold"])
+    std = _number(config["std_dev_discard_threshold"])
+    return f"mean{mean}_std{std}"
+
+
+def _acquisition_tag(config: dict[str, Any]) -> str:
+    """Folder name for an acquisition function, e.g. "EI" or "UCB_beta1.96"."""
+    if config["acquisition_function"] == "UCB":
+        return f"UCB_beta{_number(config['beta'])}"
+    return config["acquisition_function"]
+
+
+def run_dir(config: dict[str, Any], schedule: str | None = None) -> Path:
     """
-    Returns where PFGS saves the beta intervals for a given training seed.
+    Returns the results folder for a run, derived from its config.
+
+    Runs that differ in problem, method or method settings get different folders,
+    so sweeps don't overwrite each other::
+
+        results/<problem>/pfgs/mean<m>_std<s>/
+        results/<problem>/bo/<UCB_beta<b> | EI>/
+        results/<problem>/pfgs-bo/beta_from_mean<m>_std<s>/<schedule>/
+        results/<problem>/constrained-bo/<UCB_beta<b> | EI>/mean<m>_std<s>/
+
+    For PFGS-guided BO the thresholds are those of the PFGS run whose beta
+    intervals are used. The results root can be changed with ``results_dir``.
 
     Parameters:
-        seed (int): training seed of the PFGS run.
+        config (dict[str, Any]): resolved config.
+        schedule (str | None): beta schedule name, for PFGS-guided BO.
 
     Returns:
-        path (Path): ``results/pfgs/beta_seed_<seed>.json`` in the project root.
+        path (Path): results folder.
     """
-    return PROJECT_ROOT / "results" / "pfgs" / f"beta_seed_{seed}.json"
+    root = PROJECT_ROOT / config.get("results_dir", "results") / config["problem"]
+    method = config["method"]
+
+    if method == "PFGS":
+        return root / "pfgs" / _thresholds_tag(config)
+    if method == "BO":
+        return root / "bo" / _acquisition_tag(config)
+    if method == "BO-PFGS":
+        if schedule is None:
+            raise ValueError("PFGS-guided BO results need a beta schedule name.")
+        return root / "pfgs-bo" / f"beta_from_{_thresholds_tag(config)}" / schedule
+    if method == "constrained-BO":
+        return (
+            root / "constrained-bo" / _acquisition_tag(config) / _thresholds_tag(config)
+        )
+    raise ValueError(f"Method {method} is not supported.")
+
+
+def results_csv(config: dict[str, Any], schedule: str | None = None) -> Path:
+    """
+    Returns the CSV file for a run: ``train_seed_<n>.csv`` in its ``run_dir``.
+
+    Parameters:
+        config (dict[str, Any]): resolved config.
+        schedule (str | None): beta schedule name, for PFGS-guided BO.
+
+    Returns:
+        path (Path): CSV file.
+    """
+    return run_dir(config, schedule) / f"train_seed_{config['train_seed']}.csv"
+
+
+def beta_file(config: dict[str, Any]) -> Path:
+    """
+    Returns the beta-interval file of the PFGS run matching a config's problem,
+    discard thresholds and training seed.
+
+    PFGS writes this file and PFGS-guided BO reads it, so both resolve to the same
+    path.
+
+    Parameters:
+        config (dict[str, Any]): resolved PFGS or PFGS-guided BO config.
+
+    Returns:
+        path (Path): ``beta_train_seed_<n>.json`` in the PFGS run's folder.
+    """
+    pfgs_dir = run_dir({**config, "method": "PFGS"})
+    return pfgs_dir / f"beta_train_seed_{config['train_seed']}.json"
 
 
 def unit_bounds(space: InvestigationSpace) -> tuple[list[float], list[float]]:
@@ -101,6 +179,7 @@ def build_datasets(
         test_sets (TestSets): "Entire Space" and "Design Space" test sets.
     """
     simulation = config["simulation"]
+    maxima = np.array(config["benchmark"].maxima)
     x_labels = space.labels
     y_labels = space.outputs
 
@@ -135,7 +214,7 @@ def build_datasets(
         dataset_type="test",
         x_labels=x_labels,
         y_labels=y_labels,
-        maxima=np.array(config["maxima"]),
+        maxima=maxima,
     )
 
     return train_data, {"Entire Space": entire_space, "Design Space": design_space}
@@ -160,9 +239,9 @@ def start_run(
     Returns:
         tracker (MLflowTracker): tracker for the started run.
     """
-    simulation_name = config["simulation"].__name__
+    problem = config["problem"]
     tracker = MLflowTracker(
-        experiment_name=f"{simulation_name}-optimisation",
+        experiment_name=f"{problem}-optimisation",
         run_name=run_name or config["test_name"],
     )
 
@@ -172,7 +251,7 @@ def start_run(
             x_label=space.labels,
             y_label=space.outputs,
             variables=space.variables,
-            simulation=simulation_name,
+            problem=problem,
             beta_schedule=beta_schedule,
             train_seed=config["train_seed"],
         )
@@ -372,8 +451,7 @@ def finish_run(
     model: GPModel,
     train_data: Dataset,
     history: RunHistory,
-    results_dir: str,
-    seed: int,
+    csv_path: Path,
     beta_fig: plt.Figure | None = None,
 ) -> None:
     """
@@ -384,8 +462,7 @@ def finish_run(
         model (GPModel): final GP surrogate.
         train_data (Dataset): final de-normalised training data.
         history (RunHistory): per-iteration results.
-        results_dir (str): folder to write "seed_<seed>.csv" into.
-        seed (int): training seed, used in the CSV file name.
+        csv_path (Path): CSV file to write the history to (see ``results_csv``).
         beta_fig (plt.Figure | None): beta figure, for PFGS and PFGS-guided BO.
     """
     rrmse_fig = plot_rrmse_history(
@@ -407,4 +484,4 @@ def finish_run(
         train_data_max_fig=train_data_max_fig,
     )
 
-    to_csv(results=history.to_dict(), folder=results_dir, seed=seed)
+    to_csv(results=history.to_dict(), csv_file=csv_path)

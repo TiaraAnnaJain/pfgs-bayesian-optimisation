@@ -19,8 +19,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 class MLflowTracker:
     """Logs parameters, model metrics and plots to MLflow."""
 
-    def __init__(self, experiment_name: str, run_name: str = None):
-        mlflow.set_tracking_uri(f"sqlite:///{PROJECT_ROOT}/mlflow.db")
+    def __init__(self, experiment_name: str, run_name: str | None = None):
+        # Log to mlflow.db in the project root unless MLFLOW_TRACKING_URI is set.
+        mlflow.set_tracking_uri(
+            os.environ.get("MLFLOW_TRACKING_URI", f"sqlite:///{PROJECT_ROOT}/mlflow.db")
+        )
         mlflow.set_experiment(experiment_name)
         self._run = mlflow.start_run(run_name=run_name)
         self._artifact_dir = tempfile.mkdtemp()
@@ -35,6 +38,8 @@ class MLflowTracker:
         """
         config_to_log = deepcopy(resolved_config)
         for key in [
+            "benchmark",
+            "problem",
             "simulation",
             "train_samples",
             "test_samples",
@@ -65,7 +70,7 @@ class MLflowTracker:
         x_label: list[str],
         y_label: list[str],
         variables: list[InvestigationSpaceVariable],
-        simulation: str,
+        problem: str,
         beta_schedule: str | None = None,
         train_seed: int | None = None,
     ):
@@ -76,7 +81,7 @@ class MLflowTracker:
             x_label (list[str]): input labels.
             y_label (list[str]): output labels.
             variables (list[InvestigationSpaceVariable]): variables to be logged.
-            simulation (str): Name of the simulation being run.
+            problem (str): name of the benchmark problem.
             beta_schedule (str): Name of the beta schedule.
             train_seed (int): seed for training runs.
         """
@@ -88,7 +93,7 @@ class MLflowTracker:
             {
                 "x_labels": x_label,
                 "y_labels": y_label,
-                "simulation": simulation,
+                "problem": problem,
                 **bounds,
                 "beta_schedule": beta_schedule,
                 "train_seed": train_seed,

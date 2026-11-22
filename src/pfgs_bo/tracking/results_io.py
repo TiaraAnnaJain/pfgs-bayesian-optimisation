@@ -8,20 +8,18 @@ import pandas as pd
 from numpy.typing import NDArray
 
 
-def to_csv(results: dict, folder: str | Path, seed: int) -> None:
+def to_csv(results: dict, csv_file: str | Path) -> None:
     """
-    Takes results from optimisation scripts and writes them into csv file.
+    Writes the per-iteration results of a run to a CSV file.
 
     Parameters:
-         results (Dict): results dictionary
-         folder (str | Path): folder path
-         seed (int): LHS seed
+        results (dict): columns to write, e.g. ``RunHistory.to_dict()``.
+        csv_file (str | Path): file to write; parent folders are created.
     """
-    out_dir = Path(folder)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_file = Path(csv_file)
+    csv_file.parent.mkdir(parents=True, exist_ok=True)
 
-    df = pd.DataFrame(results)
-    df.to_csv(out_dir / f"seed_{seed}.csv", index=False)
+    pd.DataFrame(results).to_csv(csv_file, index=False)
 
 
 def from_csv(folder: str, x_column: str, y_column: str) -> tuple[NDArray, NDArray]:
@@ -37,7 +35,7 @@ def from_csv(folder: str, x_column: str, y_column: str) -> tuple[NDArray, NDArra
         x (NDArray[np.float64]): x-axis array.
         y_all (NDArray[np.float64]): y-axis array.
     """
-    files = Path(folder).glob("seed_*.csv")
+    files = sorted(Path(folder).glob("train_seed_*.csv"))
 
     runs = []
     x_runs = []

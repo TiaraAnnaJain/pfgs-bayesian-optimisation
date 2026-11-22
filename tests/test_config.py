@@ -2,7 +2,7 @@
 
 import pytest
 
-from pfgs_bo.config import validate_config
+from pfgs_bo.config import apply_overrides, load_config, validate_config
 
 
 def base_config(**overrides):
@@ -10,7 +10,7 @@ def base_config(**overrides):
         "test_name": "test",
         "method": "PFGS",
         "num_iter": 5,
-        "simulation": "himmelblau",
+        "problem": "himmelblau",
         "train_samples": 5,
         "test_samples": 10,
         "train_seed": 0,
@@ -60,3 +60,44 @@ def test_ucb_needs_beta():
 def test_num_iter_must_be_positive_int():
     with pytest.raises(TypeError):
         validate_config(base_config(num_iter=0))
+
+
+def test_unknown_problem_is_rejected():
+    with pytest.raises(ValueError, match="not supported"):
+        validate_config(base_config(problem="rosenbrock"))
+
+
+def test_load_config_applies_command_line_overrides(tmp_path):
+    path = tmp_path / "config.toml"
+    path.write_text(
+        'problem = "himmelblau"\ntrain_seed = 1\nbeta = 1.96\n'
+        "[nsga_parameters]\npopulation_size = 100\n"
+    )
+
+    config = load_config(
+        [
+            "--file",
+            str(path),
+            "--problem",
+            "branin",
+            "--train-seed",
+            "4",
+            "--set",
+            "beta=2.5",
+            "--set",
+            "acquisition_function=EI",
+            "--set",
+            "nsga_parameters.population_size=20",
+        ]
+    )
+
+    assert config["problem"] == "branin"
+    assert config["train_seed"] == 4
+    assert config["beta"] == 2.5
+    assert config["acquisition_function"] == "EI"
+    assert config["nsga_parameters"] == {"population_size": 20}
+
+
+def test_override_must_be_key_value():
+    with pytest.raises(ValueError, match="key=value"):
+        apply_overrides({}, ["beta"])

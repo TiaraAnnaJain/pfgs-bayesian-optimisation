@@ -1,53 +1,126 @@
-"""Loads config from toml files."""
+"""
+Loads experiment configs from TOML files, with command-line overrides.
+
+A config is resolved in this order, later sources winning:
+
+1. the TOML file given with ``--file`` (a path, or a name inside ``configs/``),
+2. ``--problem``, ``--train-seed`` and ``--test-seed``,
+3. any number of ``--set key=value`` overrides (values are parsed as TOML, so
+   ``--set beta=2.5`` gives a float and ``--set acquisition_function=EI`` a string).
+"""
 
 import tomllib
 from argparse import ArgumentParser
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from pfgs_bo.data.simulation import SIMULATION_REGISTRY
+from pfgs_bo.benchmarks import BENCHMARKS, get_benchmark
 
 PROJECT_ROOT = Path(__file__).parents[2]
+CONFIG_DIR = PROJECT_ROOT / "configs"
 
 
-def load_config() -> tuple[dict[str, Any], dict[str, Any]]:
+def _parse_value(text: str) -> Any:
+    """Parses a TOML value such as ``2.5``, ``true`` or ``[1, 2]``; else a string."""
+    try:
+        return tomllib.loads(f"value = {text}")["value"]
+    except tomllib.TOMLDecodeError:
+        return text
+
+
+def _config_path(file: str) -> Path:
+    """Resolves ``--file``: an existing path, or a file name inside ``configs/``."""
+    path = Path(file)
+    if path.is_file():
+        return path
+    return CONFIG_DIR / file
+
+
+def apply_overrides(config: dict[str, Any], overrides: Sequence[str]) -> None:
     """
-    Loads a TOML configuration file specified via command-line argument.
+    Applies ``key=value`` overrides to a config in place.
+
+    Dotted keys set nested values, e.g. ``nsga_parameters.population_size=50``.
+
+    Parameters:
+        config (dict[str, Any]): config to update.
+        overrides (Sequence[str]): overrides in ``key=value`` form.
+
+    Raises:
+        ValueError: if an override is not in ``key=value`` form.
+    """
+    for override in overrides:
+        key, sep, value = override.partition("=")
+        if not sep or not key:
+            raise ValueError(f"Override {override!r} must be in key=value form.")
+
+        *parents, leaf = key.strip().split(".")
+        target = config
+        for parent in parents:
+            target = target.setdefault(parent, {})
+        target[leaf] = _parse_value(value.strip())
+
+
+def load_config(argv: Sequence[str] | None = None) -> dict[str, Any]:
+    """
+    Loads the config file given on the command line and applies any overrides.
+
+    Parameters:
+        argv (Sequence[str] | None): command-line arguments; defaults to
+            ``sys.argv[1:]``.
 
     Returns:
-        config (dict): TOML configuration dictionary.
-        files (dict): TOML configuration files.
+        config (dict[str, Any]): raw config with overrides applied.
     """
-    parser = ArgumentParser()
-    parser.add_argument("--file", type=str, required=True, help="Name of config file.")
-    args = parser.parse_args()
+    parser = ArgumentParser(description=__doc__.splitlines()[1])
+    parser.add_argument(
+        "--file", required=True, help="Config file: a path or a name in configs/."
+    )
+    parser.add_argument("--problem", choices=sorted(BENCHMARKS), help="Problem.")
+    parser.add_argument("--train-seed", type=int, help="LHS seed for training data.")
+    parser.add_argument("--test-seed", type=int, help="LHS seed for the test sets.")
+    parser.add_argument(
+        "--set",
+        dest="overrides",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Override any config value; can be repeated.",
+    )
+    args = parser.parse_args(argv)
 
-    toml_path = PROJECT_ROOT / "configs" / args.file
+    with open(_config_path(args.file), "rb") as f:
+        config = tomllib.load(f)
 
-    with open(toml_path, "rb") as f:
-        data = tomllib.load(f)
+    for key, value in (
+        ("problem", args.problem),
+        ("train_seed", args.train_seed),
+        ("test_seed", args.test_seed),
+    ):
+        if value is not None:
+            config[key] = value
 
-    config = {k: v for k, v in data.items() if k != "files"}
-    files = data.get("files", {})
+    apply_overrides(config, args.overrides)
 
-    return config, files
+    return config
 
 
 def resolve_config(config: dict[str, Any]) -> dict[str, Any]:
     """
-    Returns a flat, fully resolved config.
+    Returns a copy of a validated config with the problem looked up.
 
     Parameters:
-         config (dict[str, Any]): raw dict from tomllib.
+         config (dict[str, Any]): validated raw config.
 
     Returns:
-        resolved (dict[str, Any]): fully resolved config.
+        resolved (dict[str, Any]): config with "benchmark" (the ``Benchmark``) and
+            "simulation" (its objective function) added.
     """
     resolved = dict(config)
-
-    if "simulation" in resolved:
-        sim_name = resolved["simulation"]
-        resolved["simulation"] = SIMULATION_REGISTRY[sim_name]
+    benchmark = get_benchmark(config["problem"])
+    resolved["benchmark"] = benchmark
+    resolved["simulation"] = benchmark.function
 
     return resolved
 
@@ -108,19 +181,17 @@ def validate_config(config: dict[str, Any]) -> None:
         if acquisition_function == "UCB":
             _require(config, "beta", "Please provide beta parameter.")
 
-    simulation = _require(
+    problem = _require(
         config,
-        "simulation",
-        "Please provide simulation from the following: "
-        f"{', '.join(SIMULATION_REGISTRY)}.",
+        "problem",
+        f"Please provide problem from the following: {', '.join(BENCHMARKS)}.",
     )
-    if simulation not in SIMULATION_REGISTRY:
-        raise ValueError(f"Simulation {simulation} is not supported.")
+    get_benchmark(problem)
 
     _require_positive_int(config, "train_samples", "number of training samples")
     _require_positive_int(config, "test_samples", "number of test samples")
 
-    if method in ("PFGS", "constrained-BO") and (
+    if method in ("PFGS", "BO-PFGS", "constrained-BO") and (
         config.get("mean_discard_threshold") is None
         or config.get("std_dev_discard_threshold") is None
     ):

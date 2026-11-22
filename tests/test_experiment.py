@@ -6,6 +6,7 @@ import matplotlib
 import numpy as np
 import pytest
 
+from pfgs_bo.benchmarks import BENCHMARKS
 from pfgs_bo.data.investigation_space import (
     InvestigationSpace,
     InvestigationSpaceVariable,
@@ -14,10 +15,13 @@ from pfgs_bo.data.simulation import himmelblau
 from pfgs_bo.experiment import (
     RunHistory,
     add_observation,
+    beta_file,
     build_datasets,
     evaluate_surrogate,
     fit_surrogate,
     log_iteration,
+    results_csv,
+    run_dir,
     unit_bounds,
 )
 from pfgs_bo.model import GPModel
@@ -37,13 +41,14 @@ def space():
 @pytest.fixture
 def config():
     return {
+        "problem": "himmelblau",
+        "benchmark": BENCHMARKS["himmelblau"],
         "simulation": himmelblau,
         "train_samples": 6,
         "train_seed": 0,
         "test_samples": 20,
         "test_seed": 1,
         "delta": 1.0,
-        "maxima": [[3.0, 2.0], [-2.805118, 3.131312]],
     }
 
 
@@ -136,3 +141,66 @@ def test_log_iteration_logs_best_value_before_new_point(config, space):
     )
 
     assert tracker.log_iteration.call_args.kwargs["train_data_max"] == best_observed
+
+
+@pytest.mark.parametrize(
+    ("settings", "expected"),
+    [
+        (
+            {
+                "method": "PFGS",
+                "mean_discard_threshold": 0,
+                "std_dev_discard_threshold": 0,
+            },
+            "himmelblau/pfgs/mean0_std0",
+        ),
+        (
+            {"method": "BO", "acquisition_function": "UCB", "beta": 1.96},
+            "himmelblau/bo/UCB_beta1.96",
+        ),
+        ({"method": "BO", "acquisition_function": "EI"}, "himmelblau/bo/EI"),
+        (
+            {
+                "method": "constrained-BO",
+                "acquisition_function": "EI",
+                "mean_discard_threshold": 1200.0,
+                "std_dev_discard_threshold": 0.5,
+            },
+            "himmelblau/constrained-bo/EI/mean1200_std0.5",
+        ),
+    ],
+)
+def test_run_dir_depends_on_method_settings(settings, expected, tmp_path):
+    config = {"problem": "himmelblau", "results_dir": str(tmp_path), **settings}
+
+    assert run_dir(config) == tmp_path / expected
+
+
+def test_pfgs_and_pfgs_guided_bo_share_beta_file(tmp_path):
+    shared = {
+        "problem": "branin",
+        "results_dir": str(tmp_path),
+        "train_seed": 3,
+        "mean_discard_threshold": 0,
+        "std_dev_discard_threshold": 0,
+    }
+    pfgs = {**shared, "method": "PFGS"}
+    pfgs_bo = {**shared, "method": "BO-PFGS"}
+
+    expected = tmp_path / "branin/pfgs/mean0_std0/beta_train_seed_3.json"
+    assert beta_file(pfgs) == beta_file(pfgs_bo) == expected
+    assert results_csv(pfgs_bo, schedule="max") == (
+        tmp_path / "branin/pfgs-bo/beta_from_mean0_std0/max/train_seed_3.csv"
+    )
+
+
+def test_pfgs_guided_bo_results_need_a_schedule(tmp_path):
+    config = {
+        "problem": "himmelblau",
+        "method": "BO-PFGS",
+        "mean_discard_threshold": 0,
+        "std_dev_discard_threshold": 0,
+    }
+
+    with pytest.raises(ValueError, match="schedule"):
+        run_dir(config)

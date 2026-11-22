@@ -22,6 +22,7 @@ from pfgs_bo.experiment import (
     load_experiment,
     log_iteration,
     print_progress,
+    results_csv,
     start_run,
     unit_bounds,
 )
@@ -80,8 +81,7 @@ def main() -> None:
             model,
             train_data,
             history,
-            results_dir=f"results/bo/{acquisition_function}",
-            seed=config["train_seed"],
+            csv_path=results_csv(config),
         )
 
 

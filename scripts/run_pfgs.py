@@ -5,7 +5,7 @@ import numpy as np
 from pfgs_bo.experiment import (
     RunHistory,
     add_observation,
-    beta_file_path,
+    beta_file,
     build_datasets,
     evaluate_surrogate,
     finish_run,
@@ -13,6 +13,7 @@ from pfgs_bo.experiment import (
     load_experiment,
     log_iteration,
     print_progress,
+    results_csv,
     start_run,
     unit_bounds,
 )
@@ -124,7 +125,7 @@ def main() -> None:
         to_json(
             beta_min=beta_lower,
             beta_max=beta_upper,
-            json_file=beta_file_path(config["train_seed"]),
+            json_file=beta_file(config),
         )
 
         finish_run(
@@ -132,8 +133,7 @@ def main() -> None:
             model,
             train_data,
             history,
-            results_dir="results/pfgs",
-            seed=config["train_seed"],
+            csv_path=results_csv(config),
             beta_fig=plot_beta_ranges(beta_lower, beta_upper),
         )
 
