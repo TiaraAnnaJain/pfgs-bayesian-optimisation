@@ -90,17 +90,35 @@ def figure_specs(root: Path) -> dict[str, dict[str, pd.DataFrame]]:
             curves[thresholds_label(folder.name)] = load_runs(folder)
         specs[f"constrained_bo_{name.lower()}"] = curves
 
-    for pfgs_folder in sorted((root / "pfgs").glob("mean*")):
-        if pfgs_folder.name == Path(PFGS_UNCONSTRAINED).name:
-            continue
-        tag = pfgs_folder.name
-        specs[f"constrained_bo_vs_pfgs_{tag}"] = {
+    pfgs_curves = {"PFGS (unconstrained)": runs_for(root, PFGS_UNCONSTRAINED)}
+    constrained_pfgs = [
+        folder
+        for folder in sorted((root / "pfgs").glob("mean*"))
+        if f"pfgs/{folder.name}" != PFGS_UNCONSTRAINED
+    ]
+    for folder in constrained_pfgs:
+        pfgs_curves[thresholds_label(folder.name)] = load_runs(folder)
+    specs["pfgs_constrained"] = pfgs_curves
+
+    for folder in constrained_pfgs:
+        tag = folder.name
+        specs[f"constrained_methods_{tag}"] = {
+            "Constrained PFGS": load_runs(folder),
             "Constrained BO (EI)": runs_for(root, f"constrained-bo/EI/{tag}"),
-            "BO (EI, unconstrained)": runs_for(root, BO_EI),
-            "Constrained PFGS": load_runs(pfgs_folder),
+            "Constrained BO (UCB, β=1.96)": runs_for(
+                root, f"constrained-bo/UCB_beta1.96/{tag}"
+            ),
         }
 
     return specs
+
+
+def problem_title(label: str) -> str:
+    """Turns a results folder name like "ackley_6d" into "Ackley (6-D)"."""
+    name, _, dimensions = label.partition("_")
+    if dimensions:
+        return f"{name.capitalize()} ({dimensions.removesuffix('d')}-D)"
+    return name.capitalize()
 
 
 def make_figures(root: Path) -> list[Path]:
@@ -126,7 +144,7 @@ def make_figures(root: Path) -> list[Path]:
                 curves,
                 column,
                 ylabel,
-                title=f"{root.name.capitalize()}: {ylabel}",
+                title=f"{problem_title(root.name)}: {ylabel}",
                 nonnegative=column.endswith("rrmse"),
             )
             figures_dir.mkdir(parents=True, exist_ok=True)
