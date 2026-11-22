@@ -14,7 +14,6 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-# Small enough to run in seconds, large enough to exercise every step.
 TINY = [
     "num_iter=2",
     "test_samples=20",

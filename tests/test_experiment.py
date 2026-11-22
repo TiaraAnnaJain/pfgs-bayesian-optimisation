@@ -82,7 +82,6 @@ def test_add_observation_appends_de_normalised_point(config, space):
     assert not train_data.normalised
     assert train_data.x_data.shape == (7, 2)
     assert train_data.y_data.shape == (7, 1)
-    # 0.5 and 1.0 in the unit cube map to 0 and 5 in [-5, 5].
     np.testing.assert_allclose(new_point.x_data, [[0.0, 5.0]])
     np.testing.assert_allclose(train_data.x_data[-1], [0.0, 5.0])
     np.testing.assert_allclose(train_data.y_data[-1], himmelblau(new_point.x_data))
@@ -128,7 +127,6 @@ def test_log_iteration_logs_best_value_before_new_point(config, space):
     best_observed = train_data.y_data.max()
     model = GPModel()
     stats = fit_surrogate(model, train_data, space)
-    # A point at the Himmelblau maximum, so the new best is higher than before.
     new_point = add_observation(train_data, np.array([0.8, 0.7]), stats, himmelblau)
     tracker = MagicMock()
 

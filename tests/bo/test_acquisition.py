@@ -50,7 +50,7 @@ def test_ei():
         y_data=y_data,
         x_labels=x_label,
         y_labels=y_label,
-    )  # best_f = 0.8
+    )
 
     ei = compute_ei(preds, train)
 

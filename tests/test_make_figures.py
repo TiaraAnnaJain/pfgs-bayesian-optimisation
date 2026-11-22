@@ -60,7 +60,6 @@ def test_mean_and_std_over_seeds(results):
     iterations, mean, std = mean_and_std(runs, "design_space_rrmse")
 
     np.testing.assert_allclose(iterations, [0, 1, 2, 3])
-    # Seeds 1 and 2 differ by exactly 1, so the std is 0.5 at every iteration.
     np.testing.assert_allclose(std, 0.5)
     np.testing.assert_allclose(mean[0], 2 + 1.5)
 
@@ -90,7 +89,6 @@ def test_figures_are_written_for_available_comparisons(results, make_figures):
     assert "bo_design_space_rrmse.png" in names
     assert "constrained_bo_ei_train_data_max.png" in names
     assert "constrained_bo_vs_pfgs_mean1000_std50_design_space_rrmse.png" in names
-    # One beta source, so the PFGS-guided BO figures have no thresholds suffix.
     assert "pfgs_bo_schedules_design_space_rrmse.png" in names
     assert "pfgs_bo_vs_baselines_train_data_max.png" in names
 
