@@ -1,6 +1,6 @@
 """Generates contour plots of trained GP model."""
 
-from typing import Any, Optional, List, Dict, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,10 +11,10 @@ from pfgs_bo.data.data_models import Dataset
 def contour_slice_plot(
     trained_model: Any,
     train_dataset: Dataset,
-    x_plot_labels: List[str],
+    x_plot_labels: list[str],
     y_plot_label: str,
-    iteration: Union[int, str],
-    fixed_x_values: Optional[Dict[str, float]] = None,
+    iteration: int | str,
+    fixed_x_values: dict[str, float] | None = None,
     x_new: Dataset = None,
 ) -> plt.Figure:
     """
@@ -24,10 +24,10 @@ def contour_slice_plot(
         trained_model (Any): The trained model to plot.
         train_dataset (Dataset): The training dataset.
         x_new (Dataset): new x values appended.
-        x_plot_labels (List[str]): Labels of input values to plot.
+        x_plot_labels (list[str]): Labels of input values to plot.
         y_plot_label (str): Label of output to plot.
-        iteration (Union[int, str]): Iteration number.
-        fixed_x_values (Optional[Dict[str, float]], optional): Fixed values of other
+        iteration (int | str): Iteration number.
+        fixed_x_values (dict[str, float] | None, optional): Fixed values of other
             inputs which are not to be plotted.
 
     Returns:
@@ -109,7 +109,7 @@ def contour_slice_plot(
     plt.scatter(training_sample_1, training_sample_2, c="r")
 
     if x_new is not None:
-        plt.scatter(x_new.x_data[:, 0], x_new.x_data[:, 1], c="w")
+        plt.scatter(x_new.x_data[:, x1_index], x_new.x_data[:, x2_index], c="w")
 
     plt.xlabel(x_plot_labels[0])
     plt.ylabel(x_plot_labels[1])

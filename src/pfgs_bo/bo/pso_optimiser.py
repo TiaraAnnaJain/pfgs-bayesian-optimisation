@@ -1,13 +1,14 @@
 """Particle swarm optimization objective and optimizer."""
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
 import pyswarms as ps
+from numpy.typing import NDArray
 
-from pfgs_bo.data.data_models import Dataset
 from pfgs_bo.bo.acquisition import filter_predictions
+from pfgs_bo.data.data_models import Dataset
 
 
 class PSOObjective:
@@ -18,10 +19,11 @@ class PSOObjective:
         model (Any): GP model.
         acq_fun (Callable): Acquisition function.
         acq_kwargs: Extra keyword arguments passed to the acquisition function.
-        mean_discard_threshold (Optional[NDArray[np.float64]]): mean discard threshold.
-        std_dev_discard_threshold (Optional[NDArray[np.float64]]): standard deviation
+        mean_discard_threshold (NDArray[np.float64] | None): mean discard threshold.
+        std_dev_discard_threshold (NDArray[np.float64] | None): standard deviation
             discard threshold.
-        normalisation_stats (Optional[Dict[str, Any]]): normalisation stats from train data.
+        normalisation_stats (dict[str, Any] | None): normalisation stats from the
+            training data.
     """
 
     def __init__(
@@ -29,9 +31,9 @@ class PSOObjective:
         model: Any,
         acq_fun: Callable,
         device="cpu",
-        mean_discard_threshold: Optional[NDArray[np.float64]] = None,
-        std_dev_discard_threshold: Optional[NDArray[np.float64]] = None,
-        normalisation_stats: Optional[Dict[str, Any]] = None,
+        mean_discard_threshold: NDArray[np.float64] | None = None,
+        std_dev_discard_threshold: NDArray[np.float64] | None = None,
+        normalisation_stats: dict[str, Any] | None = None,
         **acq_kwargs,
     ):
         self.model = model
@@ -46,8 +48,8 @@ class PSOObjective:
 
     def __call__(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         """
-        Evaluates GP and computes acquisition function for given predictions, the negates
-        acquisition function outputs.
+        Evaluates the GP and the acquisition function at the given points, and negates
+        the acquisition values (PSO minimises).
 
         Parameters:
             x (NDArray[np.float64]): Population points to be evaluated.
@@ -94,20 +96,20 @@ class PSOptimiser:
 
     Parameters:
         objective (PSOObjective): Objective function to be optimized.
-        lower_bound (List[float]): Lower bound of the optimization space.
-        upper_bound (List[float]): Upper bound of the optimization space.
-        n_particles (Optional[int]): Number of particles, defaults to 200.
-        options (Optional[Dict[str, float]]): hyperparameter values. Defaults to
+        lower_bound (list[float]): Lower bound of the optimization space.
+        upper_bound (list[float]): Upper bound of the optimization space.
+        n_particles (int | None): Number of particles, defaults to 200.
+        options (dict[str, float] | None): hyperparameter values. Defaults to
             {"c1": 2.0, "c2": 2.0, "w": 0.9}
     """
 
     def __init__(
         self,
         objective: PSOObjective,
-        lower_bound: List[float],
-        upper_bound: List[float],
-        n_particles: Optional[int] = None,
-        options: Optional[Dict[str, float]] = None,
+        lower_bound: list[float],
+        upper_bound: list[float],
+        n_particles: int | None = None,
+        options: dict[str, float] | None = None,
     ):
         xl = np.array(lower_bound, dtype=np.float64)
         xu = np.array(upper_bound, dtype=np.float64)
@@ -130,23 +132,25 @@ class PSOptimiser:
 
     def run(
         self,
-    ) -> Tuple[
-        Union[None, NDArray[np.float64]], Union[None, NDArray[np.float64]], bool
-    ]:
+    ) -> tuple[None | NDArray[np.float64], None | NDArray[np.float64], bool]:
         """
-        Runs the particle swarm optimization. Stops optimization loop if no point survives thresholds.
+        Runs the particle swarm optimisation. Stops early if no point in the initial
+        swarm satisfies the thresholds.
 
         Returns:
             cost (NDArray[np.float64]): value of PSO at points.
             positions (NDArray[np.float64]): positions of particles.
-            stop_optimisation (bool): Whether optimization should stop due to no feasible points.
+            stop_optimisation (bool): whether to stop because no point is feasible.
         """
 
-        initial_costs = self.objective(self.optimizer.swarm.position)
+        # Evaluate the initial swarm: sets stop_optimisation if nothing is feasible.
+        self.objective(self.optimizer.swarm.position)
 
         if self.objective.stop_optimisation:
             return None, None, True
 
-        cost, best_pos = self.optimizer.optimize(self.objective, iters=100)
+        cost, best_pos = self.optimizer.optimize(
+            self.objective, iters=100, verbose=False
+        )
 
         return cost, best_pos, False

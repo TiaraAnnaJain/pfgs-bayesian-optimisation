@@ -1,8 +1,9 @@
 """Tests for beta calculator"""
 
 import numpy as np
+import pytest
 
-from pfgs_bo.pareto_front.beta import calculate_beta
+from pfgs_bo.pareto_front.beta import calculate_beta, feasible_beta_range
 
 
 def test_beta_valid_range():
@@ -29,3 +30,17 @@ def test_beta_invalid_range_returns_zero():
 
     assert np.isnan(beta_min)
     assert np.isnan(beta_max)
+
+
+@pytest.mark.parametrize(
+    ("beta_lower", "beta_upper", "expected"),
+    [
+        ([0.5, 0.8], [2.0, 1.5], (0.8, 1.5)),
+        ([0.5, np.nan], [2.0, np.nan], (0.5, 2.0)),  # NaN iterations are skipped
+        ([0.5, 0.8], [2.0, 0.0], (0.8, 2.0)),  # 0 means "no upper bound"
+        ([1.0, 2.0], [1.5, 3.0], None),  # intervals don't overlap
+        ([], [], None),  # PFGS stopped before the first beta
+    ],
+)
+def test_feasible_beta_range(beta_lower, beta_upper, expected):
+    assert feasible_beta_range(beta_lower, beta_upper) == expected

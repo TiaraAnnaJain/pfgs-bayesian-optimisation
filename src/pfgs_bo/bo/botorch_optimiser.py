@@ -1,13 +1,13 @@
 """Single step bayesian optimisation acquisition and candidate selection."""
 
 import inspect
-from typing import Any, List, Tuple, Union, Type
+from typing import Any
 
-from pfgs_bo.data.data_models import Dataset
-
+import torch
 from botorch.acquisition import AcquisitionFunction
 from botorch.optim import optimize_acqf
-import torch
+
+from pfgs_bo.data.data_models import Dataset
 
 
 class BoTorchOptimizer:
@@ -17,8 +17,8 @@ class BoTorchOptimizer:
 
     Parameters:
         acq_fn (Type[AcquisitionFunction]): acquisition function to use.
-        lower_bounds (List[float]): lower bounds of the search space.
-        upper_bounds (List[float]): upper bounds of the search space.
+        lower_bounds (list[float]): lower bounds of the search space.
+        upper_bounds (list[float]): upper bounds of the search space.
         num_restarts (int): number of restarts for multi-start optimisation of the
             acquisition function.
         raw_samples (int): number of samples used to generate initial conditions for
@@ -29,9 +29,9 @@ class BoTorchOptimizer:
 
     def __init__(
         self,
-        acq_fn: Type[AcquisitionFunction],
-        lower_bounds: List[float],
-        upper_bounds: List[float],
+        acq_fn: type[AcquisitionFunction],
+        lower_bounds: list[float],
+        upper_bounds: list[float],
         num_restarts: int,
         raw_samples: int,
         q: int,
@@ -47,7 +47,7 @@ class BoTorchOptimizer:
 
     def _build_acq_fn(
         self, model: Any, train_data: Dataset
-    ) -> Union[AcquisitionFunction, None]:
+    ) -> AcquisitionFunction | None:
         """
         Instantiate the configured acquisition function for the given model.
 
@@ -74,7 +74,7 @@ class BoTorchOptimizer:
 
     def optimize(
         self, model: Any, train_data: Dataset
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Suggest the next candidate point to evaluate.
 

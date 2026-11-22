@@ -1,6 +1,7 @@
 """Tests for optimal point calculator."""
 
 import numpy as np
+import pytest
 
 from pfgs_bo.data.data_models import Dataset
 from pfgs_bo.pareto_front.selection import ParetoPointSelector
@@ -54,3 +55,18 @@ def test_discard_areas():
     _, _, closest_point, _ = calculator.closest_points(filtered_front)
 
     assert np.allclose(closest_point, [[5, 5]])
+
+
+def test_rejects_normalised_pareto_front():
+    pareto_front = Dataset(
+        dataset_type="pareto_front",
+        x_data=np.array([[0.1, 0.2]]),
+        x_labels=["x1", "x2"],
+        y_labels=["y1"],
+        y_data=np.array([[1.0]]),
+        y_errors=np.array([[0.5]]),
+        normalised=True,
+    )
+
+    with pytest.raises(ValueError, match="must not be normalised"):
+        ParetoPointSelector(pareto_front=pareto_front, utopia_point=np.array([1, 1]))

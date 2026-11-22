@@ -1,0 +1,25 @@
+# Pareto Front Guided Sampling. Run with scripts/run_pfgs.py.
+# Any value can be overridden with --set key=value.
+
+test_name = "PFGS"
+method = "PFGS"
+num_iter = 95
+
+# Problem
+problem = "himmelblau"      # himmelblau | branin | ackley; or --problem
+
+# Data
+train_samples = 5           # initial LHS training points
+test_samples = 100          # points in each test set
+delta = 1.5                 # half-width of the design-space test regions around the maxima
+train_seed = 1              # or --train-seed
+test_seed = 11              # or --test-seed
+
+# Candidates with a predicted mean or standard deviation below these are discarded.
+# They depend on the problem's scale (report: Himmelblau 1000 / 100, Branin 150 / 1).
+mean_discard_threshold = 0
+std_dev_discard_threshold = 0
+
+[nsga_parameters]           # NSGA-II settings for the Pareto front
+population_size = 100
+number_of_generations = 10

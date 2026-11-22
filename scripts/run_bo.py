@@ -1,6 +1,15 @@
-"""Standard Bayesian optimisation with a UCB or EI acquisition function and BoTorch's gradient-based optimiser."""
+"""
+Standard Bayesian optimisation with a UCB or EI acquisition function, optimised
+with BoTorch's gradient-based optimiser.
+"""
 
-from botorch.acquisition import qExpectedImprovement, qUpperConfidenceBound
+from typing import Any
+
+from botorch.acquisition import (
+    AcquisitionFunction,
+    qExpectedImprovement,
+    qUpperConfidenceBound,
+)
 
 from pfgs_bo.bo.botorch_optimiser import BoTorchOptimizer
 from pfgs_bo.experiment import (
@@ -13,18 +22,22 @@ from pfgs_bo.experiment import (
     load_experiment,
     log_iteration,
     print_progress,
+    results_csv,
     start_run,
     unit_bounds,
 )
 from pfgs_bo.model import GPModel
 
 
-def main():
-    config, space = load_experiment()
+def main() -> None:
+    """Runs standard BO with the config given on the command line."""
+    config, space = load_experiment("BO")
     train_data, test_sets = build_datasets(config, space)
     lower_bound, upper_bound = unit_bounds(space)
 
     acquisition_function = config["acquisition_function"]
+    acq_fn: type[AcquisitionFunction]
+    acq_kwargs: dict[str, Any]
     if acquisition_function == "UCB":
         acq_fn, acq_kwargs = qUpperConfidenceBound, {"beta": config["beta"]}
     else:
@@ -59,15 +72,16 @@ def main():
             history.record(best_observed, metrics)
 
             print_progress(step, metrics)
-            log_iteration(tracker, step, model, train_data, new_point, metrics)
+            log_iteration(
+                tracker, step, model, train_data, new_point, metrics, best_observed
+            )
 
         finish_run(
             tracker,
             model,
             train_data,
             history,
-            results_dir=f"results/bo/{acquisition_function}",
-            seed=config["train_seed"],
+            csv_path=results_csv(config),
         )
 
 

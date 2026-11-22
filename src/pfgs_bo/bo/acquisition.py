@@ -1,10 +1,10 @@
-"""Acquisition functions (UCB, EI) and the prediction-space filter used by constrained BO."""
+"""UCB and EI acquisition functions, and the prediction filter for constrained BO."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
 import torch
+from numpy.typing import NDArray
 from torch.distributions import Normal
 
 from pfgs_bo.data.data_models import Dataset
@@ -28,7 +28,8 @@ def compute_ucb(predictions: Dataset, beta: float) -> NDArray[np.float64]:
 
 def compute_ei(predictions: Dataset, train_data: Dataset) -> NDArray[np.float64]:
     """
-    Computes the expected improvement acquisition function for a given mean and variance.
+    Computes the expected improvement acquisition function for a given mean and
+    standard deviation.
 
     Parameters:
         predictions (Dataset): mean and standard deviation predictions from GP output.
@@ -60,8 +61,8 @@ def filter_predictions(
     preds: Dataset,
     mean_threshold: NDArray[np.float64],
     std_threshold: NDArray[np.float64],
-    normalisation_stats: Dict[str, Any],
-) -> NDArray[np.float64]:
+    normalisation_stats: dict[str, Any],
+) -> NDArray[np.bool_]:
     """
     Creates a filter based on thresholds to apply to acquisition function.
 
@@ -69,10 +70,10 @@ def filter_predictions(
         preds (Dataset): GP predictions.
         mean_threshold (NDArray[np.float64]): mean threshold.
         std_threshold (NDArray[np.float64]): standard deviation threshold.
-        normalisation_stats (Dict[str, Any]): normalisation stats.
+        normalisation_stats (dict[str, Any]): normalisation stats.
 
     Returns:
-        mask (NDArray[np.float64]): boolean mask of predictions.
+        mask (NDArray[np.bool_]): True for predictions that meet both thresholds.
     """
     preds_raw = preds.copy()
     preds_raw.set_stats(normalisation_stats)

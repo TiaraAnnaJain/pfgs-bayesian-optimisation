@@ -1,12 +1,10 @@
 """GP model: botorch's SingleTaskGP."""
 
-from typing import List, Optional
-
-from botorch.models import SingleTaskGP
-from botorch.fit import fit_gpytorch_mll
-from gpytorch.mlls import ExactMarginalLogLikelihood
-from gpytorch.constraints import GreaterThan
 import torch
+from botorch.fit import fit_gpytorch_mll
+from botorch.models import SingleTaskGP
+from gpytorch.constraints import GreaterThan
+from gpytorch.mlls import ExactMarginalLogLikelihood
 
 from pfgs_bo.data.data_models import Dataset
 
@@ -19,8 +17,8 @@ class GPModel:
     def __init__(self):
         self.model = None
         self.mll = None
-        self.x_labels: Optional[List[str]] = None
-        self.y_labels: Optional[List[str]] = None
+        self.x_labels: list[str] | None = None
+        self.y_labels: list[str] | None = None
         torch.manual_seed(11)
 
     def train(self, train_dataset: Dataset):

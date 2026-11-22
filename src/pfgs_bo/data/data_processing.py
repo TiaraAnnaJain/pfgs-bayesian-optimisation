@@ -1,6 +1,6 @@
 """Generates datasets using LHS sampling."""
 
-from typing import List, Callable
+from collections.abc import Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,8 +12,8 @@ from pfgs_bo.data.data_models import Dataset
 def lhs_sampler(
     n_samples: int,
     n_vars: int,
-    lower_bound: List[float],
-    upper_bound: List[float],
+    lower_bound: list[float],
+    upper_bound: list[float],
     seed: int,
 ) -> NDArray[np.float64]:
     """
@@ -22,8 +22,8 @@ def lhs_sampler(
     Parameters:
         n_samples (int): Number of samples to generate.
         n_vars (int): Number of dimensions.
-        lower_bound (List[float]): Lower bound.
-        upper_bound (List[float]): Upper bound.
+        lower_bound (list[float]): Lower bound.
+        upper_bound (list[float]): Upper bound.
         seed (int): Random seed for reproducibility.
 
     Returns:
@@ -39,12 +39,12 @@ def generate_data(
     simulation: Callable,
     n_samples: int,
     n_vars: int,
-    lower_bound: List[float],
-    upper_bound: List[float],
+    lower_bound: list[float],
+    upper_bound: list[float],
     seed: int,
     dataset_type: str,
-    x_labels: List[str],
-    y_labels: List[str],
+    x_labels: list[str],
+    y_labels: list[str],
 ) -> Dataset:
     """
     Uses LHS sampling to generate datasets.
@@ -53,12 +53,12 @@ def generate_data(
         simulation (Callable): Simulation function.
         n_samples (int): Number of samples to generate.
         n_vars (int): Number of dimensions.
-        lower_bound (List[float]): Lower bound.
-        upper_bound (List[float]): Upper bound.
+        lower_bound (list[float]): Lower bound.
+        upper_bound (list[float]): Upper bound.
         seed (int): Random seed for reproducibility.
         dataset_type (str): Dataset type.
-        x_labels (List[str]): Labels for the dataset input.
-        y_labels (List[str]): Labels for the dataset output.
+        x_labels (list[str]): Labels for the dataset input.
+        y_labels (list[str]): Labels for the dataset output.
 
     Returns:
         Dataset(x, y): dataset.
@@ -89,8 +89,8 @@ def generate_design_space_dataset(
     delta: float,
     seed: int,
     dataset_type: str,
-    x_labels: List[str],
-    y_labels: List[str],
+    x_labels: list[str],
+    y_labels: list[str],
     maxima: NDArray[np.float64],
 ) -> Dataset:
     """
@@ -103,8 +103,8 @@ def generate_design_space_dataset(
         delta (float): indicates how large the region should be.
         seed (int): Random seed for reproducibility.
         dataset_type (str): Dataset type.
-        x_labels (List[str]): Labels for the dataset input.
-        y_labels (List[str]): Labels for the dataset output.
+        x_labels (list[str]): Labels for the dataset input.
+        y_labels (list[str]): Labels for the dataset output.
         maxima (NDArray[np.float64]): maxima values of the simulation function.
 
     Returns:

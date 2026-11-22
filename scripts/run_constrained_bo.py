@@ -1,6 +1,13 @@
-"""Constrained Bayesian optimisation with a UCB or EI acquisition function and PSO optimiser."""
+"""
+Constrained Bayesian optimisation with a UCB or EI acquisition function, optimised
+with particle swarm optimisation (PSO).
+"""
+
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from pfgs_bo.bo.acquisition import compute_ei, compute_ucb
 from pfgs_bo.bo.pso_optimiser import PSOObjective, PSOptimiser
@@ -14,14 +21,16 @@ from pfgs_bo.experiment import (
     load_experiment,
     log_iteration,
     print_progress,
+    results_csv,
     start_run,
     unit_bounds,
 )
 from pfgs_bo.model import GPModel
 
 
-def main():
-    config, space = load_experiment()
+def main() -> None:
+    """Runs constrained BO with the config given on the command line."""
+    config, space = load_experiment("constrained-BO")
     train_data, test_sets = build_datasets(config, space)
     lower_bound, upper_bound = unit_bounds(space)
 
@@ -38,6 +47,8 @@ def main():
             best_observed = train_data.y_data.max()
             normalisation_stats = fit_surrogate(model, train_data, space)
 
+            acq_fun: Callable[..., NDArray[np.float64]]
+            acq_kwargs: dict[str, Any]
             if acquisition_function == "UCB":
                 acq_fun, acq_kwargs = compute_ucb, {"beta": config["beta"]}
             else:
@@ -65,15 +76,16 @@ def main():
             history.record(best_observed, metrics)
 
             print_progress(step, metrics)
-            log_iteration(tracker, step, model, train_data, new_point, metrics)
+            log_iteration(
+                tracker, step, model, train_data, new_point, metrics, best_observed
+            )
 
         finish_run(
             tracker,
             model,
             train_data,
             history,
-            results_dir=f"results/constrained-bo/{acquisition_function}",
-            seed=config["train_seed"],
+            csv_path=results_csv(config),
         )
 
 

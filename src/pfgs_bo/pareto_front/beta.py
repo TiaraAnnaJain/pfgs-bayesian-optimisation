@@ -1,6 +1,6 @@
 """UCB beta derivation from the Pareto front and beta schedules for PFGS-guided BO."""
 
-from typing import Dict, List, Tuple
+from collections.abc import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 
 def calculate_beta(
     pareto_front: NDArray[np.float64], closest_point: NDArray[np.float64]
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Computes the range of α values that maximise the selected optimal point on the
     Pareto front for a UCB acquisition function.
@@ -48,13 +48,31 @@ def calculate_beta(
     return beta_min, beta_max
 
 
-def most_overlapping_beta(beta_min, beta_max):
+def most_overlapping_beta(
+    beta_min: NDArray[np.float64], beta_max: NDArray[np.float64]
+) -> tuple[NDArray[np.float64], int]:
+    """
+    Finds the beta values that lie inside the largest number of PFGS beta intervals.
+
+    Sweeps over the interval end points, counting how many intervals are open
+    between each pair of consecutive end points. Intervals with a non-finite bound
+    are ignored.
+
+    Parameters:
+        beta_min (NDArray[np.float64]): lower bound of the beta interval per iteration.
+        beta_max (NDArray[np.float64]): upper bound of the beta interval per iteration.
+
+    Returns:
+        best_betas (NDArray[np.float64]): midpoint of each beta range covered by the
+            most intervals (adjacent ranges are merged); empty if there are none.
+        best (int): number of intervals covering those ranges.
+    """
     events = []
 
-    for l, u in zip(beta_min, beta_max):
-        if np.isfinite(l) and np.isfinite(u):
-            events.append((l, +1))
-            events.append((u, -1))
+    for lower, upper in zip(beta_min, beta_max, strict=True):
+        if np.isfinite(lower) and np.isfinite(upper):
+            events.append((lower, +1))
+            events.append((upper, -1))
 
     if not events:
         return np.array([]), 0
@@ -92,8 +110,8 @@ def most_overlapping_beta(beta_min, beta_max):
 
 
 def beta_ranges(
-    beta_range: Dict[str, List[float]],
-) -> Dict[str, NDArray[np.float64]]:
+    beta_range: dict[str, list[float]],
+) -> dict[str, NDArray[np.float64]]:
     """
     Takes a dictionary of beta ranges and returns a dictionary of beta schedules with
     the min, max, mid-point, mean and meadian.
@@ -103,7 +121,7 @@ def beta_ranges(
          beta_schedules (dict): Dictionary of beta schedules.
     """
     beta_min = np.array(beta_range["beta_min"])
-    beta_max = beta_range["beta_max"]
+    beta_max = np.array(beta_range["beta_max"])
 
     mid_point = (beta_max + beta_min) / 2
     mean_value = np.nanmean(mid_point)
@@ -127,3 +145,32 @@ def beta_ranges(
     )
 
     return beta_schedule
+
+
+def feasible_beta_range(
+    beta_lower: Sequence[float], beta_upper: Sequence[float]
+) -> tuple[float, float] | None:
+    """
+    Finds the beta range that lies inside the beta interval of every PFGS iteration.
+    Iterations without a valid interval (NaN) are skipped, and an upper bound of 0
+    is treated as "no upper bound".
+
+    Parameters:
+        beta_lower (Sequence[float]): lower bound of the beta interval per iteration.
+        beta_upper (Sequence[float]): upper bound of the beta interval per iteration.
+
+    Returns:
+        feasible_range (tuple[float, float] | None): (min, max) of the common range,
+            or None if the intervals don't overlap or there are none.
+    """
+    lower = [beta for beta in beta_lower if np.isfinite(beta)]
+    upper = [beta for beta in beta_upper if np.isfinite(beta) and beta != 0]
+
+    if not lower or not upper:
+        return None
+
+    beta_min, beta_max = max(lower), min(upper)
+    if beta_max < beta_min:
+        return None
+
+    return beta_min, beta_max

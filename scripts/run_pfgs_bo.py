@@ -7,6 +7,7 @@ from pfgs_bo.bo.botorch_optimiser import BoTorchOptimizer
 from pfgs_bo.experiment import (
     RunHistory,
     add_observation,
+    beta_file,
     build_datasets,
     evaluate_surrogate,
     finish_run,
@@ -14,6 +15,7 @@ from pfgs_bo.experiment import (
     load_experiment,
     log_iteration,
     print_progress,
+    results_csv,
     start_run,
     unit_bounds,
 )
@@ -25,12 +27,20 @@ from pfgs_bo.tracking.results_io import from_json
 DEFAULT_BETA = 1.96
 
 
-def main():
-    config, space = load_experiment(validate=False)
+def main() -> None:
+    """Runs PFGS-guided BO for every beta schedule with the given config."""
+    config, space = load_experiment("BO-PFGS")
     lower_bound, upper_bound = unit_bounds(space)
     optimizer_parameters = config["optimizer_parameters"]
 
-    beta_schedules = beta_ranges(from_json("beta.json"))
+    # Beta intervals from the PFGS run with the same problem, seed and thresholds.
+    pfgs_beta_file = beta_file(config)
+    if not pfgs_beta_file.is_file():
+        raise FileNotFoundError(
+            f"No PFGS beta intervals at {pfgs_beta_file}. Run run_pfgs.py with the "
+            "same problem, training seed and discard thresholds first."
+        )
+    beta_schedules = beta_ranges(from_json(pfgs_beta_file))
 
     for name, beta_values in beta_schedules.items():
         train_data, test_sets = build_datasets(config, space)
@@ -79,6 +89,7 @@ def main():
                     train_data,
                     new_point,
                     metrics,
+                    best_observed,
                     curr_beta=beta,
                 )
 
@@ -87,8 +98,7 @@ def main():
                 model,
                 train_data,
                 history,
-                results_dir=f"results/pfgs-bo/{name}",
-                seed=config["train_seed"],
+                csv_path=results_csv(config, schedule=name),
                 beta_fig=plot_beta_schedule(beta_values),
             )
 

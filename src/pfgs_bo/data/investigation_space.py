@@ -1,7 +1,6 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
 
 
 @dataclass(frozen=True)
@@ -19,17 +18,17 @@ class InvestigationSpaceVariable:
 
 @dataclass(frozen=True)
 class InvestigationSpace:
-    variables: List[InvestigationSpaceVariable]
-    outputs: List[str]
+    variables: list[InvestigationSpaceVariable]
+    outputs: list[str]
 
     def __post_init__(self):
         labels = [variable.label for variable in self.variables]
 
         if len(set(labels)) != len(labels):
-            raise ValueError(f"Duplicate variable labels found.")
+            raise ValueError("Duplicate variable labels found.")
 
         if len(set(self.outputs)) != len(self.outputs):
-            raise ValueError(f"Duplicate output labels found.")
+            raise ValueError("Duplicate output labels found.")
 
     @classmethod
     def from_json(cls, json_path: Path) -> "InvestigationSpace":
@@ -40,21 +39,21 @@ class InvestigationSpace:
         return cls(variables=variables, outputs=data["outputs"])
 
     @property
-    def labels(self) -> List[str]:
+    def labels(self) -> list[str]:
         return [variable.label for variable in self.variables]
 
     @property
-    def lower_bounds(self) -> Dict[str, float]:
+    def lower_bounds(self) -> dict[str, float]:
         return {variable.label: variable.lower_bound for variable in self.variables}
 
     @property
-    def upper_bounds(self) -> Dict[str, float]:
+    def upper_bounds(self) -> dict[str, float]:
         return {variable.label: variable.upper_bound for variable in self.variables}
 
     @property
-    def lower_bound_list(self) -> List[float]:
+    def lower_bound_list(self) -> list[float]:
         return list(self.lower_bounds.values())
 
     @property
-    def upper_bound_list(self) -> List[float]:
+    def upper_bound_list(self) -> list[float]:
         return list(self.upper_bounds.values())

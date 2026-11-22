@@ -1,7 +1,7 @@
 """Unit tests for GP Model."""
 
-import torch
 import numpy as np
+import torch
 
 from pfgs_bo.data.data_models import Dataset
 from pfgs_bo.model import GPModel

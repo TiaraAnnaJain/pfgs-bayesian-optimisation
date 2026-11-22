@@ -5,6 +5,7 @@ import numpy as np
 from pfgs_bo.experiment import (
     RunHistory,
     add_observation,
+    beta_file,
     build_datasets,
     evaluate_surrogate,
     finish_run,
@@ -12,11 +13,12 @@ from pfgs_bo.experiment import (
     load_experiment,
     log_iteration,
     print_progress,
+    results_csv,
     start_run,
     unit_bounds,
 )
 from pfgs_bo.model import GPModel
-from pfgs_bo.pareto_front.beta import calculate_beta
+from pfgs_bo.pareto_front.beta import calculate_beta, feasible_beta_range
 from pfgs_bo.pareto_front.generation import GPProblem, NSGAOptimiser
 from pfgs_bo.pareto_front.selection import ParetoPointSelector
 from pfgs_bo.plotting.pareto_front import plot_pareto_front
@@ -24,8 +26,9 @@ from pfgs_bo.plotting.results import plot_beta_ranges
 from pfgs_bo.tracking.results_io import to_json
 
 
-def main():
-    config, space = load_experiment()
+def main() -> None:
+    """Runs PFGS with the config given on the command line."""
+    config, space = load_experiment("PFGS")
     train_data, test_sets = build_datasets(config, space)
     lower_bound, upper_bound = unit_bounds(space)
 
@@ -99,6 +102,7 @@ def main():
                 train_data,
                 new_point,
                 metrics,
+                best_observed,
                 beta_min=beta_min,
                 beta_max=beta_max,
                 pareto_fig=plot_pareto_front(
@@ -109,27 +113,27 @@ def main():
                 ),
             )
 
-        beta_upper = history.extra["beta_upper"]
-        beta_lower = history.extra["beta_lower"]
+        beta_upper = history.extra.get("beta_upper", [])
+        beta_lower = history.extra.get("beta_lower", [])
 
-        feasible_beta_min = max(beta_lower)
-        feasible_beta_max = min(beta for beta in beta_upper if beta != 0)
-        if feasible_beta_max >= feasible_beta_min:
-            print(
-                f"feasible range of beta values: {[feasible_beta_min, feasible_beta_max]}"
-            )
+        feasible_range = feasible_beta_range(beta_lower, beta_upper)
+        if feasible_range is not None:
+            print(f"feasible range of beta values: {list(feasible_range)}")
         else:
             print("There is no feasible range of beta values")
 
-        to_json(beta_min=beta_lower, beta_max=beta_upper)
+        to_json(
+            beta_min=beta_lower,
+            beta_max=beta_upper,
+            json_file=beta_file(config),
+        )
 
         finish_run(
             tracker,
             model,
             train_data,
             history,
-            results_dir="results/pfgs",
-            seed=config["train_seed"],
+            csv_path=results_csv(config),
             beta_fig=plot_beta_ranges(beta_lower, beta_upper),
         )
 

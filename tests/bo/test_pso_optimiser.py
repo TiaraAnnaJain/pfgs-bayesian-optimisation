@@ -1,7 +1,8 @@
 """Tests for Particle Swarm Optimisation objective and optimiser."""
 
-import numpy as np
 from unittest.mock import MagicMock, patch
+
+import numpy as np
 
 from pfgs_bo.bo.pso_optimiser import PSOObjective, PSOptimiser
 
@@ -79,7 +80,7 @@ def test_pso_optimiser_runs_and_returns_cost_and_best_position(mock_global_best_
     cost, best_pos, stop_optimisation = optimiser.run()
 
     objective.assert_called_once_with(mock_optimizer.swarm.position)
-    mock_optimizer.optimize.assert_called_once_with(objective, iters=100)
+    mock_optimizer.optimize.assert_called_once_with(objective, iters=100, verbose=False)
     assert cost == -10.0
     assert np.allclose(best_pos, np.array([1.0, 2.0]))
     assert stop_optimisation is False
