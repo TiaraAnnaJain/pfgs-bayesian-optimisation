@@ -1,101 +1,78 @@
-"""Figures summarising a run (per-run histories) and comparing runs across seeds."""
+"""Figures for a single run (histories) and for comparing runs across seeds."""
 
 from collections.abc import Sequence
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 
-def save_fig(name: str, folder: str, root: Path) -> None:
+def mean_and_std(
+    runs: pd.DataFrame, column: str
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """
-    Saves figures to specified folder.
+    Averages a metric over runs at each iteration.
+
+    Runs that stopped early (PFGS and constrained BO can) drop out of later
+    iterations, so late means are over fewer runs.
 
     Parameters:
-        name (str): name of figure.
-        folder (str): path to folder where to save figures.
-        root (Path): path to root.
+        runs (pd.DataFrame): output of ``load_runs``.
+        column (str): metric column, e.g. "design_space_rrmse".
+
+    Returns:
+        iterations (NDArray[np.float64]): iteration numbers.
+        mean (NDArray[np.float64]): mean over runs.
+        std (NDArray[np.float64]): standard deviation over runs (0 for one run).
     """
-    out_dir = Path(root) / folder
-    out_dir.mkdir(parents=True, exist_ok=True)
+    grouped = runs.groupby("iteration")[column]
+    mean = grouped.mean()
+    std = grouped.std(ddof=0)
+    return (
+        mean.index.to_numpy(dtype=np.float64),
+        mean.to_numpy(dtype=np.float64),
+        std.to_numpy(dtype=np.float64),
+    )
 
-    plt.savefig(out_dir / f"{name}.png", dpi=300, bbox_inches="tight")
-    plt.savefig(out_dir / f"{name}.pdf", dpi=300, bbox_inches="tight")
 
-
-def plot_single_metric(
-    x_data: NDArray,
-    y_data: NDArray,
-    y_label: str,
-    fig_name: str,
-    root: Path,
-) -> None:
+def plot_comparison(
+    curves: dict[str, pd.DataFrame],
+    column: str,
+    ylabel: str,
+    title: str,
+    nonnegative: bool = False,
+) -> plt.Figure:
     """
-    Plots single curve with mean and standard deviation band.
+    Plots the mean of a metric over runs, with a +/- 1 std band, for each curve.
 
     Parameters:
-        x_data (NDArray): x data to plot.
-        y_data (NDArray): y data to plot.
-        y_label (str): y label to plot.
-        fig_name (str): figure name.
-        root (Path): path to root.
+        curves (dict[str, pd.DataFrame]): legend label -> runs from ``load_runs``.
+        column (str): metric column to plot.
+        ylabel (str): y-axis label.
+        title (str): figure title.
+        nonnegative (bool): clip the band at 0, for metrics that can't be negative.
+
+    Returns:
+        fig (plt.Figure): comparison figure.
     """
-    mean = np.nanmean(y_data, axis=0)
-    std = np.nanstd(y_data, axis=0)
+    fig, ax = plt.subplots(figsize=(7, 5))
 
-    plt.plot(x_data, mean, label=f"{fig_name}")
-    plt.fill_between(x_data, mean - std, mean + std, alpha=0.3, label="±1 std")
-
-    plt.xlabel("Iteration")
-    plt.ylabel(y_label)
-    plt.legend()
-
-    save_fig(name=fig_name, folder="figures", root=root)
-    plt.show()
-
-
-def plot_multiple_metrics(
-    x_data: NDArray, curves: dict, y_label: str, fig_name: str, root: Path
-) -> None:
-    """
-    Plots multiple curves with mean and standard deviation band.
-
-    Parameters:
-        x_data (NDArray): x data to plot.
-        curves (Dict): dictionary of curves to plot.
-        y_label (str): y label to plot.
-        fig_name (str): figure name.
-        root (Path): path to root.
-    """
-    for label, y_data in curves.items():
-        max_length = max(len(run) for run in y_data)
-        padded = np.full((len(y_data), max_length), np.nan)
-
-        for i, run in enumerate(y_data):
-            padded[i, : len(run)] = run
-
-        mean = np.nanmean(padded, axis=0)
-        std = np.nanstd(padded, axis=0)
-
-        x = np.asarray(x_data)
-        if len(x) < max_length:
-            x = np.arange(max_length)
-
-        plt.plot(x[:max_length], mean, label=label)
-        plt.fill_between(
-            x[:max_length],
-            mean - std,
-            mean + std,
-            alpha=0.3,
+    for label, runs in curves.items():
+        iterations, mean, std = mean_and_std(runs, column)
+        n_runs = runs["train_seed"].nunique()
+        (line,) = ax.plot(iterations, mean, label=f"{label} (n={n_runs})", lw=2)
+        lower = np.maximum(mean - std, 0) if nonnegative else mean - std
+        ax.fill_between(
+            iterations, lower, mean + std, alpha=0.18, color=line.get_color()
         )
 
-    plt.xlabel("Iteration")
-    plt.ylabel(y_label)
-    plt.legend()
+    ax.set(title=title, xlabel="Iteration", ylabel=ylabel)
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    fig.tight_layout()
 
-    save_fig(name=fig_name, folder="figures", root=root)
-    plt.show()
+    return fig
 
 
 def plot_rrmse_history(
