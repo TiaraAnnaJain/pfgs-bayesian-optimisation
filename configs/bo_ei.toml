@@ -1,0 +1,22 @@
+# Standard BO with expected improvement. Run with scripts/run_bo.py.
+# Any value can be overridden with --set key=value.
+
+test_name = "BO-EI"
+method = "BO"
+num_iter = 95
+acquisition_function = "EI"
+
+# Problem
+problem = "himmelblau"      # himmelblau | branin | ackley; or --problem
+
+# Data
+train_samples = 5           # initial LHS training points
+test_samples = 100          # points in each test set
+delta = 1.5                 # half-width of the design-space test regions around the maxima
+train_seed = 1              # or --train-seed
+test_seed = 11              # or --test-seed
+
+[optimizer_parameters]      # BoTorch multi-start acquisition optimiser
+num_restarts = 20
+raw_samples = 512
+q = 1

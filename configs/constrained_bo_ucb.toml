@@ -1,0 +1,23 @@
+# Constrained BO with UCB, optimised with PSO. Run with scripts/run_constrained_bo.py.
+# Any value can be overridden with --set key=value.
+
+test_name = "constrained-BO-UCB"
+method = "constrained-BO"
+num_iter = 95
+acquisition_function = "UCB"
+beta = 1.96
+
+# Problem
+problem = "himmelblau"      # himmelblau | branin | ackley; or --problem
+
+# Data
+train_samples = 5           # initial LHS training points
+test_samples = 100          # points in each test set
+delta = 1.5                 # half-width of the design-space test regions around the maxima
+train_seed = 1              # or --train-seed
+test_seed = 11              # or --test-seed
+
+# Candidates with a predicted mean or standard deviation below these are discarded.
+# They depend on the problem's scale (report: Himmelblau 1000 / 100, Branin 150 / 1).
+mean_discard_threshold = 1000
+std_dev_discard_threshold = 100

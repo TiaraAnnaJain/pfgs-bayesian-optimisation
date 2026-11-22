@@ -35,9 +35,8 @@ scripts/start_mlflow.sh
 .report.log
 report.log
 
-# configs
-configs/
-.configs/
+# personal configs (the example configs in configs/ are committed)
+configs/local/
 
 *.egg-info/
 
