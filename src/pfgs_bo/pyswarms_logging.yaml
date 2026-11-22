@@ -1,0 +1,5 @@
+# Logging config for PySwarms, loaded through its LOG_CFG environment variable (see
+# pfgs_bo/__init__.py). It adds no handlers, so PySwarms writes no report.log and
+# only its warnings and errors are shown.
+version: 1
+disable_existing_loggers: false

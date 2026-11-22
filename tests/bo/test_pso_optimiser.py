@@ -108,3 +108,13 @@ def test_pso_optimiser_stops_when_no_point_survives_thresholds(mock_global_best_
     assert cost is None
     assert best_pos is None
     assert stop_optimisation is True
+
+
+def test_pso_optimiser_does_not_write_report_log(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    objective = MagicMock()
+    objective.x_labels = ["x1", "x2"]
+
+    PSOptimiser(objective=objective, lower_bound=[0.0, 0.0], upper_bound=[1.0, 1.0])
+
+    assert not (tmp_path / "report.log").exists()

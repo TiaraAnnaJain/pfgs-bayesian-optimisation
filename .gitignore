@@ -1,13 +1,11 @@
 # IDE
 .idea/
 
-# Python version manager
-.python-version
-
-# Python cache
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.egg-info/
+.ipynb_checkpoints/
 
 # Tool caches
 .mypy_cache/
@@ -16,33 +14,20 @@ __pycache__/
 
 # Virtual environments
 .venv/
-venv/
-env/
 .env
 
 # OS files
 .DS_Store
 
-#mlflow
-mlflow.db
-mlflow.db-shm
-mlflow.db-wal
+# MLflow tracking database and artifacts
+mlflow.db*
 mlruns/
-.mlruns/
-.mlflow.db
-scripts/start_mlflow.sh
 
-.report.log
+# PySwarms log (disabled in pso_optimiser.py, kept as a safety net)
 report.log
 
-# personal configs (the example configs in configs/ are committed)
+# Personal configs (the example configs in configs/ are committed)
 configs/local/
 
-*.egg-info/
-
-scripts/beta.json
-beta.json
-
+# Experiment outputs; final results are committed once the report runs are done
 results/
-figures/
-result_analysis/
