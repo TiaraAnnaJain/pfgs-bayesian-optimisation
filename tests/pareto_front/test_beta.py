@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pfgs_bo.pareto_front.beta import calculate_beta, feasible_beta_range
+from pfgs_bo.pareto_front.beta import beta_ranges, calculate_beta, feasible_beta_range
 
 
 def test_beta_valid_range():
@@ -44,3 +44,18 @@ def test_beta_invalid_range_returns_zero():
 )
 def test_feasible_beta_range(beta_lower, beta_upper, expected):
     assert feasible_beta_range(beta_lower, beta_upper) == expected
+
+
+def test_beta_ranges_names_the_six_schedules():
+    schedules = beta_ranges({"beta_min": [0.5, 0.8, 1.0], "beta_max": [2.0, 1.5, 1.2]})
+
+    assert set(schedules) == {
+        "min",
+        "max",
+        "mid_point",
+        "mean",
+        "median",
+        "max_overlap",
+    }
+    # All three intervals contain [1.0, 1.2], so maximum overlap picks its midpoint.
+    np.testing.assert_allclose(schedules["max_overlap"], 1.1)
