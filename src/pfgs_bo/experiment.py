@@ -81,17 +81,6 @@ def run_dir(config: dict[str, Any], schedule: str | None = None) -> Path:
     """
     Returns the results folder for a run, derived from its config.
 
-    Runs that differ in problem, method or method settings get different folders,
-    so sweeps don't overwrite each other::
-
-        results/<problem>/pfgs/mean<m>_std<s>/
-        results/<problem>/bo/<UCB_beta<b> | EI>/
-        results/<problem>/pfgs-bo/beta_from_mean<m>_std<s>/<schedule>/
-        results/<problem>/constrained-bo/<UCB_beta<b> | EI>/mean<m>_std<s>/
-
-    For PFGS-guided BO the thresholds are those of the PFGS run whose beta
-    intervals are used. The results root can be changed with ``results_dir``.
-
     Parameters:
         config (dict[str, Any]): resolved config.
         schedule (str | None): beta schedule name, for PFGS-guided BO.
@@ -135,9 +124,6 @@ def beta_file(config: dict[str, Any]) -> Path:
     """
     Returns the beta-interval file of the PFGS run matching a config's problem,
     discard thresholds and training seed.
-
-    PFGS writes this file and PFGS-guided BO reads it, so both resolve to the same
-    path.
 
     Parameters:
         config (dict[str, Any]): resolved PFGS or PFGS-guided BO config.

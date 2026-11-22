@@ -1,12 +1,5 @@
 """
 Loads experiment configs from TOML files, with command-line overrides.
-
-A config is resolved in this order, later sources winning:
-
-1. the TOML file given with ``--file`` (a path, or a name inside ``configs/``),
-2. ``--problem``, ``--train-seed`` and ``--test-seed``,
-3. any number of ``--set key=value`` overrides (values are parsed as TOML, so
-   ``--set beta=2.5`` gives a float and ``--set acquisition_function=EI`` a string).
 """
 
 import tomllib
@@ -40,8 +33,6 @@ def _config_path(file: str) -> Path:
 def apply_overrides(config: dict[str, Any], overrides: Sequence[str]) -> None:
     """
     Applies ``key=value`` overrides to a config in place.
-
-    Dotted keys set nested values, e.g. ``nsga_parameters.population_size=50``.
 
     Parameters:
         config (dict[str, Any]): config to update.
