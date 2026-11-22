@@ -34,6 +34,7 @@ def results(tmp_path):
     write_runs(root / "bo/UCB_beta1.96", seeds=[1, 2])
     write_runs(root / "bo/EI", seeds=[1, 2])
     write_runs(root / "constrained-bo/EI/mean1000_std50", seeds=[1, 2], n_iter=3)
+    write_runs(root / "pfgs/mean0_std0", seeds=[1, 2])
     write_runs(root / "pfgs/mean1000_std50", seeds=[1, 2], n_iter=2)
     for schedule in ["min", "max", "max_overlap"]:
         write_runs(root / f"pfgs-bo/beta_from_mean1000_std50/{schedule}", seeds=[1, 2])
@@ -71,6 +72,7 @@ def test_summary_has_one_row_per_run_setting(results, make_figures):
         "bo/UCB_beta1.96",
         "bo/EI",
         "constrained-bo/EI/mean1000_std50",
+        "pfgs/mean0_std0",
         "pfgs/mean1000_std50",
         "pfgs-bo/beta_from_mean1000_std50/min",
         "pfgs-bo/beta_from_mean1000_std50/max",
@@ -88,7 +90,8 @@ def test_figures_are_written_for_available_comparisons(results, make_figures):
 
     assert "bo_design_space_rrmse.png" in names
     assert "constrained_bo_ei_train_data_max.png" in names
-    assert "constrained_bo_vs_pfgs_mean1000_std50_design_space_rrmse.png" in names
+    assert "constrained_methods_mean1000_std50_design_space_rrmse.png" in names
+    assert "pfgs_constrained_train_data_max.png" in names
     assert "pfgs_bo_schedules_design_space_rrmse.png" in names
     assert "pfgs_bo_vs_baselines_train_data_max.png" in names
 
@@ -99,7 +102,7 @@ def test_main_writes_summary_csv(results, make_figures, monkeypatch):
     make_figures["main"]()
 
     summary = pd.read_csv(results / "himmelblau" / "summary.csv")
-    assert len(summary) == 7
+    assert len(summary) == 8
     assert (results / "himmelblau" / "figures").is_dir()
 
 
@@ -107,3 +110,8 @@ def test_beta_source_figures_include_the_pfgs_run_that_made_beta(results, make_f
     specs = make_figures["figure_specs"](results / "himmelblau")
 
     assert "PFGS (µ=1000, σ=50)" in specs["pfgs_bo_vs_baselines"]
+
+
+def test_problem_title(make_figures):
+    assert make_figures["problem_title"]("himmelblau") == "Himmelblau"
+    assert make_figures["problem_title"]("ackley_6d") == "Ackley (6-D)"
