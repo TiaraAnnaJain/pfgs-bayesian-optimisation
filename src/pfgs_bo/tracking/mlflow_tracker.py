@@ -46,7 +46,6 @@ class MLflowTracker:
         mlflow.set_tracking_uri(tracking_uri())
         mlflow.set_experiment(experiment_name)
         self._run = mlflow.start_run(run_name=run_name)
-        self._artifact_dir = tempfile.mkdtemp()
         print(mlflow.get_tracking_uri())
 
     def log_resolved_config(self, resolved_config: dict[str, Any]):
@@ -220,13 +219,12 @@ class MLflowTracker:
             fig (plt.Figure): figure to log.
             artifact_path (str): artifact path.
         """
-        full_path = os.path.join(self._artifact_dir, artifact_path)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        fig.savefig(full_path, bbox_inches="tight", dpi=150)
-        plt.close(fig)
-
-        folder = str(Path(artifact_path).parent)
-        mlflow.log_artifact(full_path, artifact_path=folder)
+        path = Path(artifact_path)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            local_file = Path(tmp_dir) / path.name
+            fig.savefig(local_file, bbox_inches="tight", dpi=150)
+            plt.close(fig)
+            mlflow.log_artifact(str(local_file), artifact_path=str(path.parent))
 
     def finish(self, failed: bool = False) -> None:
         """Ends the MLflow run, marking it FAILED or FINISHED."""
