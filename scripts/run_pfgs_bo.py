@@ -20,7 +20,7 @@ from pfgs_bo.experiment import (
     unit_bounds,
 )
 from pfgs_bo.model import GPModel
-from pfgs_bo.pareto_front.beta import beta_ranges
+from pfgs_bo.pareto_front.beta import beta_ranges, select_schedules
 from pfgs_bo.plotting.results import plot_beta_schedule
 from pfgs_bo.tracking.results_io import from_json
 
@@ -28,19 +28,22 @@ DEFAULT_BETA = 1.96
 
 
 def main() -> None:
-    """Runs PFGS-guided BO for every beta schedule with the given config."""
+    """Runs PFGS-guided BO for every beta schedule (or the config's `schedule`)."""
     config, space = load_experiment("BO-PFGS")
     lower_bound, upper_bound = unit_bounds(space)
     optimizer_parameters = config["optimizer_parameters"]
 
-    # Beta intervals from the PFGS run with the same problem, seed and thresholds.
     pfgs_beta_file = beta_file(config)
     if not pfgs_beta_file.is_file():
         raise FileNotFoundError(
             f"No PFGS beta intervals at {pfgs_beta_file}. Run run_pfgs.py with the "
             "same problem, training seed and discard thresholds first."
         )
-    beta_schedules = beta_ranges(from_json(pfgs_beta_file))
+    beta_schedules = select_schedules(
+        beta_ranges(from_json(pfgs_beta_file)), config.get("schedule")
+    )
+    if not beta_schedules:
+        print(f"No {config['schedule']!r} schedule for this run; nothing to do.")
 
     for name, beta_values in beta_schedules.items():
         train_data, test_sets = build_datasets(config, space)

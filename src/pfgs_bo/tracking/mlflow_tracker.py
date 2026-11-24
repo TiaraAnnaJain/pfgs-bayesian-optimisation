@@ -16,14 +16,34 @@ from pfgs_bo.data.investigation_space import InvestigationSpaceVariable
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
+def tracking_uri() -> str:
+    """MLFLOW_TRACKING_URI if set, else mlflow.db in the project root."""
+    return os.environ.get("MLFLOW_TRACKING_URI", f"sqlite:///{PROJECT_ROOT}/mlflow.db")
+
+
+def experiment_name(problem: str) -> str:
+    """MLflow experiment for a problem label, e.g. "himmelblau-optimisation"."""
+    return f"{problem}-optimisation"
+
+
+def prepare_experiments(problems: list[str]) -> None:
+    """
+    Creates the MLflow database and an experiment per problem, if they don't exist.
+
+    Parameters:
+        problems (list[str]): problem labels, e.g. ["himmelblau", "ackley_6d"].
+    """
+    mlflow.set_tracking_uri(tracking_uri())
+    for problem in problems:
+        if mlflow.get_experiment_by_name(experiment_name(problem)) is None:
+            mlflow.create_experiment(experiment_name(problem))
+
+
 class MLflowTracker:
     """Logs parameters, model metrics and plots to MLflow."""
 
     def __init__(self, experiment_name: str, run_name: str | None = None):
-        # Log to mlflow.db in the project root unless MLFLOW_TRACKING_URI is set.
-        mlflow.set_tracking_uri(
-            os.environ.get("MLFLOW_TRACKING_URI", f"sqlite:///{PROJECT_ROOT}/mlflow.db")
-        )
+        mlflow.set_tracking_uri(tracking_uri())
         mlflow.set_experiment(experiment_name)
         self._run = mlflow.start_run(run_name=run_name)
         self._artifact_dir = tempfile.mkdtemp()

@@ -31,3 +31,4 @@ configs/local/
 
 # Experiment outputs; final results are committed once the report runs are done
 results/
+logs/

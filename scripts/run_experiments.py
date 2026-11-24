@@ -2,19 +2,24 @@
 Runs every experiment from the report, once per training seed.
 """
 
+import os
 import subprocess
 import sys
+import time
 from argparse import ArgumentParser
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from pfgs_bo.config import load_config, resolve_config
 from pfgs_bo.experiment import beta_file, results_csv
-from pfgs_bo.pareto_front.beta import beta_ranges
+from pfgs_bo.pareto_front.beta import SCHEDULE_NAMES, beta_ranges, select_schedules
+from pfgs_bo.tracking.mlflow_tracker import prepare_experiments
 from pfgs_bo.tracking.results_io import from_json
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
+LOG_DIR = SCRIPTS_DIR.parent / "logs" / "experiments"
 
 TRAIN_SEEDS = [1, 2, 3, 4, 5]
 TEST_SEED = 11
@@ -114,17 +119,25 @@ def experiment_a() -> list[tuple[Problem, Experiment]]:
     Returns:
         runs (list[tuple[Problem, Experiment]]): runs in the order they must run.
     """
-    return [
-        (
-            PROBLEMS[label],
-            Experiment(script, config, thresholds(baseline)),
+    runs = []
+    for label, baseline in BASELINE_CONSTRAINTS.items():
+        problem = PROBLEMS[label]
+        runs.append(
+            (problem, Experiment("run_pfgs.py", "pfgs.toml", thresholds(baseline)))
         )
-        for label, baseline in BASELINE_CONSTRAINTS.items()
-        for script, config in [
-            ("run_pfgs.py", "pfgs.toml"),
-            ("run_pfgs_bo.py", "pfgs_bo.toml"),
+        # One run per schedule, so the schedules can run in parallel.
+        runs += [
+            (
+                problem,
+                Experiment(
+                    "run_pfgs_bo.py",
+                    "pfgs_bo.toml",
+                    {**thresholds(baseline), "schedule": schedule},
+                ),
+            )
+            for schedule in SCHEDULE_NAMES
         ]
-    ]
+    return runs
 
 
 def experiment_b() -> list[tuple[Problem, Experiment]]:
@@ -210,8 +223,87 @@ def is_done(command: list[str]) -> bool:
     pfgs_beta_file = beta_file(config)
     if not pfgs_beta_file.is_file():
         return False
-    schedules = beta_ranges(from_json(pfgs_beta_file))
+    schedules = select_schedules(
+        beta_ranges(from_json(pfgs_beta_file)), config.get("schedule")
+    )
     return all(results_csv(config, schedule=name).is_file() for name in schedules)
+
+
+def shown(command: list[str]) -> str:
+    """A command as you would type it, e.g. "python scripts/run_bo.py --file ..."."""
+    return " ".join(["python", f"scripts/{Path(command[1]).name}", *command[2:]])
+
+
+def log_name(command: list[str]) -> str:
+    """A readable, unique log file name for a command."""
+    args = command[2:]
+    parts = [Path(command[1]).stem.removeprefix("run_")]
+    for flag in ("--file", "--problem", "--dimensions", "--train-seed"):
+        if flag in args:
+            parts.append(Path(args[args.index(flag) + 1]).stem)
+    parts += [a.split("=", 1)[1] for a in args if "_discard_threshold=" in a]
+    parts += [a.split("=", 1)[1] for a in args if a.startswith("schedule=")]
+    return "_".join(parts) + ".log"
+
+
+def stages(commands: list[list[str]]) -> list[list[list[str]]]:
+    """
+    Splits commands into stages that can each run in parallel: PFGS-guided BO
+    reads the beta intervals PFGS saves, so it runs after everything else.
+    """
+    first = [c for c in commands if Path(c[1]).name != "run_pfgs_bo.py"]
+    second = [c for c in commands if Path(c[1]).name == "run_pfgs_bo.py"]
+    return [stage for stage in (first, second) if stage]
+
+
+def run_all(commands: list[list[str]], jobs: int, log_dir: Path) -> list[list[str]]:
+    """
+    Runs commands, ``jobs`` at a time.
+
+    Parameters:
+        commands (list[list[str]]): commands, in the order they must run.
+        jobs (int): number of runs at once.
+        log_dir (Path): folder for the log files when ``jobs`` > 1.
+
+    Returns:
+        failed (list[list[str]]): commands that failed.
+    """
+    total = len(commands)
+    if jobs <= 1:
+        for i, command in enumerate(commands, start=1):
+            print(f"[{i}/{total}] {shown(command)}", flush=True)
+            subprocess.run(command, check=True)
+        return []
+
+    log_dir.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
+    failed: list[list[str]] = []
+    finished = 0
+
+    def run_one(command: list[str]) -> tuple[list[str], int, float, Path]:
+        log_file = log_dir / log_name(command)
+        start = time.perf_counter()
+        with open(log_file, "w") as log:
+            log.write(shown(command) + "\n\n")
+            log.flush()
+            result = subprocess.run(
+                command, stdout=log, stderr=subprocess.STDOUT, env=env
+            )
+        return command, result.returncode, time.perf_counter() - start, log_file
+
+    for stage in stages(commands):
+        with ThreadPoolExecutor(max_workers=jobs) as pool:
+            for future in as_completed([pool.submit(run_one, c) for c in stage]):
+                command, returncode, seconds, log_file = future.result()
+                finished += 1
+                status = "done" if returncode == 0 else f"FAILED, see {log_file}"
+                print(
+                    f"[{finished}/{total}] {status} ({seconds:.0f}s): {shown(command)}"
+                )
+                if returncode != 0:
+                    failed.append(command)
+
+    return failed
 
 
 def main() -> None:
@@ -240,6 +332,12 @@ def main() -> None:
         "--dry-run", action="store_true", help="Print the commands without running."
     )
     parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="Runs to do at once (each uses one CPU thread); 4 suits an 8 GB laptop.",
+    )
+    parser.add_argument(
         "--skip-existing",
         action="store_true",
         help="Skip runs whose results already exist, e.g. to resume after a crash.",
@@ -262,15 +360,21 @@ def main() -> None:
         )
     )
 
-    for i, command_tuple in enumerate(commands, start=1):
-        command = list(command_tuple)
-        shown = " ".join(["python", f"scripts/{Path(command[1]).name}", *command[2:]])
-        if args.skip_existing and is_done(command):
-            print(f"[{i}/{len(commands)}] done, skipping: {shown}", flush=True)
-            continue
-        print(f"[{i}/{len(commands)}] {shown}", flush=True)
-        if not args.dry_run:
-            subprocess.run(command, check=True)
+    if args.skip_existing:
+        remaining = [command for command in commands if not is_done(list(command))]
+        print(f"Skipping {len(commands) - len(remaining)} runs that already finished.")
+        commands = remaining
+
+    if args.dry_run:
+        for i, command in enumerate(commands, start=1):
+            print(f"[{i}/{len(commands)}] {shown(list(command))}")
+        return
+
+    if args.jobs > 1:
+        prepare_experiments(sorted({problem.label for problem, _ in runs}))
+    failed = run_all([list(command) for command in commands], args.jobs, LOG_DIR)
+    if failed:
+        sys.exit(f"{len(failed)} run(s) failed; see their logs in {LOG_DIR}.")
 
 
 if __name__ == "__main__":
