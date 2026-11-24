@@ -1,9 +1,12 @@
 """UCB beta derivation from the Pareto front and beta schedules for PFGS-guided BO."""
 
+import re
 from collections.abc import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
+
+SCHEDULE_NAMES = ("min", "max", "mid_point", "mean", "median", "max_overlap")
 
 
 def calculate_beta(
@@ -181,3 +184,30 @@ def feasible_beta_range(
         return None
 
     return beta_min, beta_max
+
+
+def select_schedules(
+    schedules: dict[str, NDArray[np.float64]], name: str | None
+) -> dict[str, NDArray[np.float64]]:
+    """
+    Picks one beta schedule from ``beta_ranges``, or all of them.
+
+    Parameters:
+        schedules (dict[str, NDArray[np.float64]]): output of ``beta_ranges``.
+        name (str | None): one of ``SCHEDULE_NAMES``, or None for all schedules.
+
+    Returns:
+        selected (dict[str, NDArray[np.float64]]): the matching schedules; empty if
+            the schedule doesn't exist for this run (e.g. no maximum overlap).
+    """
+    if name is None:
+        return schedules
+    if name not in SCHEDULE_NAMES:
+        raise ValueError(
+            f"Unknown beta schedule {name!r}. Choose from: {', '.join(SCHEDULE_NAMES)}."
+        )
+    return {
+        key: values
+        for key, values in schedules.items()
+        if key == name or re.fullmatch(rf"{name}_\d+", key)
+    }

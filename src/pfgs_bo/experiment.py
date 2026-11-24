@@ -22,7 +22,7 @@ from pfgs_bo.metrics import calculate_model_metrics
 from pfgs_bo.model import GPModel
 from pfgs_bo.plotting.gp import contour_slice_plot
 from pfgs_bo.plotting.results import plot_rrmse_history, plot_train_max_history
-from pfgs_bo.tracking.mlflow_tracker import MLflowTracker
+from pfgs_bo.tracking.mlflow_tracker import MLflowTracker, experiment_name
 from pfgs_bo.tracking.results_io import to_csv
 
 TestSets = dict[str, Dataset]
@@ -260,7 +260,7 @@ def start_run(
     """
     problem = problem_label(config)
     tracker = MLflowTracker(
-        experiment_name=f"{problem}-optimisation",
+        experiment_name=experiment_name(problem),
         run_name=run_name or config["test_name"],
     )
 

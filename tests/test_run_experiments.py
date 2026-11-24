@@ -2,6 +2,7 @@
 
 import json
 import runpy
+import sys
 from pathlib import Path
 
 import pytest
@@ -73,10 +74,20 @@ def settings(runs):
     ]
 
 
-def test_experiment_a_is_pfgs_then_pfgs_guided_bo_on_himmelblau(runner):
-    assert settings(runner["experiment_a"]()) == [
+def test_experiment_a_is_pfgs_then_one_run_per_beta_schedule(runner):
+    runs = runner["experiment_a"]()
+
+    assert settings(runs) == [
         ("himmelblau", "run_pfgs.py", "pfgs.toml", (1000, 100)),
-        ("himmelblau", "run_pfgs_bo.py", "pfgs_bo.toml", (1000, 100)),
+        *[("himmelblau", "run_pfgs_bo.py", "pfgs_bo.toml", (1000, 100))] * 6,
+    ]
+    assert [e.overrides.get("schedule") for _, e in runs[1:]] == [
+        "min",
+        "max",
+        "mid_point",
+        "mean",
+        "median",
+        "max_overlap",
     ]
 
 
@@ -123,5 +134,81 @@ def test_the_full_plan_passes_the_check_and_shared_runs_happen_once(
     runner["main"]()
     lines = capsys.readouterr().out.splitlines()
 
-    assert len(lines) == 61
-    assert len(set(line.split("] ", 1)[1] for line in lines)) == 61
+    assert len(lines) == 66
+    assert len(set(line.split("] ", 1)[1] for line in lines)) == 66
+
+
+def test_pfgs_guided_bo_runs_in_a_later_stage(runner):
+    pfgs = command(runner, "run_pfgs.py", "pfgs.toml", Path("x"))
+    bo = command(runner, "run_bo.py", "bo_ei.toml", Path("x"))
+    pfgs_bo = command(runner, "run_pfgs_bo.py", "pfgs_bo.toml", Path("x"))
+
+    assert runner["stages"]([pfgs_bo, pfgs, bo]) == [[pfgs, bo], [pfgs_bo]]
+
+
+def test_log_names_are_unique_across_the_plan(runner):
+    problem = runner["PROBLEMS"]["himmelblau"]
+    runs = runner["experiment_a"]() + runner["experiment_b"]()
+    commands = {
+        tuple(experiment.command(p, seed)) for p, experiment in runs for seed in [1, 2]
+    }
+
+    names = {runner["log_name"](list(c)) for c in commands}
+
+    assert len(names) == len(commands)
+    assert (
+        runner["log_name"](
+            runner["Experiment"]("run_bo.py", "bo_ei.toml").command(problem, 3)
+        )
+        == "bo_bo_ei_himmelblau_2_3.log"
+    )
+
+
+def test_run_all_in_parallel_logs_each_run_and_reports_failures(runner, tmp_path):
+    def fake(code: str, name: str) -> list[str]:
+        return [sys.executable, "-c", code, "--file", name]
+
+    ok = fake("print('hello')", "ok.toml")
+    bad = fake("raise SystemExit(3)", "bad.toml")
+
+    failed = runner["run_all"]([ok, bad], jobs=2, log_dir=tmp_path)
+
+    assert failed == [bad]
+    logs = {path.name: path.read_text() for path in tmp_path.iterdir()}
+    assert len(logs) == 2
+    assert any("hello" in text for text in logs.values())
+
+
+def test_prepare_experiments_creates_one_experiment_per_problem(tmp_path, monkeypatch):
+    import mlflow
+
+    from pfgs_bo.tracking.mlflow_tracker import prepare_experiments
+
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path / 'mlflow.db'}")
+
+    prepare_experiments(["himmelblau", "ackley_6d"])
+    prepare_experiments(["himmelblau"])
+
+    names = {e.name for e in mlflow.search_experiments()}
+    assert {"himmelblau-optimisation", "ackley_6d-optimisation"} <= names
+
+
+def test_pfgs_guided_bo_schedule_is_done_once_its_csv_exists(runner, tmp_path):
+    pfgs_bo = command(
+        runner,
+        "run_pfgs_bo.py",
+        "pfgs_bo.toml",
+        tmp_path,
+        mean_discard_threshold=0,
+        std_dev_discard_threshold=0,
+        schedule="max",
+    )
+    beta = tmp_path / "himmelblau/pfgs/mean0_std0/beta_train_seed_1.json"
+    beta.parent.mkdir(parents=True)
+    beta.write_text(json.dumps({"beta_min": [0.5], "beta_max": [2.0]}))
+    assert not runner["is_done"](pfgs_bo)
+
+    csv = tmp_path / "himmelblau/pfgs-bo/beta_from_mean0_std0/max/train_seed_1.csv"
+    csv.parent.mkdir(parents=True)
+    csv.write_text("iteration\n0\n")
+    assert runner["is_done"](pfgs_bo)

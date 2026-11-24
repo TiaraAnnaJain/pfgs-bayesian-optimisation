@@ -3,7 +3,12 @@
 import numpy as np
 import pytest
 
-from pfgs_bo.pareto_front.beta import beta_ranges, calculate_beta, feasible_beta_range
+from pfgs_bo.pareto_front.beta import (
+    beta_ranges,
+    calculate_beta,
+    feasible_beta_range,
+    select_schedules,
+)
 
 
 def test_beta_valid_range():
@@ -102,3 +107,16 @@ def test_max_overlap_uses_lower_end_of_unbounded_range():
     schedules = beta_ranges({"beta_min": [1.0, 2.0], "beta_max": [np.inf, np.inf]})
 
     np.testing.assert_allclose(schedules["max_overlap"], 2.0)
+
+
+def test_select_schedules_picks_one_and_includes_max_overlap_ties():
+    schedules = {"max": 1, "max_overlap": 2, "max_overlap_2": 3, "min": 4}
+
+    assert select_schedules(schedules, None) == schedules
+    assert select_schedules(schedules, "max") == {"max": 1}
+    assert select_schedules(schedules, "max_overlap") == {
+        "max_overlap": 2,
+        "max_overlap_2": 3,
+    }
+    with pytest.raises(ValueError, match="Unknown beta schedule"):
+        select_schedules(schedules, "horizontal")
