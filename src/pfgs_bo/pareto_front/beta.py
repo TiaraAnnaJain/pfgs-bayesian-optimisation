@@ -6,7 +6,6 @@ from collections.abc import Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-
 SCHEDULE_NAMES = ("min", "max", "mid_point", "mean", "median", "max_overlap")
 
 
