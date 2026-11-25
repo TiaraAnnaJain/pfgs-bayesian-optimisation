@@ -23,12 +23,6 @@ __pycache__/
 mlflow.db*
 mlruns/
 
-# PySwarms log (disabled in pso_optimiser.py, kept as a safety net)
+# PySwarms log
 report.log
-
-# Personal configs (the example configs in configs/ are committed)
-configs/local/
-
-# Experiment outputs; final results are committed once the report runs are done
-results/
 logs/
