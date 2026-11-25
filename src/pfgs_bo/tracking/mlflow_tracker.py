@@ -46,7 +46,6 @@ class MLflowTracker:
         mlflow.set_tracking_uri(tracking_uri())
         mlflow.set_experiment(experiment_name)
         self._run = mlflow.start_run(run_name=run_name)
-        print(mlflow.get_tracking_uri())
 
     def log_resolved_config(self, resolved_config: dict[str, Any]):
         """

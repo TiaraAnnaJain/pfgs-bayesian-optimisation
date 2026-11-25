@@ -42,7 +42,8 @@ def load_runs(folders: str | Path | list[str | Path]) -> pd.DataFrame:
             frame = pd.read_csv(csv_file)
             frame["train_seed"] = int(csv_file.stem.removeprefix("train_seed_"))
             frame["folder"] = str(folder)
-            frames.append(frame)
+            if not frame.empty:
+                frames.append(frame)
 
     if not frames:
         return pd.DataFrame()
